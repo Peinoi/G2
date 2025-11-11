@@ -23,6 +23,11 @@ const routes = [
     component: Test,
   },
   {
+    path: "/sch",
+    name: "sch",
+    component: Test,
+  },
+  {
     path: "/dashboard",
     name: "Dashboard",
     component: Dashboard,
