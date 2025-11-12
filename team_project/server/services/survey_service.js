@@ -10,4 +10,4 @@ const findAll = async () => {
   }
 };
 
-module.exports = { findAll, create };
+module.exports = { findAll };
