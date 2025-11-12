@@ -28,11 +28,11 @@ const pool = mariadb.createPool({
 pool
   .getConnection()
   .then((conn) => {
-    console.log("[ db.js || 성공 ]");
+    console.log("[ db.js  성공 ]");
     conn.release();
   })
   .catch((err) => {
-    console.error("[ db.js || 실패 ]", err.message);
+    console.error("[ db.js  실패 ]", err.message);
   });
 
 module.exports = pool;
