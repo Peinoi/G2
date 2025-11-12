@@ -6,6 +6,7 @@ const testRouter = require("./routes/testRoute");
 const surveyRoute = require("./routes/surveyRoute");
 const orgRouter = require("./routes/orgRoute");
 const eventRouter = require("./routes/eventRoute");
+const sponsorRouter = require("./routes/sponsorRoute");
 const approvalRouter = require("./routes/approvalRoute.js");
 
 dotenv.config();
@@ -17,7 +18,7 @@ app.use(morgan("dev"));
 // 라우터
 // app.use('/api', testRouter);
 app.use("/test", testRouter);
-
+app.use("/sponsor", sponsorRouter);
 app.use("/survey", surveyRoute);
 app.use("/organization", orgRouter);
 app.use("/approvals", approvalRouter);
