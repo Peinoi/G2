@@ -1,3 +1,4 @@
+// index.js
 import { createRouter, createWebHistory } from "vue-router";
 import Dashboard from "../views/Dashboard.vue";
 import Tables from "../views/Tables.vue";
@@ -9,6 +10,13 @@ import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 import Test from "../views/Test.vue";
 import Sponsor from "../views/Sponsor/Sponsor.vue";
+import survey from "../views/survey.vue";
+import SurveyNew from "../views/SurveyNew.vue";
+import SurveyWrite from "../views/SurveyWrite.vue";
+import EventList from "../views/EventList.vue";
+import EventForm from "../views/EventForm.vue";
+import organization from "../views/organization.vue";
+
 const routes = [
   {
     path: "/",
@@ -24,6 +32,14 @@ const routes = [
     path: "/sponsor",
     name: "Sponsor",
     component: Sponsor,
+    path: "/organization",
+    name: "organization",
+    component: organization,
+  },
+  {
+    path: "/managerApprovals",
+    name: "ManagerApprovals",
+    component: () => import("../views/ManagerApprovals.vue"),
   },
   {
     path: "/dashboard",
@@ -64,6 +80,31 @@ const routes = [
     path: "/sign-up",
     name: "SignUp",
     component: SignUp,
+  },
+  {
+    path: "/survey",
+    name: "survey",
+    component: survey,
+  },
+  {
+    path: "/survey/new",
+    name: "survey-new",
+    component: SurveyNew,
+  },
+  {
+    path: "/survey/write",
+    name: "survey-write",
+    component: SurveyWrite,
+  },
+  {
+    path: "/event",
+    name: "EventList",
+    component: EventList,
+  },
+  {
+    path: "/event/add",
+    name: "EventAdd",
+    component: EventForm,
   },
 ];
 

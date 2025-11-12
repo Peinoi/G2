@@ -1,5 +1,6 @@
 // 올바른 형식
 export default function dateFormat(dateString, format) {
+function dateFormat(dateString, format) {
   let date = new Date(dateString);
   let year = date.getFullYear();
   let month = ("0" + (date.getMonth() + 1)).slice(-2);
@@ -10,3 +11,7 @@ export default function dateFormat(dateString, format) {
     .replace("dd", day);
   return result;
 }
+  let result = format.replace("yyyy", year).replace("MM", month).replace("dd", day);
+  return result;
+}
+export default dateFormat;
