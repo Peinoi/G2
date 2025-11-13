@@ -1,7 +1,7 @@
-<!-- src/views/ManagerApprovals.vue -->
+<!-- src/views/StaffApprovals.vue -->
 <template>
   <div class="apv-page">
-    <h2 class="apv-title">승인 및 요청 목록</h2>
+    <h2 class="apv-title">기관 담당자 승인 및 요청 목록</h2>
 
     <!-- 검색/필터 -->
     <div class="apv-toolbar">
@@ -141,20 +141,23 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 
+const API_BASE = "/api/approvals/staff";
+
 /* 상태 */
 const rows = ref([]);
 const loading = ref(false);
 const error = ref("");
-// 반려 모달용 상태
-const isRejectOpen = ref(false);
-const rejectReason = ref("");
-const rejectTarget = ref(null);
 
 /* 필터/페이지 */
 const state = ref(""); // '', 'BA1', 'BA2', 'BA3'
 const keyword = ref("");
 const page = ref(1);
 const size = ref(20);
+
+/* 반려 모달 상태 */
+const isRejectOpen = ref(false);
+const rejectReason = ref("");
+const rejectTarget = ref(null);
 
 /* 헬퍼 */
 function stateLabel(s) {
@@ -169,6 +172,7 @@ function stateLabel(s) {
       return s || "-";
   }
 }
+
 function fmtDate(d) {
   if (!d) return "-";
   const date = new Date(d);
@@ -184,9 +188,8 @@ async function fetchList() {
   loading.value = true;
   error.value = "";
   try {
-    const res = await axios.get("/api/approvals", {
+    const res = await axios.get(API_BASE, {
       params: {
-        type: "ORG_MANAGER",
         state: state.value,
         keyword: keyword.value,
         page: page.value,
@@ -214,13 +217,17 @@ function onFilterChange() {
   fetchList();
 }
 
-/* 승인/반려 버튼 클릭 핸들러 */
+/* 승인/반려 버튼 */
 async function onApprove(row) {
-  if (!confirm(`[${row.approval_code}] ${row.user_name} 승인 처리할까요?`))
+  if (
+    !confirm(
+      `[${row.approval_code}] ${row.user_name} (기관 담당자) 승인 처리할까요?`
+    )
+  )
     return;
   try {
     await axios.put(
-      `/api/approvals/${encodeURIComponent(row.approval_code)}/approve`
+      `${API_BASE}/${encodeURIComponent(row.approval_code)}/approve`
     );
     alert("승인 처리되었습니다.");
     await fetchList();
@@ -230,7 +237,7 @@ async function onApprove(row) {
   }
 }
 
-async function onReject(row) {
+function onReject(row) {
   rejectTarget.value = row;
   rejectReason.value = "";
   isRejectOpen.value = true;
@@ -251,7 +258,7 @@ async function confirmReject() {
 
   try {
     await axios.put(
-      `/api/approvals/${encodeURIComponent(
+      `${API_BASE}/${encodeURIComponent(
         rejectTarget.value.approval_code
       )}/reject`,
       {
@@ -273,6 +280,7 @@ onMounted(fetchList);
 </script>
 
 <style scoped>
+/* === ManagerApprovals.vue 와 동일 스타일 === */
 .apv-page {
   max-width: 1100px;
   margin: 24px auto;
