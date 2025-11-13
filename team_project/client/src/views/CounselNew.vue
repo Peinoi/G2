@@ -108,13 +108,13 @@
       </div>
 
       <div>
-        <!-- 상담 기록 제목: MaterialInput -->
+        <!-- ✅ 여기 v-model 수정: record.title 로 -->
         <label class="block text-sm mb-1 font-medium">상담 제목</label>
         <MaterialInput
-          id="main-title"
+          :id="`record-title-${record.id}`"
           variant="outline"
           size="default"
-          v-model="mainForm.title"
+          v-model="record.title"
           placeholder="상담 제목을 입력하세요"
         />
       </div>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 
@@ -154,7 +154,10 @@ const submitInfo = ref({
   submitAt: "",
 });
 
-const formattedSubmitAt = computed(() => submitInfo.value.submitAt);
+const formattedSubmitAt = computed(() => {
+  const v = submitInfo.value.submitAt;
+  return v ? v.slice(0, 10) : "-";
+});
 
 // 메인 폼
 const mainForm = ref({
@@ -166,6 +169,37 @@ const mainForm = ref({
 // 추가 기록들
 const records = ref([]);
 const priority = ref("계획");
+
+const loading = ref(false);
+const error = ref("");
+
+// 🔹 상담/제출 기본정보 불러오기 (상담 상세 화면에서 쓰는 API 재사용)
+async function loadData() {
+  loading.value = true;
+  error.value = "";
+
+  try {
+    const { data } = await axios.get(`/api/counsel/${submitCode}`);
+
+    if (!data?.success || !data.result) {
+      throw new Error(data?.message || "상담 기본 정보를 찾을 수 없습니다.");
+    }
+
+    const res = data.result;
+
+    // submit_info: { name, ssnFront, submitAt }
+    if (res.submit_info) {
+      submitInfo.value = res.submit_info;
+    }
+  } catch (e) {
+    console.error(e);
+    error.value = e.message || "상담 기본 정보 조회 중 오류";
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(loadData);
 
 function handleLoad() {
   console.log("불러오기");

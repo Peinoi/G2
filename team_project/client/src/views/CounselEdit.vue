@@ -91,8 +91,8 @@
           </select>
 
           <MaterialButton color="dark" size="sm" @click="submitAll">
-            수정 완료
-          </MaterialButton>
+  {{ isResubmit ? "재작성 완료" : "수정 완료" }}
+</MaterialButton>
         </div>
       </div>
 
@@ -162,6 +162,11 @@ const submitCode = Number(route.params.submitCode);
 const loading = ref(false);
 const error = ref("");
 
+const status = ref(""); // 상담 상태 (CB2/CB3/CB4/CB5 ...)
+
+// CB4(반려)인 경우 재작성 모드
+const isResubmit = computed(() => status.value === "CB4");
+
 // 기본 정보 / 메인 폼 / 기록 / 우선순위
 const submitInfo = ref({
   name: "",
@@ -169,7 +174,10 @@ const submitInfo = ref({
   submitAt: "",
 });
 
-const formattedSubmitAt = computed(() => submitInfo.value.submitAt || "-");
+const formattedSubmitAt = computed(() => {
+  const v = submitInfo.value.submitAt;
+  return v ? v.slice(0, 10) : "-";
+});
 
 const mainForm = ref({
   counselDate: "",
@@ -203,6 +211,8 @@ async function loadData() {
     };
 
     priority.value = res.priority || "계획";
+
+    status.value = res.status || "";
 
     // 상세 기록들
     records.value =
@@ -276,10 +286,14 @@ async function submitAll() {
 
     const res = await axios.post("/api/counsel/new", payload);
 
-    if (res.data?.success) {
-      alert("상담 수정이 완료되었습니다.");
-      router.push({ name: "counselList" });
-    } else {
+   if (res.data?.success) {
+  if (isResubmit.value) {
+    alert("재작성이 완료되었습니다. 승인요청이 다시 올라갔습니다.");
+  } else {
+    alert("상담 수정이 완료되었습니다.");
+  }
+  router.push({ name: "counselList" });
+}else {
       alert(res.data.message || "수정 실패");
     }
   } catch (e) {

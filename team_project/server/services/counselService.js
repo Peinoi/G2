@@ -19,12 +19,17 @@ module.exports = {
   async getCounselDetail(submitCode) {
     return counselMapper.getCounselDetail(submitCode);
   },
-
+//상담 승인
   async approveCounsel(submitCode) {
     return await counselMapper.approveCounsel(submitCode);
   },
-
+//상담 반려
   async rejectCounsel(submitCode, reason) {
     return await counselMapper.rejectCounsel(submitCode, reason);
+  },
+
+  // 반려 사유 조회
+  async getRejectionReason(submitCode) {
+    return await counselMapper.getRejectionReason(submitCode);
   },
 };

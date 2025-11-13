@@ -36,7 +36,7 @@ async function listCounselByRole(role, userId) {
   }
 }
 
-// 상담 작성 / 수정 (공통)
+// 저장 / 수정 / 재수정
 async function saveCounsel(body) {
   const conn = await pool.getConnection();
   try {
@@ -51,40 +51,51 @@ async function saveCounsel(body) {
     const now = new Date();
 
     if (exist.length === 0) {
-      // 1-1) 신규 상담 생성
+      // 🔹 첫 작성: status = CB3(검토전)으로 신규 생성
       const res = await conn.query(sql.insertCounselNote, [
         submitCode, // submit_code
-        "REQ", // status
-        now, // written_at
+        "CB3",      // status
+        now,        // written_at
       ]);
       counsel_code = res.insertId;
     } else {
-      // 1-2) 상담 업데이트
+      // 🔹 기존 상담 있음
       counsel_code = exist[0].counsel_code;
+      const currentStatus = (exist[0].status || "").trim().toUpperCase();
 
-      await conn.query(sql.updateCounselNote, [
-        "REQ", // status
-        now, // written_at
-        counsel_code,
-      ]);
+      if (currentStatus === "CB4") {
+        // ✅ 반려 상태에서 재수정하는 경우:
+        //    - status는 CB4 유지
+        //    - written_at만 갱신
+        await conn.query(sql.updateCounselNoteKeepStatus, [
+          now,          // written_at
+          counsel_code, // WHERE counsel_code = ?
+        ]);
+      } else {
+        // ✅ 일반 수정(예: CB2→CB3, CB3 수정 등):
+        //    - status를 CB3(검토전)으로 맞추기
+        await conn.query(sql.updateCounselNote, [
+          "CB3",        // status
+          now,          // written_at
+          counsel_code,
+        ]);
+      }
     }
 
     // 2) 기존 상담 상세 삭제
     await conn.query(sql.deleteCounselDetails, [counsel_code]);
 
-    // 3) 상담 상세 입력
-    //    (추가 기록들)
+    // 3) 상담 상세 입력들 ... (기존 코드 그대로)
     for (const rec of records || []) {
       await conn.query(sql.insertCounselDetail, [
         counsel_code,
         rec.counselDate,
         rec.title,
         rec.content,
-        null, // attach_code
+        null,
       ]);
     }
 
-    //    (메인 상담도 기록으로 넣기)
     if (mainForm && (mainForm.title || mainForm.content)) {
       await conn.query(sql.insertCounselDetail, [
         counsel_code,
@@ -95,27 +106,18 @@ async function saveCounsel(body) {
       ]);
     }
 
-    // 4) 우선순위 초기화 + 저장
+    // 4) 우선순위 처리 ...
     await conn.query(sql.resetPriority, [submitCode]);
     await conn.query(sql.insertPriority, [submitCode, priority || "계획", "Y"]);
 
-    // 5) 제출본 상태 변경 (요청 상태로)
-    await conn.query(sql.updateSubmissionStatusToReq, ["REQ", submitCode]);
-
-    // 6) 🔥 승인요청 request_approval 인서트
-    //   - requester_code : 지금 상담 작성한 담당자 (임시로 2)
-    //   - processor_code : 처리자(관리자) (임시로 1)
-    //   - approval_type  : 'AE3'
-    //   - state          : 'BA1'
-    //   - linked_table_name : 'counsel_note'
-    //   - linked_record_pk  : 방금 저장한 counsel_code
+    // 5) 🔥 승인요청은 그대로 유지 (반려 재작성도 포함해서 항상 BA1 추가)
     await conn.query(sql.insertRequestApproval, [
-      2, // requester_code (담당자 user_code)
-      1, // processor_code (관리자 user_code)
-      "AE3", // approval_type
-      "BA1", // state
-      "counsel_note", // linked_table_name
-      counsel_code, // linked_record_pk
+      2,            // requester_code (담당자, 임시)
+      1,            // processor_code (관리자, 임시)
+      "AE3",        // approval_type
+      "BA1",        // state (요청)
+      "counsel_note",
+      counsel_code,
     ]);
 
     await conn.commit();
@@ -130,6 +132,7 @@ async function saveCounsel(body) {
     conn.release();
   }
 }
+
 
 // 상세보기 + 수정
 async function getCounselDetail(submitCode) {
@@ -184,14 +187,14 @@ async function getCounselDetail(submitCode) {
         content: d.content,
       })),
       priority,
-      status: h.status,
+      status: h.status, // 여기 status는 counselSql에서 cn.status 선택한 값
     });
   } finally {
     conn.release();
   }
 }
 
-// 상담 승인 (request_approval.state = BA2)
+// 상담 승인 (request_approval.state = BA2 + counsel_note.status = CB5)
 async function approveCounsel(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -207,6 +210,9 @@ async function approveCounsel(submitCode) {
     // 2) request_approval 상태 BA2로 업데이트
     const result = await conn.query(sql.updateApprovalApprove, [counselCode]);
 
+    // 3) ✅ counsel_note.status = 'CB5' (검토완료) 로 변경
+    await conn.query(sql.updateCounselNoteApprove, [counselCode]);
+
     await conn.commit();
     return safeJSON({ affectedRows: result.affectedRows });
   } catch (e) {
@@ -217,7 +223,7 @@ async function approveCounsel(submitCode) {
   }
 }
 
-// 상담 반려 (request_approval.state = BA3 + rejection_reason)
+// 상담 반려 (request_approval.state = BA3 + rejection_reason + counsel_note.status = CB4)
 async function rejectCounsel(submitCode, reason) {
   const conn = await pool.getConnection();
   try {
@@ -236,11 +242,42 @@ async function rejectCounsel(submitCode, reason) {
       counselCode,
     ]);
 
+    // 3) ✅ counsel_note.status = 'CB4' (반려) 로 변경
+    await conn.query(sql.updateCounselNoteReject, [counselCode]);
+
     await conn.commit();
     return safeJSON({ affectedRows: result.affectedRows });
   } catch (e) {
     await conn.rollback();
     throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+//  반려 사유 조회
+async function getRejectionReason(submitCode) {
+  const conn = await pool.getConnection();
+  try {
+    // 1) submitCode 로 counsel_note 찾기
+    const exist = await conn.query(sql.getCounselBySubmit, [submitCode]);
+    if (!exist || exist.length === 0) {
+      // 해당 제출코드에 상담 자체가 없으면 null
+      return null;
+    }
+
+    const counselCode = exist[0].counsel_code;
+
+    // 2) request_approval 에서 반려 사유 조회
+    const rows = await conn.query(sql.getRejectReasonByCounsel, [counselCode]);
+
+    if (!rows || rows.length === 0) {
+      // 반려 이력이 없으면 null
+      return null;
+    }
+
+    // { rejection_reason: '...' } 형태로 리턴
+    return safeJSON(rows[0]);
   } finally {
     conn.release();
   }
@@ -252,4 +289,5 @@ module.exports = {
   getCounselDetail,
   approveCounsel,
   rejectCounsel,
+  getRejectionReason,
 };

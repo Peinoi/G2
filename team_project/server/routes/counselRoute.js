@@ -87,4 +87,41 @@ router.post("/:submitCode/reject", async (req, res) => {
   }
 });
 
+// 반려 사유 조회
+router.get("/:submitCode/rejection-reason", async (req, res) => {
+  try {
+    const submitCode = Number(req.params.submitCode);
+
+    if (!submitCode) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 제출번호가 아닙니다.",
+      });
+    }
+
+    const result = await counselService.getRejectionReason(submitCode);
+
+    if (!result) {
+      // 상담이 없거나, 아직 반려 상태(BA3)가 아닌 경우
+      return res.status(404).json({
+        success: false,
+        message: "반려 사유를 찾을 수 없습니다.",
+      });
+    }
+
+    // 프론트에서 data.result.rejection_reason 또는 data.rejection_reason 둘 다 대비
+    res.json({
+      success: true,
+      result,                       // { rejection_reason: '...' }
+      rejection_reason: result.rejection_reason,
+    });
+  } catch (e) {
+    console.error("[GET /counsel/:submitCode/rejection-reason]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
 module.exports = router;

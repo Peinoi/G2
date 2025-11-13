@@ -13,7 +13,7 @@ module.exports = {
       ss.submit_at,
       cd.counsel_date,
       cn.written_at AS note_created_at,
-      COALESCE(cn.status, ss.status) AS status
+      cn.status AS status
     FROM survey_submission ss
     JOIN users writer
       ON writer.user_code = ss.written_by
@@ -25,9 +25,7 @@ module.exports = {
       ON cd.counsel_code = cn.counsel_code
     WHERE ss.assi_by = ?
     ORDER BY
-      cd.counsel_date DESC,
-      ss.submit_at DESC,
-      ss.submit_code DESC
+      ss.submit_code
   `,
 
   // 관리자 / 시스템용
@@ -39,7 +37,7 @@ module.exports = {
       ss.submit_at,
       cd.counsel_date,
       cn.written_at AS note_created_at,
-      COALESCE(cn.status, ss.status) AS status
+      cn.status AS status  
     FROM survey_submission ss
     JOIN users writer
       ON writer.user_code = ss.written_by
@@ -50,9 +48,7 @@ module.exports = {
     LEFT JOIN counsel_detail cd
       ON cd.counsel_code = cn.counsel_code
     ORDER BY
-      cd.counsel_date DESC,
-      ss.submit_at DESC,
-      ss.submit_code DESC
+      ss.submit_code
   `,
   // 상담 존재 여부
   getCounselBySubmit: `
@@ -71,6 +67,13 @@ module.exports = {
   updateCounselNote: `
     UPDATE counsel_note
     SET status = ?, written_at = ?
+    WHERE counsel_code = ?
+  `,
+  
+//상담 재수정 
+  updateCounselNoteKeepStatus: `
+    UPDATE counsel_note
+    SET written_at = ?
     WHERE counsel_code = ?
   `,
 
@@ -97,13 +100,6 @@ module.exports = {
   insertPriority: `
     INSERT INTO case_priority (submit_code, level, is_current)
     VALUES (?, ?, ?)
-  `,
-
-  // 제출본 상태 업데이트
-  updateSubmissionStatusToReq: `
-    UPDATE survey_submission
-    SET status = ?
-    WHERE submit_code = ?
   `,
 
   /* ✅ 상담 상세 조회용 헤더 */
@@ -186,6 +182,13 @@ module.exports = {
     AND state = 'BA1'
 `,
 
+// 승인 시 counsel_note 상태 → CB5(검토완료)
+updateCounselNoteApprove: `
+  UPDATE counsel_note
+  SET status = 'CB5'
+  WHERE counsel_code = ?
+`,
+
   // 상담 승인요청 → 반려(BA3)
   updateApprovalReject: `
   UPDATE request_approval
@@ -198,4 +201,27 @@ module.exports = {
     AND approval_type = 'AE3'
     AND state = 'BA1'
 `,
+
+// 반려 시 counsel_note 상태 → CB4 (반려로 사용할게오)
+updateCounselNoteReject: `
+  UPDATE counsel_note
+  SET status = 'CB4'
+  WHERE counsel_code = ?
+`,
+
+//  특정 상담(counsel_code)에 대한 반려 사유 조회
+  getRejectReasonByCounsel: `
+  SELECT
+    rejection_reason
+  FROM request_approval
+  WHERE linked_table_name = 'counsel_note'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE3'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC
+  LIMIT 1
+`,
+
 };

@@ -20,7 +20,7 @@
 
         <!-- BEFORE → 작성하기 (담당자만) -->
         <MaterialButton
-          v-if="role === 2 && status === 'BEFORE'"
+          v-if="role === 2 && status === 'CB2'"
           color="dark"
           size="sm"
           @click="goWrite"
@@ -30,13 +30,22 @@
 
         <!-- REQ → 수정하기 (담당자만) -->
         <MaterialButton
-          v-else-if="role === 2 && status === 'REQ'"
+          v-else-if="role === 2 && status === 'CB3'"
           color="dark"
           size="sm"
           @click="goEdit"
         >
           수정하기
         </MaterialButton>
+          <!-- 🔥 CB4 → 재수정하기 (반려 시 담당자 전용) -->
+  <MaterialButton
+    v-else-if="role === 2 && status === 'CB4'"
+    color="dark"
+    size="sm"
+    @click="goEdit"
+  >
+    재수정하기
+  </MaterialButton>
       </div>
     </header>
 
@@ -56,9 +65,9 @@
         </div>
 
         <div class="flex items-center gap-6 text-sm">
-          <button class="text-blue-600 underline" @click="openSubmissionDetail">
+          <MaterialButton color="dark" size="sm" @click="openSubmissionDetail">
             조사지 제출일: {{ formattedSubmitAt }}
-          </button>
+          </MaterialButton>
 
           <div class="flex items-center gap-2">
             <span class="text-gray-500">우선순위:</span>
@@ -127,14 +136,18 @@
       <div v-else class="text-sm text-gray-500">추가 상담 기록이 없습니다.</div>
 
       <!-- 🔥 관리자(3) 전용 승인/반려 버튼 영역 -->
-      <div v-if="role === 3" class="flex justify-end gap-3 pt-4 border-t mt-4">
-        <MaterialButton color="dark" size="sm" @click="handleApprove">
-          승인
-        </MaterialButton>
-        <MaterialButton color="dark" size="sm" @click="handleReject">
-          반려
-        </MaterialButton>
-      </div>
+<div
+  v-if="role === 3 && status !== 'CB4' && status !== 'CB5'"
+  class="flex justify-end gap-3 pt-4 border-t mt-4"
+>
+  <MaterialButton color="dark" size="sm" @click="handleApprove">
+    승인
+  </MaterialButton>
+  <MaterialButton color="dark" size="sm" @click="handleReject">
+    반려
+  </MaterialButton>
+</div>
+
     </template>
 
     <!-- 🔻 반려 사유 입력 모달 -->
@@ -187,7 +200,10 @@ const submitInfo = ref({
   submitAt: "",
 });
 
-const formattedSubmitAt = computed(() => submitInfo.value.submitAt || "-");
+const formattedSubmitAt = computed(() => {
+  const v = submitInfo.value.submitAt;
+  return v ? v.slice(0, 10) : "-";
+});
 
 const mainForm = ref({
   counselDate: "",
