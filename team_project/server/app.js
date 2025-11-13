@@ -10,7 +10,7 @@ const eventRouter = require("./routes/eventRoute");
 const sponsorRouter = require("./routes/sponsorRoute");
 const approvalRouter = require("./routes/approvalRoute.js");
 const path = require("path");
-const signRouter = require('./routes/signUser');
+const signRouter = require("./routes/signUser");
 
 dotenv.config();
 
@@ -29,10 +29,10 @@ app.use("/organization", orgRouter);
 app.use("/approvals", approvalRouter);
 app.use("/event", eventRouter);
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // 첨부파일
-app.use("/user", authRouter);
+app.use("/user", signRouter);
 
 // const port = process.env.PORT;
 const port = process.env.PORT;
 app.listen(port, () => {
-  console.log('[ server app.js 가동 완료 | http://localhost:3000/ ]');
+  console.log("[ server app.js 가동 완료 | http://localhost:3000/ ]");
 });
