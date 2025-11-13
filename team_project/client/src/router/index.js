@@ -13,7 +13,7 @@ import Sponsor from "../views/Sponsor/Sponsor.vue";
 import EventMain from "../views/EventMain.vue";
 import EventList from "../views/EventList.vue";
 import EventForm from "../views/EventForm.vue";
-import organization from "../views/organization.vue";
+import Organization from "../views/Organization.vue";
 
 const routes = [
   {
@@ -33,13 +33,18 @@ const routes = [
   },
   {
     path: "/organization",
-    name: "organization",
-    component: organization,
+    name: "Organization",
+    component: Organization,
   },
   {
     path: "/managerApprovals",
     name: "ManagerApprovals",
     component: () => import("../views/ManagerApprovals.vue"),
+  },
+  {
+    path: "/staffApprovals",
+    name: "StaffApprovals",
+    component: () => import("../views/StaffApprovals.vue"),
   },
   {
     path: "/dashboard",
