@@ -42,9 +42,10 @@
           <ul class="navbar-nav justify-content-end">
             <!-- 로그인 아이콘 -->
             <li class="nav-item d-flex align-items-center">
-              <router-link
+              <div
                 :to="{ name: 'SignIn' }"
                 class="px-0 nav-link font-weight-bold lh-1"
+                @click="loginCheck"
                 :class="color ? color : 'text-body'"
               >
                 <i
@@ -53,7 +54,7 @@
                 >
                   account_circle
                 </i>
-              </router-link>
+              </div>
             </li>
 
             <!-- 모바일 사이드바 토글 -->
@@ -220,8 +221,9 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from "../Breadcrumbs.vue";
-import { mapMutations, mapState } from "vuex";
+import Breadcrumbs from '../Breadcrumbs.vue';
+import { mapMutations, mapState } from 'vuex';
+import { useAuthStore } from '@/store/authLogin';
 
 export default {
   name: "navbar",
@@ -239,6 +241,19 @@ export default {
 
     toggleSidebar() {
       this.navbarMinimize();
+    },
+
+    loginCheck() {
+      const piniaLogin = useAuthStore();
+
+      if (piniaLogin.isLogin) {
+        piniaLogin.logout();
+        alert('로그아웃 완료');
+        this.$router.push({ name: 'SignIn' });
+        return;
+      }
+
+      this.$router.push({ name: 'SignIn' });
     },
   },
   components: {
