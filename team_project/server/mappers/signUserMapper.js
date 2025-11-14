@@ -18,7 +18,7 @@ async function findUserId(id) {
 // 개인 회원가입
 async function addUser(data) {
   try {
-    const values = [
+    const userData = [
       data.org_code || null,
       data.userId,
       data.userPw,
@@ -33,7 +33,7 @@ async function addUser(data) {
       data.joinDate, // 가입일
     ];
 
-    await pool.query(signUserSQL.INSERT_USER, values);
+    await pool.query(signUserSQL.INSERT_USER, userData);
 
     return { ok: true, message: '회원가입 완료' };
   } catch (err) {
@@ -59,7 +59,7 @@ async function findOrgCode(orgName) {
 // 기관 회원가입
 async function addOrg(data) {
   try {
-    const values = [
+    const userData = [
       data.org_code,
       data.userId,
       data.userPw,
@@ -75,7 +75,7 @@ async function addOrg(data) {
       data.joinDate, // 가입일
     ];
 
-    await pool.query(signUserSQL.INSERT_USER, values);
+    await pool.query(signUserSQL.INSERT_USER, userData);
 
     return { ok: true, message: '기관 회원가입 완료' };
   } catch (err) {
@@ -84,14 +84,28 @@ async function addOrg(data) {
   }
 }
 
-async function searchOrgByName(keyword) {
+// 로그인
+async function authLogin(data) {
   try {
-    const [rows] = await pool.query(signUserSQL.SEARCH_ORG, [keyword]);
-    return rows; // ex: [{ org_name: '행복센터' }, ...]
+    const result = await pool.query(signUserSQL.AUTH_LOGIN, [
+      data.userId,
+      data.userPw,
+    ]);
+    if (result.length == 0) {
+      console.log('값 없음');
+      return { ok: false, message: '로그인 실패' };
+    }
+    return { ok: true, message: '로그인 성공', ...result[0] };
   } catch (err) {
-    console.error('[ searchOrgByName 실패 ]', err);
+    console.error('[ authLogin 실패 ]', err);
     throw err;
   }
 }
 
-module.exports = { findUserId, addUser, findOrgCode, addOrg, searchOrgByName };
+module.exports = {
+  findUserId,
+  addUser,
+  findOrgCode,
+  addOrg,
+  authLogin,
+};

@@ -1,5 +1,13 @@
 const FIND_ID = 'SELECT user_id FROM users WHERE user_id = ?';
 
+const AUTH_LOGIN = `
+  SELECT user_id, 
+         role
+  FROM users
+  WHERE user_id = ?
+  AND password_hash = ?
+`;
+
 const INSERT_USER = `
   INSERT INTO users (
     org_code,
@@ -31,4 +39,10 @@ const SEARCH_ORG = `
   LIMIT 10
 `;
 
-module.exports = { FIND_ID, INSERT_USER, FIND_ORG_CODE, SEARCH_ORG };
+module.exports = {
+  FIND_ID,
+  AUTH_LOGIN,
+  INSERT_USER,
+  FIND_ORG_CODE,
+  SEARCH_ORG,
+};

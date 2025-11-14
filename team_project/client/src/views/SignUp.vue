@@ -297,13 +297,11 @@ export default {
             joinDate: today,
             ...detail,
           };
-
-          console.log(payload);
           const result = await addOrg(payload);
 
           if (result.ok) {
             alert('회원가입 성공. 로그인 페이지로 이동');
-            // this.$router.push({ name: 'SignIn' });
+            this.$router.push({ name: 'SignIn' });
           } else {
             alert('기관 회원가입 실패: ' + result.message);
           }
