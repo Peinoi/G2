@@ -11,6 +11,7 @@ const sponsorRouter = require("./routes/sponsorRoute");
 const approvalRouter = require("./routes/approvalRoute.js");
 const path = require("path");
 const signRouter = require("./routes/signUser");
+const attachmentRouter = require("./routes/attachmentRoute");
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use("/approvals", approvalRouter);
 app.use("/event", eventRouter);
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // 첨부파일
 app.use("/user", signRouter);
+app.use("/attachment", attachmentRouter);
 
 // const port = process.env.PORT;
 const port = process.env.PORT;

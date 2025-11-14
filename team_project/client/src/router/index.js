@@ -13,12 +13,13 @@ import Sponsor from "../views/Sponsor/Sponsor.vue";
 import EventMain from "../views/EventMain.vue";
 import EventList from "../views/EventList.vue";
 import EventForm from "../views/EventForm.vue";
+import EventInfo from "../views/EventInfo.vue";
 import Organization from "../views/Organization.vue";
 
 const routes = [
   {
     path: "/",
-    name: "/",
+    name: "dashboard",
     redirect: "/dashboard",
   },
   {
@@ -195,6 +196,12 @@ const routes = [
     path: "/event/add",
     name: "EventAdd",
     component: EventForm,
+  },
+  // 이벤트 상세
+  {
+    path: "/event/info",
+    name: "EventInfo",
+    component: EventInfo,
   },
 ];
 
