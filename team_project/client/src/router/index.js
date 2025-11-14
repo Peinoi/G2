@@ -18,7 +18,7 @@ import Organization from "../views/Organization.vue";
 const routes = [
   {
     path: "/",
-    name: "/",
+    name: "dashboard",
     redirect: "/dashboard",
   },
   {
