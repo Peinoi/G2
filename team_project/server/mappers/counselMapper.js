@@ -9,11 +9,6 @@ function safeJSON(v) {
   );
 }
 
-// 🔹 파일명 DB 저장용 인코더
-function encodeFilenameForDb(name) {
-  return name || "";
-}
-
 // 🔹 DB에서 읽어온 파일명 복원용 디코더
 function decodeFilenameFromDb(name) {
   if (!name) return name;
@@ -126,7 +121,6 @@ async function saveCounsel(body, files = []) {
         rec.counselDate,
         rec.title,
         rec.content,
-        null, // attach_code (지금은 상담 상세별 첨부는 사용 안 함)
       ]);
     }
 
@@ -136,7 +130,6 @@ async function saveCounsel(body, files = []) {
         mainForm.counselDate,
         mainForm.title,
         mainForm.content,
-        null,
       ]);
     }
 
@@ -375,12 +368,18 @@ async function getRejectionReason(submitCode) {
 }
 
 // 🔹 상담 임시저장
-async function saveCounselTemp(body) {
+async function saveCounselTemp(body, files = []) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const { submitCode, priority, mainForm, records } = body;
+    const {
+      submitCode,
+      priority,
+      mainForm,
+      records,
+      removeAttachmentCodes = [], // 🔥 작성 화면에서 삭제한 첨부 코드들
+    } = body;
     const now = new Date();
 
     // 1) 기존 상담 존재 여부 확인
@@ -409,20 +408,18 @@ async function saveCounselTemp(body) {
     // 2) 기존 상담 상세 싹 지우고
     await conn.query(sql.deleteCounselDetails, [counsel_code]);
 
-    // 3) 메인 상담 내용 (완전 빈 값이면 INSERT 안 함)
+    // 3) 메인 상담 내용
     if (mainForm) {
       const mainDate = normalizeDateForDb(mainForm.counselDate);
       const mainTitle = (mainForm.title || "").trim();
       const mainContent = (mainForm.content || "").trim();
 
-      // 🔸 날짜/제목/내용이 전부 빈 경우는 굳이 row 안 만든다
       if (mainDate || mainTitle || mainContent) {
         await conn.query(sql.insertCounselDetail, [
           counsel_code,
-          mainDate, // '' → null 처리됨
+          mainDate,
           mainTitle,
           mainContent,
-          null,
         ]);
       }
     }
@@ -433,21 +430,46 @@ async function saveCounselTemp(body) {
       const recTitle = (rec.title || "").trim();
       const recContent = (rec.content || "").trim();
 
-      // 🔸 완전히 빈 줄은 스킵
       if (!recDate && !recTitle && !recContent) continue;
 
       await conn.query(sql.insertCounselDetail, [
         counsel_code,
-        recDate, // '' → null
+        recDate,
         recTitle,
         recContent,
-        null,
       ]);
     }
 
-    // 5) 우선순위도 임시저장에 반영하고 싶으면 그대로 유지
+    // 5) 우선순위도 임시저장에 반영
     await conn.query(sql.resetPriority, [submitCode]);
     await conn.query(sql.insertPriority, [submitCode, priority || "계획", "Y"]);
+
+    // 6) 🔥 첨부파일 삭제 (임시저장 화면에서 삭제한 기존 첨부들)
+    if (Array.isArray(removeAttachmentCodes) && removeAttachmentCodes.length) {
+      for (const attachCode of removeAttachmentCodes) {
+        if (attachCode == null) continue;
+        await conn.query(sql.deleteAttachmentOne, [
+          counsel_code, // linked_record_pk
+          attachCode, // attach_code
+        ]);
+      }
+    }
+
+    // 7) 🔥 새로 업로드된 파일들 첨부로 INSERT
+    if (Array.isArray(files) && files.length > 0) {
+      const basePath = "/uploads/counsel";
+
+      for (const f of files) {
+        // counselRoute에서 originalname 이미 UTF-8로 복원해줌
+        await conn.query(sql.insertAttachment, [
+          f.originalname, // original_filename
+          f.filename, // server_filename
+          basePath, // file_path
+          "counsel_note", // linked_table_name
+          counsel_code, // linked_record_pk
+        ]);
+      }
+    }
 
     await conn.commit();
     return safeJSON({

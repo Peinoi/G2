@@ -17,11 +17,17 @@
         <router-link to="/test" class="btn btn-outline-primary btn-sm"
           >대기자</router-link
         >
-        <router-link to="/test" class="btn btn-outline-info btn-sm"
+        <router-link to="/survey-list" class="btn btn-outline-info btn-sm"
           >조사지</router-link
         >
-        <router-link to="/test" class="btn btn-outline-success btn-sm"
+        <router-link to="/counsel-list" class="btn btn-outline-success btn-sm"
           >상담</router-link
+        >
+        <router-link to="/plan-list" class="btn btn-outline-success btn-sm"
+          >지원계획</router-link
+        >
+        <router-link to="/test" class="btn btn-outline-success btn-sm"
+          >지원결과</router-link
         >
         <router-link to="/sponsor" class="btn btn-outline-success btn-sm"
           >후원</router-link
@@ -221,9 +227,9 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from '../Breadcrumbs.vue';
-import { mapMutations, mapState } from 'vuex';
-import { useAuthStore } from '@/store/authLogin';
+import Breadcrumbs from "../Breadcrumbs.vue";
+import { mapMutations, mapState } from "vuex";
+import { useAuthStore } from "@/store/authLogin";
 
 export default {
   name: "navbar",
@@ -248,12 +254,12 @@ export default {
 
       if (piniaLogin.isLogin) {
         piniaLogin.logout();
-        alert('로그아웃 완료');
-        this.$router.push({ name: 'SignIn' });
+        alert("로그아웃 완료");
+        this.$router.push({ name: "SignIn" });
         return;
       }
 
-      this.$router.push({ name: 'SignIn' });
+      this.$router.push({ name: "SignIn" });
     },
   },
   components: {
