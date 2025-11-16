@@ -31,6 +31,7 @@ const selectEventList = `
   SELECT 
     e.event_code,
     e.event_name,
+    e.event_register_date,
     e.event_start_date,
     e.event_end_date,
     e.recruit_start_date,
@@ -38,7 +39,10 @@ const selectEventList = `
     e.max_participants,
     COALESCE(SUM(se.sub_recruit_count), 0) AS total_sub_recruit_count,
     a.server_filename,
-    a.file_path
+    a.file_path,
+    org.org_name AS org_name,
+    u.name AS main_manager_name,
+    e.register_status
   FROM event e
   LEFT JOIN sub_event se ON e.event_code = se.event_code
   LEFT JOIN (
@@ -48,6 +52,8 @@ const selectEventList = `
       AND LOWER(SUBSTRING_INDEX(original_filename, '.', -1)) IN ('jpg', 'jpeg', 'png', 'gif')
     GROUP BY linked_record_pk
   ) a ON e.event_code = a.linked_record_pk
+  LEFT JOIN organization org ON e.org_code = org.org_code
+  LEFT JOIN users u ON e.user_code = u.user_code
   WHERE 1=1
     -- 모집상태
     AND (? IS NULL OR e.recruit_status = ?)

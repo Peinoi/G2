@@ -49,6 +49,15 @@ async function selectEventList(filters) {
     ];
 
     const rows = await conn.query(eventSQL.selectEventList, params);
+    if (!rows || !rows.length) return [];
+
+    for (const event of rows) {
+      event.register_status_name = await commonCodeService.getCodeName(
+        "DF",
+        event.register_status
+      );
+    }
+
     console.log("[eventMapper.js || 이벤트 목록 조회 성공]", rows);
     return rows;
   } catch (err) {
