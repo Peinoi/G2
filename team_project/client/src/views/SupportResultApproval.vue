@@ -37,13 +37,14 @@
           <tr>
             <th>승인코드</th>
             <th>이름</th>
+            <th>장애유형</th>
             <th>보호자</th>
             <th>담당자</th>
-            <th>기관</th>
+            <th v-if="showOrgColumn">기관</th>
             <th>결과 작성일</th>
-            <th>장애유형</th>
             <th>우선순위</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -55,12 +56,12 @@
           >
             <td>{{ item.approval_code }}</td>
             <td>{{ item.child_name }}</td>
+            <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <td>{{ item.org_name }}</td>
-            <!-- 🔹 지원결과 헤더의 작성일 컬럼 사용 (예: support_result.written_at) -->
+            <td v-if="showOrgColumn">{{ item.org_name }}</td>
             <td>{{ formatDate(item.written_at) }}</td>
-            <td>{{ item.disability_type }}</td>
+
             <td>
               <span
                 class="priority-chip"
@@ -69,15 +70,20 @@
                 {{ codeLabel(item.priority_level) }}
               </span>
             </td>
+
             <td>
               <span class="priority-badge" :class="stateBadgeClass(item.state)">
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+
+            <td>{{ formatDate(item.approval_date) }}</td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="9">데이터가 없습니다.</td>
+            <td class="priority-empty" :colspan="showOrgColumn ? 10 : 9">
+              데이터가 없습니다.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -112,7 +118,9 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/store/authLogin.js";
 
+const auth = useAuthStore();
 const router = useRouter();
 const list = ref([]);
 
@@ -131,6 +139,9 @@ const totalPages = computed(() =>
 const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
+
+// 🔹 기관 컬럼 표시 여부
+const showOrgColumn = computed(() => auth.role === "AA4");
 
 // 공통코드 매핑
 const CODE_LABEL_MAP = {
@@ -198,6 +209,8 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
+        loginId: auth.userId,
+        role: auth.role,
       },
     });
 
@@ -228,7 +241,7 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 지원결과 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "support-result-detail", // 라우터에서 이 이름으로 등록해 두면 됨
+    name: "resultDetail", // 라우터에서 이 이름으로 등록해 두면 됨
     params: { resultCode: item.result_code }, // support_result.result_code
     query: {
       role: 3, // 관리자 화면
@@ -236,7 +249,15 @@ function goDetail(item) {
   });
 }
 
-onMounted(loadList);
+onMounted(() => {
+  if (!auth.isAA3 && auth.role !== "AA4") {
+    alert("기관 관리자 또는 시스템 관리자만 접근할 수 있습니다.");
+    router.push("/");
+    return;
+  }
+
+  loadList();
+});
 </script>
 
 <style scoped>

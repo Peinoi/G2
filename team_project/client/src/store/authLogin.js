@@ -29,9 +29,9 @@ export const useAuthStore = defineStore("authLogin", {
 
       try {
         const loginData = JSON.parse(loginCheck);
-        this.userId = loginData.userId;
+        this.userId = loginData.user_id;
         this.role = loginData.role;
-        this.userCode = loginData.userCode;
+        this.userCode = loginData.user_code;
         this.isLogin = true;
       } catch (err) {
         console.error("[ pinia reload 오류 ] : ", err);

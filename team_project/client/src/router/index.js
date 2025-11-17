@@ -21,6 +21,7 @@ import { sponsorMenu } from "@/config/menus";
 import { eventMenu } from "@/config/menus";
 import { surveyMenu } from "@/config/menus";
 import { spportMenu } from "@/config/menus";
+import { appReqMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
 
 const router = createRouter({
@@ -381,7 +382,30 @@ router.beforeEach((to, from, next) => {
   const sponsorPages = ["Sponsor", "SponsorProgramList"];
 
   // event 그룹
-  const eventPages = ["EventMain", "EventList"];
+  const eventPages = [
+    "EventMain",
+    "EventList",
+    "EventApplyList",
+    "EventAdd",
+    "EventResultAdd",
+    "EventApplyResult",
+    "EventManagerList",
+    "EventAttendanceList",
+  ];
+
+  // 승인 요청 그룹
+  const appReqPages = [
+    "Organization",
+    "ManagerApprovals",
+    "StaffApprovals",
+    "PriorityApprovals",
+    "SupportPlanApprovals",
+    "SupportResultApprovals",
+    "EventPlanApprovals",
+    "EventResultApprovals",
+    "SponsorshipPlanApprovals",
+    "SponsorshipResultApprovals",
+  ];
 
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
@@ -411,6 +435,11 @@ router.beforeEach((to, from, next) => {
   if (spportPages.includes(to.name)) {
     menu.setPageTitle("지원 페이지");
     menu.setMenu(spportMenu);
+    
+  // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
+  if (appReqPages.includes(to.name)) {
+    menu.setPageTitle("승인 요청 관리");
+    menu.setMenu(appReqMenu);
   }
 
   next();

@@ -84,12 +84,15 @@ WHERE ra.approval_type = 'AE2'
     u.phone       LIKE CONCAT('%', ?, '%') OR
     u.email       LIKE CONCAT('%', ?, '%')
   )
-  -- 🔽 로그인한 기관 관리자와 같은 기관만 보기
-  AND o.org_code = (
-    SELECT u2.org_code
-    FROM users u2
-    WHERE u2.user_id = ?
-    LIMIT 1
+  -- 🔹 AA3: 자기 기관만, AA4: 전체 (orgFilterLoginId === '' 이면 필터 해제)
+  AND (
+    ? = '' OR
+    o.org_code = (
+      SELECT u2.org_code
+      FROM users u2
+      WHERE u2.user_id = ?
+      LIMIT 1
+    )
   )
 ORDER BY ra.request_date DESC, ra.approval_code DESC
 LIMIT ?, ?
@@ -117,6 +120,7 @@ const priorityApprovalList = `
     , c.disability_type       AS disability_type -- 장애유형
     , cp.level                AS priority_level  -- 우선순위 등급(BB코드)
     , ra.state                AS state         -- 상태(BA1/BA2/BA3)
+    , ra.approval_date        AS approval_date -- 처리일(승인/반려 일자)
   FROM request_approval ra
 
   LEFT JOIN counsel_note cn
@@ -243,6 +247,7 @@ const supportPlanApprovalList = `
       c.disability_type   AS disability_type, -- 장애유형
       cp.level            AS priority_level,  -- 우선순위(BB코드)
       ra.state            AS state,           -- 상태(BA코드)
+      ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
 
       sp.plan_code        AS plan_code,
       sp.submit_code      AS submit_code
@@ -372,6 +377,8 @@ const supportResultApprovalList = `
       cp.level            AS priority_level,  -- 우선순위(BB코드)
       ra.state            AS state,           -- 상태(BA코드)
 
+      ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
+
       sr.result_code      AS result_code,     -- 결과코드 (상세 이동용)
       sr.plan_code        AS plan_code
   FROM request_approval ra
@@ -421,6 +428,17 @@ const supportResultApprovalList = `
       parent.name    LIKE CONCAT('%', ?, '%') OR
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
+  )
+
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기 (AA3), AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
   )
 
   ORDER BY 
@@ -474,6 +492,17 @@ const supportResultApprovalTotalCount = `
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
   )
+
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트 (AA3), AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+  )
 `;
 
 // 🔹 이벤트 계획 승인 요청 목록 (페이징용)
@@ -492,6 +521,7 @@ const eventPlanApprovalList = `
     , e.event_end_date      AS event_end_date    -- 시행 기간
 
     , ra.state              AS state        -- 요청 상태(BA 코드)
+    , ra.approval_date      AS approval_date -- 처리일(승인/반려 일자)
     , e.event_code          AS event_code   -- 상세 이동용
   FROM request_approval ra
 

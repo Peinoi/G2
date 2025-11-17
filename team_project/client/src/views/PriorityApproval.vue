@@ -29,19 +29,21 @@
     <div class="priority-card">
       <!-- 🔹 로딩 중일 때만 표시 -->
       <div v-if="loading" class="priority-loading">불러오는 중...</div>
+
       <!-- 🔹 로딩이 끝났을 때만 테이블 표시 -->
       <table v-else class="priority-table">
         <thead>
           <tr>
             <th>승인코드</th>
             <th>이름</th>
+            <th>장애유형</th>
             <th>보호자</th>
             <th>담당자</th>
-            <th>기관</th>
+            <th v-if="isOrgVisible">기관</th>
             <th>상담기록</th>
-            <th>장애유형</th>
             <th>우선순위</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -53,11 +55,11 @@
           >
             <td>{{ item.approval_code }}</td>
             <td>{{ item.child_name }}</td>
+            <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <td>{{ item.org_name }}</td>
+            <td v-if="isOrgVisible">{{ item.org_name }}</td>
             <td>{{ formatDate(item.counsel_date) }}</td>
-            <td>{{ item.disability_type }}</td>
             <td>
               <span
                 class="priority-chip"
@@ -71,13 +73,24 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+            <td>
+              {{
+                item.state === "BA1" || !item.approval_date
+                  ? "-"
+                  : formatDate(item.approval_date)
+              }}
+            </td>
           </tr>
+
           <!-- 🔹 로딩이 끝났고 + 데이터 없을 때만 메시지 -->
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="9">데이터가 없습니다.</td>
+            <td class="priority-empty" :colspan="isOrgVisible ? 10 : 9">
+              데이터가 없습니다.
+            </td>
           </tr>
         </tbody>
       </table>
+
       <!-- 🔹 페이징도 로딩 끝난 뒤에만 -->
       <div v-if="!loading && totalPages > 1" class="priority-pagination">
         <button
@@ -108,10 +121,10 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/store/authLogin"; // 🔹 추가
+import { useAuthStore } from "@/store/authLogin";
 
 const router = useRouter();
-const auth = useAuthStore(); // 🔹 추가
+const auth = useAuthStore();
 
 const list = ref([]);
 
@@ -128,22 +141,39 @@ const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
 
-// 🔹 로그인 아이디 / 역할 계산
-const loginId = computed(() => {
-  // 프로젝트에 따라 사용하는 필드 맞춰서 쓸 것
+// 🔹 공통: 유저 role, loginId 계산
+const userRole = computed(() => {
   return (
-    auth.userId || // 예: userId
-    auth.loginId || // 예: loginId
-    auth.id || // 예: id
+    auth.role || // 예: 'AA3', 'AA4'
+    (auth.user && auth.user.roleCode) ||
+    ""
+  );
+});
+
+// 🔹 로그인 아이디
+const loginId = computed(() => {
+  return (
+    auth.userId ||
+    auth.loginId ||
+    auth.id ||
     (auth.user && auth.user.userId) ||
     ""
   );
 });
 
-const isOrgManager = computed(() => {
-  // roleCode = 'AA3' 이거나, roleName이 '기관 관리자' 같은 케이스
-  return auth.role === "AA3" || (auth.user && auth.user.roleCode === "AA3");
-});
+// 🔹 기관 관리자 여부 (AA3)
+const isOrgManager = computed(() => userRole.value === "AA3");
+
+// 🔹 시스템 관리자 여부 (AA4)
+const isSystemAdmin = computed(() => userRole.value === "AA4");
+
+// 🔹 이 페이지 접근 가능한지 (AA3 또는 AA4)
+const canViewPriorityPage = computed(
+  () => isOrgManager.value || isSystemAdmin.value
+);
+
+// 🔹 기관 컬럼 표시 여부 (기관 관리자 AA3이면 숨김)
+const isOrgVisible = computed(() => !isOrgManager.value);
 
 // 공통코드 매핑
 const CODE_LABEL_MAP = {
@@ -185,8 +215,8 @@ function priorityChipClass(level) {
 }
 
 // 상태 뱃지 색상
-function stateBadgeClass(state) {
-  switch (state) {
+function stateBadgeClass(stateCode) {
+  switch (stateCode) {
     case "BA1": // 요청
       return "priority-badge-request";
     case "BA2": // 승인
@@ -206,8 +236,8 @@ function formatDate(value) {
 
 // 🔹 리스트 로딩 (서버 페이징)
 async function loadList() {
-  // 기관 관리자만 요청
-  if (!isOrgManager.value) return;
+  // 🔸 AA3 / AA4만 서버 호출
+  if (!canViewPriorityPage.value) return;
 
   loading.value = true;
   try {
@@ -218,7 +248,8 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
-        loginId: loginId.value, // 🔹 자신의 로그인 아이디 전달
+        loginId: loginId.value, // 🔹 기관 필터 기준 아이디
+        role: userRole.value, // 🔹 역할(AA3 / AA4)
       },
     });
 
@@ -249,20 +280,19 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 상담 상세로 이동 (모든 상태 이동 가능)
 function goDetail(item) {
   router.push({
-    name: "counsel-detail", // 이미 라우터에 정의된 상세 페이지
-    params: { submitCode: item.submit_code }, // 우선순위 → 제출코드 연결
+    name: "counsel-detail",
+    params: { submitCode: item.submit_code },
     query: {
-      role: 3, // 관리자 화면에서 여는 거라면 3 유지
-      // 필요하면 approvalCode도 같이 넘길 수 있음 (백엔드에서 필요할 때 사용)
-      // approvalCode: item.approval_code,
+      role: 3,
     },
   });
 }
 
 onMounted(() => {
-  if (!isOrgManager.value) {
-    alert("기관 관리자만 접근 가능합니다.");
-    router.push("/"); // 필요하면 관리자용 대시보드로 변경
+  // 🔸 접근 권한 체크: 기관 관리자 + 시스템 관리자만
+  if (!canViewPriorityPage.value) {
+    alert("기관 관리자 및 시스템 관리자만 접근 가능합니다.");
+    router.push("/");
     return;
   }
   loadList();

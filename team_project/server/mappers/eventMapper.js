@@ -314,12 +314,48 @@ async function addEventApply(data) {
       data.event_code,
       data.sub_event_code,
     ];
+
+    const duplicate = await checkDuplicateApply({
+      user_code: data.user_code,
+      event_code: data.event_code,
+      sub_event_code: data.sub_event_code,
+    });
+
+    if (duplicate) {
+      throw new Error("이미 신청한 이벤트/서브 이벤트입니다.");
+    }
+
     const rows = await conn.query(eventSQL.insertEventApply, params);
     console.log("[eventMapper.js || 이벤트 신청 내역 등록 성공]");
     return rows;
   } catch (err) {
     console.error(
       "[eventMapper.js || 이벤트 신청 내역 등록 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// 중복 신청 여부 확인
+async function checkDuplicateApply(data) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(eventSQL.selectEventApplyExist, [
+      data.user_code,
+      data.event_code,
+      data.sub_event_code,
+      data.sub_event_code,
+    ]);
+    // console.log(rows[0].cnt);
+    console.log("[eventMapper.js || 이벤트 신청 중복 체크 성공]");
+    return rows[0].cnt > 0;
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트 신청 중복 체크 실패]",
       err.message
     );
     throw err;
@@ -512,4 +548,5 @@ module.exports = {
   updateSubEvent,
   deleteSubEvent,
   addEventFull,
+  checkDuplicateApply,
 };
