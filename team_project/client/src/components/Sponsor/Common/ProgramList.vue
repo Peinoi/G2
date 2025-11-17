@@ -82,7 +82,9 @@
             <td>{{ dateFormat(program.end_date, "yyyy-MM-dd") }}</td>
             <td>{{ numberFormat(program.goal_amount) }}원</td>
             <td>{{ numberFormat(program.current_amount) }}원</td>
-            <td>{{ program.approval_status }}</td>
+            <td>
+              <button>{{ program.approval_status }}</button>
+            </td>
           </tr>
         </tbody>
       </table>

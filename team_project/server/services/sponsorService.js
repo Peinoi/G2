@@ -18,10 +18,11 @@ async function sponsorUsersList(searchParams = {}) {
 async function sponsorUsers(programCode) {
   //  programCode를 인수로 받습니다.
   const sponsorFindDB = await sponsorMapper.programSearch(programCode); // programSearch로 변경
+
   return sponsorFindDB;
 }
 // 프로그램 등록
-async function sponsorProgramAdd(clientData) {
+async function sponsorProgramAdd(clientData, attachments) {
   // DB 쿼리의 Placeholder(?) 순서에 맞게 데이터 배열을 생성해야 합니다.
   // 쿼리 순서 (server/spq/sponsorSql.js):
   // 1.program_name, 2.sponsor_type, 3.status, 4.start_date, 5.end_date,
@@ -53,7 +54,8 @@ async function sponsorProgramAdd(clientData) {
 
   // 배열화된 데이터를 매퍼로 전달하여 쿼리 실행
   const sponsorInsertResult = await sponsorMapper.programAddSQL(
-    programDataArray
+    programDataArray,
+    attachments
   );
 
   return sponsorInsertResult;
