@@ -177,6 +177,19 @@ INSERT INTO event_apply (
 VALUES ( ?, ?, ?, ?, ? )
 `;
 
+// 이벤트 신청 내역 확인 (중복 신청 체크)
+const selectEventApplyExist = `
+SELECT
+  COUNT(*) AS cnt
+ ,user_code
+ ,event_code
+ ,sub_event_code       
+FROM event_apply
+WHERE user_code = ?
+  AND event_code = ?
+  AND (sub_event_code = ? OR (sub_event_code IS NULL AND ? IS NULL))
+`;
+
 // 이벤트 수정
 const updateEvent = `
 UPDATE event
@@ -241,4 +254,5 @@ module.exports = {
   insertManager,
   selectAttachList,
   selectManager,
+  selectEventApplyExist,
 };

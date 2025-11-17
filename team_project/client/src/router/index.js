@@ -380,7 +380,16 @@ router.beforeEach((to, from, next) => {
   const sponsorPages = ["Sponsor", "SponsorProgramList"];
 
   // event 그룹
-  const eventPages = ["EventMain", "EventList"];
+  const eventPages = [
+    "EventMain",
+    "EventList",
+    "EventApplyList",
+    "EventAdd",
+    "EventResultAdd",
+    "EventApplyResult",
+    "EventManagerList",
+    "EventAttendanceList",
+  ];
 
   // 승인 요청 그룹
   const appReqPages = [
