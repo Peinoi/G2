@@ -43,8 +43,7 @@ import { ref, onMounted } from "vue";
 import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import { useRouter } from "vue-router";
-import { useMenuStore } from "@/store/sidebar";
-import { eventMenu } from "@/config/menus";
+
 const router = useRouter();
 
 const goToEventAdd = () => {
@@ -71,6 +70,10 @@ const formatDate = (dateStr) => {
   if (!dateStr) return "";
   return dateFormat(dateStr, "yyyy-MM-dd");
 };
+
+onMounted(() => {
+  fetchEvents();
+});
 </script>
 
 <style scoped>
