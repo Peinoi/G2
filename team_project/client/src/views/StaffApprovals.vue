@@ -140,8 +140,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useAuthStore } from "@/store/authLogin";
+import { useRouter } from "vue-router";
 
 const API_BASE = "/api/approvals/staff";
+
+const auth = useAuthStore();
+const router = useRouter();
 
 /* 상태 */
 const rows = ref([]);
@@ -187,15 +192,26 @@ function fmtDate(d) {
 async function fetchList() {
   loading.value = true;
   error.value = "";
+
   try {
+    // 🔽 혹시라도 안전하게 한번 더 체크
+    if (!auth.userId) {
+      error.value = "로그인 정보가 없습니다.";
+      loading.value = false;
+      return;
+    }
+
     const res = await axios.get(API_BASE, {
       params: {
         state: state.value,
         keyword: keyword.value,
         page: page.value,
         size: size.value,
+        // 🔽 로그인한 기관 관리자 아이디 같이 보냄
+        loginId: auth.userId,
       },
     });
+
     rows.value = Array.isArray(res.data?.data) ? res.data.data : [];
   } catch (e) {
     console.error(e);
@@ -276,7 +292,27 @@ async function confirmReject() {
   }
 }
 
-onMounted(fetchList);
+onMounted(() => {
+  // 로컬스토리지 → pinia 복구
+  auth.reload();
+
+  // 로그인 안 되어 있으면
+  if (!auth.isLogin || !auth.userId) {
+    alert("로그인 정보가 없습니다. 다시 로그인 해주세요.");
+    router.push("/sign-in");
+    return;
+  }
+
+  // 기관 관리자(AA3)가 아니면 접근 불가
+  if (auth.role !== "AA3") {
+    alert("기관 관리자만 접근 가능한 메뉴입니다.");
+    router.push("/");
+    return;
+  }
+
+  // 여기까지 통과한 경우에만 목록 조회
+  fetchList();
+});
 </script>
 
 <style scoped>
