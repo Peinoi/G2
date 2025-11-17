@@ -1,3 +1,5 @@
+// team_project/server/routes/approvalRoute.js
+
 const express = require("express");
 const router = express.Router();
 const approvalService = require("../services/approvalService");
@@ -91,8 +93,8 @@ router.get("/staff", async (req, res) => {
     const keyword = req.query.keyword || "";
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
-    // 🔽 추가: 로그인한 기관 관리자 아이디
     const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
 
     const list = await approvalService.staffApprovalList({
       state,
@@ -100,6 +102,7 @@ router.get("/staff", async (req, res) => {
       page,
       size,
       loginId,
+      role,
     });
 
     return res.status(200).json({
@@ -188,8 +191,8 @@ router.get("/priority", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
-    // 🔹 추가: 로그인한 기관 관리자 아이디
     const loginId = req.query.loginId || "";
+    const role = req.query.role || ""; // 🔹 역할 추가 (AA3 / AA4)
 
     const result = await approvalService.getPriorityApprovalList({
       page,
@@ -197,7 +200,8 @@ router.get("/priority", async (req, res) => {
       state,
       keyword,
       orderBy,
-      loginId, // 🔹 추가
+      loginId,
+      role, // 🔹 서비스로 전달
     });
 
     return res.status(200).json({
@@ -224,6 +228,7 @@ router.get("/support-plan", async (req, res) => {
     const size = parseInt(req.query.size || "20", 10);
 
     const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
 
     const result = await approvalService.getSupportPlanApprovalList({
       page,
@@ -232,6 +237,7 @@ router.get("/support-plan", async (req, res) => {
       keyword,
       orderBy,
       loginId,
+      role,
     });
 
     return res.status(200).json({
@@ -257,12 +263,18 @@ router.get("/support-result", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    // 🔹 추가: 로그인 아이디 / 역할
+    const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
+
     const result = await approvalService.getSupportResultApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
+      role,
     });
 
     return res.status(200).json({
