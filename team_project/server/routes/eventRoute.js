@@ -152,6 +152,26 @@ router.post("/", upload.array("attachments"), async (req, res) => {
 });
 
 // ==========================
+// 이벤트 신청 내역 등록
+// POST /event/apply
+// ==========================
+router.post("/apply", async (req, res) => {
+  try {
+    const newEventApply = await eventService.createEventApply(req.body);
+    res.status(201).json({
+      status: "success",
+      data: newEventApply,
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || 이벤트 신청 내역 등록 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "이벤트 신청 내역 등록 중 에러 발생",
+    });
+  }
+});
+
+// ==========================
 // 이벤트 수정
 // PUT /event/:event_code
 // ==========================

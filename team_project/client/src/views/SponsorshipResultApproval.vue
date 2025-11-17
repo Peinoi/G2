@@ -1,13 +1,14 @@
-<!-- src/views/SupportPlanApproval.vue -->
+<!-- src/views/SponsorshipResultsApproval.vue -->
 <template>
   <div class="priority-page">
-    <h2 class="priority-title">지원계획 승인 요청 목록</h2>
+    <h2 class="priority-title">후원 결과 승인 요청 목록</h2>
 
+    <!-- 검색 / 상태 / 정렬 -->
     <div class="priority-filters">
       <input
         v-model="keyword"
         class="priority-input"
-        placeholder="이름/보호자/기관 검색"
+        placeholder="프로그램명/후원유형 검색"
         @keyup.enter="searchList"
       />
 
@@ -21,26 +22,25 @@
       <select v-model="orderBy" class="priority-select" @change="searchList">
         <option value="latest">최신순</option>
         <option value="oldest">오래된순</option>
-        <option value="name">이름순</option>
-        <option value="priority">우선순위순</option>
+        <option value="name">프로그램명순</option>
+        <option value="goal">목표금액순</option>
       </select>
     </div>
 
     <div class="priority-card">
-      <!-- 🔹 로딩 중일 때만 표시 -->
+      <!-- 로딩 표시 -->
       <div v-if="loading" class="priority-loading">불러오는 중...</div>
-      <!-- 🔹 로딩이 끝났을 때만 테이블 표시 -->
+
+      <!-- 목록 테이블 -->
       <table v-else class="priority-table">
         <thead>
           <tr>
             <th>승인코드</th>
-            <th>이름</th>
-            <th>보호자</th>
-            <th>담당자</th>
-            <th>기관</th>
-            <th>계획 작성일</th>
-            <th>장애유형</th>
-            <th>우선순위</th>
+            <th>프로그램</th>
+            <th>작성일</th>
+            <th>후원유형</th>
+            <th>목표기간</th>
+            <th>목표금액</th>
             <th>상태</th>
           </tr>
         </thead>
@@ -48,37 +48,41 @@
           <tr
             v-for="item in list"
             :key="item.approval_code"
-            @click="goDetail(item)"
             class="priority-row"
+            @click="goDetail(item)"
           >
             <td>{{ item.approval_code }}</td>
-            <td>{{ item.child_name }}</td>
-            <td>{{ item.parent_name }}</td>
-            <td>{{ item.manager_name }}</td>
-            <td>{{ item.org_name }}</td>
-            <td>{{ formatDate(item.written_at) }}</td>
-            <td>{{ item.disability_type }}</td>
-            <td>
-              <span
-                class="priority-chip"
-                :class="priorityChipClass(item.priority_level)"
-              >
-                {{ codeLabel(item.priority_level) }}
-              </span>
-            </td>
+
+            <!-- [프로그램코드]프로그램명 -->
+            <td>[{{ item.program_code }}] {{ item.program_name }}</td>
+
+            <!-- 작성일 (후원 결과 작성일 or 생성일) -->
+            <td>{{ formatDate(item.create_date) }}</td>
+
+            <!-- 후원유형(EB1/EB2 공통코드) -->
+            <td>{{ codeLabel(item.sponsor_type) }}</td>
+
+            <!-- 목표기간: 시작일 ~ 종료일 -->
+            <td>{{ formatPeriod(item.start_date, item.end_date) }}</td>
+
+            <!-- 목표금액 -->
+            <td>{{ formatCurrency(item.goal_amount) }}</td>
+
+            <!-- 상태(BA1/BA2/BA3) 뱃지 -->
             <td>
               <span class="priority-badge" :class="stateBadgeClass(item.state)">
                 {{ codeLabel(item.state) }}
               </span>
             </td>
           </tr>
-          <!-- 🔹 로딩이 끝났고 + 데이터 없을 때만 메시지 -->
+
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="9">데이터가 없습니다.</td>
+            <td class="priority-empty" colspan="7">데이터가 없습니다.</td>
           </tr>
         </tbody>
       </table>
-      <!-- 🔹 페이징도 로딩 끝난 뒤에만 -->
+
+      <!-- 페이징 -->
       <div v-if="!loading && totalPages > 1" class="priority-pagination">
         <button
           class="priority-page-btn"
@@ -108,11 +112,8 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/store/authLogin.js";
 
 const router = useRouter();
-const auth = useAuthStore();
-
 const list = ref([]);
 
 // 페이지 관련 상태
@@ -121,54 +122,35 @@ const pageSize = ref(10);
 const totalCount = ref(0);
 const loading = ref(false);
 
-// 전체 페이지 수 계산
+// 전체 페이지 수
 const totalPages = computed(() =>
   totalCount.value > 0 ? Math.ceil(totalCount.value / pageSize.value) : 1
 );
 
-// 검색어, 상태, 정렬
+// 검색 / 상태 / 정렬
 const keyword = ref("");
 const state = ref("");
-const orderBy = ref("latest"); // 최신순 기본
+const orderBy = ref("latest");
 
-// 공통코드 매핑 (PriorityApproval과 동일)
+// 공통코드 라벨 매핑
 const CODE_LABEL_MAP = {
   // 요청 상태(BA)
   BA1: "요청",
   BA2: "승인",
   BA3: "반려",
 
-  // 우선순위 유형(BB)
-  BB1: "긴급",
-  BB2: "중점",
-  BB3: "준비",
+  // 후원 프로그램 유형(EB)
+  EB1: "정기후원",
+  EB2: "일시후원",
 };
-
-function searchList() {
-  page.value = 1; // 검색하면 페이지 초기화
-  loadList();
-}
 
 function codeLabel(code) {
   if (!code) return "";
   return CODE_LABEL_MAP[code] || code;
 }
 
-function priorityChipClass(level) {
-  switch (level) {
-    case "BB1":
-      return "priority-chip-danger";
-    case "BB2":
-      return "priority-chip-warning";
-    case "BB3":
-      return "priority-chip-info";
-    default:
-      return "priority-chip-default";
-  }
-}
-
-function stateBadgeClass(state) {
-  switch (state) {
+function stateBadgeClass(st) {
+  switch (st) {
     case "BA1":
       return "priority-badge-request";
     case "BA2":
@@ -186,18 +168,40 @@ function formatDate(value) {
   return s.length >= 10 ? s.slice(0, 10) : s;
 }
 
+// 목표기간: "YYYY-MM-DD ~ YYYY-MM-DD"
+function formatPeriod(start, end) {
+  const s = formatDate(start);
+  const e = formatDate(end);
+  if (!s && !e) return "";
+  if (s && !e) return `${s} ~`;
+  if (!s && e) return `~ ${e}`;
+  return `${s} ~ ${e}`;
+}
+
+// 목표금액(천단위 콤마)
+function formatCurrency(amount) {
+  if (amount == null) return "";
+  const num = Number(amount);
+  if (Number.isNaN(num)) return amount;
+  return num.toLocaleString("ko-KR") + "원";
+}
+
+function searchList() {
+  page.value = 1;
+  loadList();
+}
+
+// 목록 조회
 async function loadList() {
   loading.value = true;
   try {
-    const res = await axios.get("/api/approvals/support-plan", {
-      // support-plan이면 변경
+    const res = await axios.get("/api/approvals/sponsorship-result", {
       params: {
         page: page.value,
         size: pageSize.value,
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
-        loginId: auth.userId,
       },
     });
 
@@ -207,7 +211,7 @@ async function loadList() {
     list.value = rows;
     totalCount.value = payload.totalCount ?? 0;
   } catch (err) {
-    console.error("[SupportPlanApproval] loadList error:", err);
+    console.error("[SponsorshipResultsApproval] loadList error:", err);
     list.value = [];
     totalCount.value = 0;
   } finally {
@@ -225,31 +229,23 @@ function changePage(nextPage) {
   loadList();
 }
 
-// ✅ 각 행 클릭 시 지원계획 상세로 이동
+// 행 클릭 시 후원 결과 상세로 이동 (라우터 이름은 나중에 맞춰도 됨)
 function goDetail(item) {
   router.push({
-    name: "support-plan-detail", // 실제 등록된 라우트 이름에 맞게만 수정
-    params: { planCode: item.plan_code }, // 상세에서 어떤 파라미터 쓰는지에 맞춰서
+    name: "sponsorship-result-detail", // 👉 나중에 라우터에서 이 이름으로 등록
+    params: {
+      programCode: item.program_code, // 필요하면 result_code 추가 예정
+    },
     query: {
-      role: 3, // 관리자 화면에서 열면 3
+      role: 3, // 관리자 화면 표시용(계속 동일하게 사용)
     },
   });
 }
 
-// 기관 관리자(AA3) 아닐 경우 접근 차단
-onMounted(() => {
-  if (!auth.isAA3) {
-    alert("기관 관리자만 접근할 수 있습니다.");
-    router.push("/");
-    return;
-  }
-
-  loadList(); // 권한 확인 후 목록 로드
-});
+onMounted(loadList);
 </script>
 
 <style scoped>
-/* PriorityApproval.vue에서 쓰던 CSS 그대로 재사용 */
 .priority-page {
   max-width: 1100px;
   margin: 24px auto 40px;
@@ -313,35 +309,6 @@ onMounted(() => {
   color: #9ca3af;
 }
 
-.priority-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.priority-chip-danger {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.priority-chip-warning {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.priority-chip-info {
-  background: #e0f2fe;
-  color: #075985;
-}
-
-.priority-chip-default {
-  background: #e5e7eb;
-  color: #4b5563;
-}
-
 .priority-badge {
   display: inline-flex;
   align-items: center;
@@ -382,7 +349,6 @@ onMounted(() => {
   padding: 8px 4px;
 }
 
-/* 페이징 */
 .priority-pagination {
   margin-top: 10px;
   display: flex;

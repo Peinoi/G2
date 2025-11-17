@@ -63,6 +63,20 @@ async function createEvent(data) {
   }
 }
 
+// 이벤트 신청 내역 등록
+async function createEventApply(data) {
+  try {
+    const result = await eventMapper.addEventApply(data);
+    return result;
+  } catch (err) {
+    console.error(
+      "[eventService.js || 이벤트 신청 내역 등록 실패]",
+      err.message
+    );
+    throw err;
+  }
+}
+
 // 이벤트 + 세부 이벤트 수정
 async function modifyEvent(data, event_code) {
   try {
@@ -163,4 +177,5 @@ module.exports = {
   modifySubEvent,
   removeSubEvent,
   createEventFull,
+  createEventApply,
 };

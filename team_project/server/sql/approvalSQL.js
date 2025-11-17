@@ -84,6 +84,13 @@ WHERE ra.approval_type = 'AE2'
     u.phone       LIKE CONCAT('%', ?, '%') OR
     u.email       LIKE CONCAT('%', ?, '%')
   )
+  -- 🔽 로그인한 기관 관리자와 같은 기관만 보기
+  AND o.org_code = (
+    SELECT u2.org_code
+    FROM users u2
+    WHERE u2.user_id = ?
+    LIMIT 1
+  )
 ORDER BY ra.request_date DESC, ra.approval_code DESC
 LIMIT ?, ?
 `;
@@ -99,7 +106,7 @@ const activateUserByApproval = `
 
 // 우선순위 승인 요청 목록 (페이징용)
 const priorityApprovalList = `
-  SELECT
+   SELECT
       ra.approval_code                         -- 승인코드
     , ss.submit_code          AS submit_code   -- 상담 상세로 갈 때 필요
     , c.child_name            AS child_name    -- 아이 이름
@@ -147,6 +154,17 @@ const priorityApprovalList = `
       parent.name    LIKE CONCAT('%', ?, '%') OR
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
+  )
+
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
   )
 
   -- 정렬: orderBy 값(latest, oldest, name, priority)에 따라 동작
@@ -199,11 +217,21 @@ const priorityApprovalTotalCount = `
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
   )
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+  )
 `;
 
 // 지원계획 승인 요청 목록 (페이징용)
 const supportPlanApprovalList = `
-  SELECT
+    SELECT
       ra.approval_code,                    -- 승인코드
       c.child_name        AS child_name,   -- 아이 이름
       parent.name         AS parent_name,  -- 보호자 이름
@@ -257,12 +285,23 @@ const supportPlanApprovalList = `
       org.org_name   LIKE CONCAT('%', ?, '%')
   )
 
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+  )
+
   ORDER BY 
     CASE WHEN ? = 'latest'   THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest'   THEN ra.request_date END ASC,
     CASE WHEN ? = 'name'     THEN c.child_name    END ASC,
 
-    /* 🔥 우선순위 정렬: BB1 → BB2 → BB3 */
+    /* 🔥 우선순위 정렬: BB1 → BB3 */
     CASE WHEN ? = 'priority' THEN 
         CASE cp.level 
             WHEN 'BB1' THEN 1
@@ -305,6 +344,16 @@ const supportPlanApprovalTotalCount = `
       parent.name    LIKE CONCAT('%', ?, '%') OR
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
+  )
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
   )
 `;
 
@@ -603,6 +652,142 @@ const eventResultApprovalTotalCount = `
     )
 `;
 
+// 🔹 후원 계획 승인 요청 목록 (AE8, 페이징용)
+const sponsorshipPlanApprovalList = `
+  SELECT
+      ra.approval_code                  -- 승인코드
+    , sp.program_code                   -- 프로그램코드
+    , sp.program_name                   -- 프로그램명
+    , sp.sponsor_type                   -- 후원유형 코드(EB1/EB2)
+    , sp.start_date                     -- 목표 시작일
+    , sp.end_date                       -- 목표 종료일
+    , sp.goal_amount                    -- 목표금액
+    , sp.create_date                    -- 작성일(프로그램 생성일)
+    , ra.state                          -- 요청 상태(BA1/BA2/BA3)
+  FROM request_approval ra
+  JOIN support_program sp
+    ON ra.linked_table_name = 'support_program'
+   AND ra.linked_record_pk  = sp.program_code
+
+  /* 후원유형명 검색용 공통코드 조인(EB) */
+  LEFT JOIN common_code cc
+    ON cc.group_code = 'EB'
+   AND cc.code_id    = sp.sponsor_type
+
+  WHERE ra.approval_type = 'AE8'   -- 후원 계획 승인 요청
+
+  -- 상태 필터 (전체면 무시)
+  AND (? = '' OR ra.state = ?)
+
+  -- 검색어 필터: 프로그램명 / 후원유형명
+  AND (
+      ? = '' OR
+      sp.program_name LIKE CONCAT('%', ?, '%') OR
+      cc.code_name    LIKE CONCAT('%', ?, '%')
+  )
+
+  ORDER BY
+    CASE WHEN ? = 'latest' THEN ra.request_date END DESC,
+    CASE WHEN ? = 'oldest' THEN ra.request_date END ASC,
+    CASE WHEN ? = 'name'   THEN sp.program_name END ASC,
+    CASE WHEN ? = 'goal'   THEN sp.goal_amount  END DESC,
+
+    ra.request_date DESC,
+    ra.approval_code DESC
+  LIMIT ?, ?
+`;
+
+// 🔢 후원 계획 승인 요청 총 개수
+const sponsorshipPlanApprovalTotalCount = `
+  SELECT COUNT(*) AS totalCount
+  FROM request_approval ra
+  JOIN support_program sp
+    ON ra.linked_table_name = 'support_program'
+   AND ra.linked_record_pk  = sp.program_code
+  LEFT JOIN common_code cc
+    ON cc.group_code = 'EB'
+   AND cc.code_id    = sp.sponsor_type
+  WHERE ra.approval_type = 'AE8'
+    AND (? = '' OR ra.state = ?)
+    AND (
+      ? = '' OR
+      sp.program_name LIKE CONCAT('%', ?, '%') OR
+      cc.code_name    LIKE CONCAT('%', ?, '%')
+    )
+`;
+
+// 🔹 후원 결과 승인 요청 목록 (AE9, 페이징용)
+const sponsorshipResultApprovalList = `
+  SELECT
+      ra.approval_code                  -- 승인코드
+    , sp.program_code                   -- 프로그램코드
+    , sp.program_name                   -- 프로그램명
+    , sp.sponsor_type                   -- 후원유형 코드(EB1/EB2)
+    , sp.start_date                     -- 목표 시작일
+    , sp.end_date                       -- 목표 종료일
+    , sp.goal_amount                    -- 목표금액
+    , sr.create_date                    -- 작성일(후원 결과 보고서 생성일)
+    , ra.state                          -- 요청 상태(BA1/BA2/BA3)
+  FROM request_approval ra
+
+  /* 후원 결과 보고서 */
+  JOIN support_report sr
+    ON ra.linked_table_name = 'support_report'
+   AND ra.linked_record_pk  = sr.report_code
+
+  /* 후원 프로그램 */
+  JOIN support_program sp
+    ON sp.program_code = sr.program_code
+
+  /* 후원유형명 검색용 공통코드 (EB) */
+  LEFT JOIN common_code cc
+    ON cc.group_code = 'EB'
+   AND cc.code_id    = sp.sponsor_type
+
+  WHERE ra.approval_type = 'AE9'   -- 후원 결과 승인 요청
+
+  -- 상태 필터 (전체면 무시)
+  AND (? = '' OR ra.state = ?)
+
+  -- 검색어 필터: 프로그램명 / 후원유형명
+  AND (
+      ? = '' OR
+      sp.program_name LIKE CONCAT('%', ?, '%') OR
+      cc.code_name    LIKE CONCAT('%', ?, '%')
+  )
+
+  ORDER BY
+    CASE WHEN ? = 'latest' THEN ra.request_date END DESC,
+    CASE WHEN ? = 'oldest' THEN ra.request_date END ASC,
+    CASE WHEN ? = 'name'   THEN sp.program_name END ASC,
+    CASE WHEN ? = 'goal'   THEN sp.goal_amount  END DESC,
+
+    ra.request_date DESC,
+    ra.approval_code DESC
+  LIMIT ?, ?
+`;
+
+// 🔢 후원 결과 승인 요청 총 개수
+const sponsorshipResultApprovalTotalCount = `
+  SELECT COUNT(*) AS totalCount
+  FROM request_approval ra
+  JOIN support_report sr
+    ON ra.linked_table_name = 'support_report'
+   AND ra.linked_record_pk  = sr.report_code
+  JOIN support_program sp
+    ON sp.program_code = sr.program_code
+  LEFT JOIN common_code cc
+    ON cc.group_code = 'EB'
+   AND cc.code_id    = sp.sponsor_type
+  WHERE ra.approval_type = 'AE9'
+    AND (? = '' OR ra.state = ?)
+    AND (
+      ? = '' OR
+      sp.program_name LIKE CONCAT('%', ?, '%') OR
+      cc.code_name    LIKE CONCAT('%', ?, '%')
+    )
+`;
+
 module.exports = {
   managerApprovalList,
   updateApprovalState,
@@ -619,4 +804,8 @@ module.exports = {
   eventPlanApprovalTotalCount,
   eventResultApprovalList,
   eventResultApprovalTotalCount,
+  sponsorshipPlanApprovalList,
+  sponsorshipPlanApprovalTotalCount,
+  sponsorshipResultApprovalList,
+  sponsorshipResultApprovalTotalCount,
 };
