@@ -5,6 +5,7 @@ export const useAuthStore = defineStore('authLogin', {
   state: () => ({
     userId: '',
     role: '',
+    userCode: '',
     isLogin: false,
   }),
   getters: {
@@ -30,6 +31,7 @@ export const useAuthStore = defineStore('authLogin', {
         const loginData = JSON.parse(loginCheck);
         this.userId = loginData.userId;
         this.role = loginData.role;
+        this.userCode = loginData.userCode;
         this.isLogin = true;
       } catch (err) {
         console.error('[ pinia reload 오류 ] : ', err);
@@ -47,13 +49,15 @@ export const useAuthStore = defineStore('authLogin', {
 
       this.userId = result.user_id;
       this.role = result.role;
+      this.userCode = result.user_code;
       this.isLogin = true;
 
       localStorage.setItem(
         'user',
         JSON.stringify({
-          userId: result.user_Id,
+          userId: result.user_id,
           role: result.role,
+          userCode: result.user_code,
         })
       );
       return result;
@@ -63,6 +67,7 @@ export const useAuthStore = defineStore('authLogin', {
     logout() {
       this.userId = '';
       this.role = '';
+      this.userCode = '';
       this.isLogin = false;
       localStorage.removeItem('user');
     },

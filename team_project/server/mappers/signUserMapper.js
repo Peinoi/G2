@@ -28,6 +28,7 @@ async function addUser(data) {
       data.phone,
       data.address,
       data.email,
+      null,
       1, // is_active(승인 여부)
       0, // 로그인 실패 횟수
       data.joinDate, // 가입일

@@ -66,6 +66,26 @@
               </div>
             </li>
 
+            <!-- 로그인 상태일 때만 보이는 '회원정보' 아이콘 -->
+            <li
+              v-if="piniaLogin.isLogin"
+              class="nav-item d-flex align-items-center ms-3"
+            >
+              <div
+                class="px-0 nav-link font-weight-bold lh-1"
+                :class="color ? color : 'text-body'"
+                @click="$router.push({ name: 'UserInfo' })"
+                style="cursor: pointer"
+              >
+                <i
+                  class="material-icons"
+                  :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
+                >
+                  face
+                </i>
+              </div>
+            </li>
+
             <!-- 모바일 사이드바 토글 -->
             <!-- <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
               <a

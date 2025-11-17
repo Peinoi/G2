@@ -3,29 +3,35 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Dashboard from '../views/Dashboard.vue';
 import Tables from '../views/Tables.vue';
 import Billing from '../views/Billing.vue';
-// import RTL from "../views/Rtl.vue";
-import Notifications from "../views/Notifications.vue";
-import Profile from "../views/Profile.vue";
-import SignIn from "../views/SignIn.vue";
-import SignUp from "../views/SignUp.vue";
-import Test from "../views/Test.vue";
-import Sponsor from "../views/Sponsor/Sponsor.vue";
-import EventMain from "../views/EventMain.vue";
-import EventList from "../views/EventList.vue";
-import EventForm from "../views/EventForm.vue";
-import EventInfo from "../views/EventInfo.vue";
-import Organization from "../views/Organization.vue";
+import Notifications from '../views/Notifications.vue';
+import Profile from '../views/Profile.vue';
+import SignIn from '../views/SignIn.vue';
+import SignUp from '../views/SignUp.vue';
+import Test from '../views/Test.vue';
+import Sponsor from '../views/Sponsor/Sponsor.vue';
+import EventMain from '../views/EventMain.vue';
+import EventList from '../views/EventList.vue';
+import EventForm from '../views/EventForm.vue';
+import EventInfo from '../views/EventInfo.vue';
+import Organization from '../views/Organization.vue';
+import UserInfo from '../views/UserInfo.vue';
 
 const routes = [
   {
-    path: "/",
-    name: "dashboard",
-    redirect: "/dashboard",
+    path: '/',
+    name: 'dashboard',
+    redirect: '/dashboard',
   },
   {
     path: '/test',
     name: 'Test',
     component: Test,
+  },
+  // 회원정보
+  {
+    path: '/userinfo',
+    name: 'UserInfo',
+    component: UserInfo,
   },
   {
     path: '/sponsor',
@@ -48,38 +54,38 @@ const routes = [
     component: () => import('../views/StaffApprovals.vue'),
   },
   {
-    path: "/priorityApprovals",
-    name: "PriorityApprovals",
-    component: () => import("../views/PriorityApproval.vue"),
+    path: '/priorityApprovals',
+    name: 'PriorityApprovals',
+    component: () => import('../views/PriorityApproval.vue'),
   },
   {
-    path: "/supportPlanApprovals",
-    name: "SupportPlanApprovals",
-    component: () => import("../views/SupportPlanApproval.vue"),
+    path: '/supportPlanApprovals',
+    name: 'SupportPlanApprovals',
+    component: () => import('../views/SupportPlanApproval.vue'),
   },
   {
-    path: "/supportResultApprovals",
-    name: "SupportResultApprovals",
-    component: () => import("../views/SupportResultApproval.vue"),
+    path: '/supportResultApprovals',
+    name: 'SupportResultApprovals',
+    component: () => import('../views/SupportResultApproval.vue'),
   },
   {
-    path: "/eventPlanApprovals",
-    name: "EventPlanApprovals",
-    component: () => import("../views/EventPlanApproval.vue"),
+    path: '/eventPlanApprovals',
+    name: 'EventPlanApprovals',
+    component: () => import('../views/EventPlanApproval.vue'),
   },
   {
-    path: "/eventResultApprovals",
-    name: "EventResultApprovals",
-    component: () => import("../views/EventResultApproval.vue"),
+    path: '/eventResultApprovals',
+    name: 'EventResultApprovals',
+    component: () => import('../views/EventResultApproval.vue'),
   },
   {
-    path: "/sponsorshipPlanApprovals",
-    name: "SponsorshipPlanApprovals",
-    component: () => import("../views/SponsorshipPlanApproval.vue"),
+    path: '/sponsorshipPlanApprovals',
+    name: 'SponsorshipPlanApprovals',
+    component: () => import('../views/SponsorshipPlanApproval.vue'),
   },
   {
-    path: "/dashboard",
-    name: "Dashboard",
+    path: '/dashboard',
+    name: 'Dashboard',
     component: Dashboard,
   },
   {
@@ -92,11 +98,6 @@ const routes = [
     name: 'Billing',
     component: Billing,
   },
-  // {
-  //   path: "/rtl-page",
-  //   name: "RTL",
-  //   component: RTL,
-  // },
   {
     path: '/notifications',
     name: 'Notifications',
@@ -211,9 +212,9 @@ const routes = [
   },
   // 지원계획목록
   {
-    path: "/plan-list",
-    name: "planList",
-    component: () => import("../views/PlanList.vue"),
+    path: '/plan-list',
+    name: 'planList',
+    component: () => import('../views/PlanList.vue'),
   },
   // 이벤트 메인페이지
   {
@@ -235,8 +236,8 @@ const routes = [
   },
   // 이벤트 상세
   {
-    path: "/event/info",
-    name: "EventInfo",
+    path: '/event/info',
+    name: 'EventInfo',
     component: EventInfo,
   },
 ];
