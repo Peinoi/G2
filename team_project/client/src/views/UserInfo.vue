@@ -6,19 +6,23 @@
 
     <!-- 탭 -->
     <div class="tabs-container">
-      <material-button
-        :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
-        @click="activeTab = 'user'"
-      >
-        사용자 정보
-      </material-button>
+      <div>
+        <material-button
+          :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
+          @click="activeTab = 'user'"
+        >
+          사용자 정보
+        </material-button>
+      </div>
 
-      <material-button
-        :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
-        @click="activeTab = 'org'"
-      >
-        소속기관 정보
-      </material-button>
+      <div>
+        <material-button
+          :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
+          @click="activeTab = 'org'"
+        >
+          소속기관 정보
+        </material-button>
+      </div>
 
       <div v-if="auth.role === 'AA1'">
         <material-button
@@ -119,23 +123,25 @@ export default {
     this.auth = auth;
 
     this.userData.user_id = auth.userId;
-    this.userData.name = auth.name || '';
-    this.userData.phone = auth.phone || '';
-    this.userData.address = auth.address || '';
-    this.userData.email = auth.email || '';
+    this.userData.name = '';
+    this.userData.phone = '';
+    this.userData.address = '';
+    this.userData.email = '';
     this.originalUser = { ...this.userData };
 
-    this.orgData.orgName = auth.orgName || '';
-    this.orgData.managerName = auth.managerName || '';
-    this.orgData.deptName = auth.deptName || '';
-    this.orgData.roleName = auth.role || '';
-    this.orgData.phone = auth.orgPhone || '';
-    this.orgData.address = auth.orgAddress || '';
+    this.orgData.orgName = '';
+    this.orgData.managerName = '';
+    this.orgData.deptName = '';
+    this.orgData.roleName = auth.role;
+    this.orgData.phone = '';
+    this.orgData.address = '';
     this.originalOrg = { ...this.orgData };
 
-    if (this.auth.role == 'AA1') {
-      this.userFullInfo();
-    }
+    // if (this.auth.role == 'AA1') {
+    //   this.userFullInfo();
+    // }
+
+    this.userFullInfo();
 
     this.childList = [
       {
@@ -194,28 +200,30 @@ export default {
           userId: this.auth.userId,
           role: this.auth.role,
         });
-        if (!res.ok) {
+        console.log(res.data);
+        if (res.ok) {
           console.log('값 없음');
           return;
         }
 
         this.userData = {
-          user_id: res.user_id,
-          name: res.user_name,
-          phone: res.user_phone,
-          address: res.user_address,
-          email: res.email,
+          user_id: res.data.user_id,
+          name: res.data.name,
+          phone: res.data.phone,
+          address: res.data.user_address,
+          email: res.data.email,
         };
         this.originalUser = { ...this.userData };
 
         this.orgData = {
-          orgName: res.org_name || '',
-          managerName: res.manager_name || '',
-          deptName: res.dept_name || '',
-          roleName: res.role,
-          phone: res.org_phone || '',
-          address: res.org_address || '',
+          orgName: res.data.org_name || '소속기관 없음',
+          managerName: res.data.manager_name || '담당자 미정',
+          deptName: res.data.department,
+          roleName: this.auth.role,
+          phone: res.data.org_phone,
+          address: res.data.org_address,
         };
+        console.log(res.data);
         this.originalOrg = { ...this.orgData };
       } catch (err) {
         console.error('[ loadUserFullInfo 오류 ]', err);

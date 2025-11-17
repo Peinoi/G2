@@ -6,13 +6,11 @@ async function findUserInfo(userData) {
   try {
     let result;
     if (userData.role == 'AA1') {
-      [result] = await pool.query(userInfoSQL.FIND_USER_INFO, [
-        userData.userId,
-      ]);
+      result = await pool.query(userInfoSQL.FIND_USER_INFO, [userData.userId]);
     } else {
-      [result] = await pool.query(userInfoSQL.FIND_ORG_INFO, [userData.userId]);
+      result = await pool.query(userInfoSQL.FIND_ORG_INFO, [userData.userId]);
     }
-    if (result.length < 1) {
+    if (!result) {
       return { ok: false, message: '값 없음' };
     }
     return result[0];

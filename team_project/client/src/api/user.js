@@ -48,6 +48,7 @@ export async function login(userData) {
 export async function findUserInfo(userData) {
   try {
     const result = await axios.post('/api/userinfo/findInfo', userData);
+    console.log('test');
     console.log(result);
     return;
   } catch (err) {

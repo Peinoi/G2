@@ -22,6 +22,7 @@ import { eventMenu } from '@/config/menus';
 import { surveyMenu } from '@/config/menus';
 import { spportMenu } from '@/config/menus';
 import { appReqMenu } from '@/config/menus';
+import { infoMenu } from '@/config/menus';
 import UserInfo from '../views/UserInfo.vue';
 
 const router = createRouter({
@@ -440,6 +441,13 @@ router.beforeEach((to, from, next) => {
   if (appReqPages.includes(to.name)) {
     menu.setPageTitle('승인 요청 관리');
     menu.setMenu(appReqMenu);
+  }
+
+  // 회원 정보
+  const infoPage = ['UserInfo'];
+  if (infoPage.includes(to.name)) {
+    menu.setPageTitle('마이 페이지');
+    menu.setMenu(infoMenu);
   }
 
   next();

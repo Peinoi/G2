@@ -7,7 +7,6 @@ router.post('/findInfo', async (req, res) => {
   const userData = { userId: req.body.userId, role: req.body.role };
   try {
     const result = await userInfoService.findInfo(userData);
-    console.log(result);
     res.json(result);
   } catch (err) {
     console.error('[ findInfo 라우터 오류 ]', err);
