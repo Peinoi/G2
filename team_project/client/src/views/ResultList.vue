@@ -152,11 +152,21 @@
           {{ rejectReasonError }}
         </div>
 
-        <div
-          v-else
-          class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
-        >
-          {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+        <div v-else>
+          <!-- 🔹 반려일 -->
+          <p class="text-sm text-gray-600 mb-2">
+            반려일자:
+            <span class="font-medium">
+              {{ formatDate(rejectReasonDate) }}
+            </span>
+          </p>
+
+          <!-- 반려 사유 텍스트 박스 -->
+          <div
+            class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
+          >
+            {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+          </div>
         </div>
 
         <div class="modal-actions mt-4 flex justify-end gap-2">
@@ -212,9 +222,9 @@ const formatDate = (v) => {
 function statusLabel(code) {
   switch (code) {
     case "CD1":
-      return "지원중"; // (작성 전)
+      return "지원중";
     case "CD3":
-      return "지원중"; // (작성 중)
+      return "지원중";
     case "CD4":
       return "검토중";
     case "CD5":
@@ -270,8 +280,8 @@ const handleReEdit = (row) => {
   console.log("지원결과 재수정하기 클릭:", row);
   router.push({
     name: "result-edit",
-    params: { planCode: row.planCode },
-    query: { submitCode: row.submitCode },
+    params: { resultCode: row.resultCode },
+    query: { planCode: row.planCode, submitCode: row.submitCode },
   });
 };
 
@@ -279,7 +289,7 @@ const handleReEdit = (row) => {
 function goDetail(row) {
   router.push({
     name: "resultDetail",
-    params: { planCode: row.planCode },
+    params: { resultCode: row.resultCode },
     query: { submitCode: row.submitCode, role: role.value },
   });
 }
@@ -287,6 +297,7 @@ function goDetail(row) {
 // 🔻 반려 사유 모달 상태
 const rejectReasonModalOpen = ref(false);
 const rejectReasonText = ref("");
+const rejectReasonDate = ref("");
 const rejectReasonLoading = ref(false);
 const rejectReasonError = ref("");
 
@@ -294,12 +305,13 @@ const rejectReasonError = ref("");
 async function openRejectReason(row) {
   rejectReasonModalOpen.value = true;
   rejectReasonText.value = "";
+  rejectReasonDate.value = "";
   rejectReasonError.value = "";
   rejectReasonLoading.value = true;
 
   try {
     const { data } = await axios.get(
-      `/api/result/${row.planCode}/rejection-reason`
+      `/api/result/${row.resultCode}/rejection-reason`
     );
 
     if (data?.success === false) {
@@ -308,6 +320,8 @@ async function openRejectReason(row) {
 
     rejectReasonText.value =
       data?.result?.rejection_reason ?? data?.rejection_reason ?? "";
+
+    rejectReasonDate.value = data?.result?.approval_date ?? "";
   } catch (e) {
     console.error(e);
     rejectReasonError.value =

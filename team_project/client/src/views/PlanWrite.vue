@@ -489,6 +489,15 @@ function removePlanItem(id) {
 
 // 유효성 체크
 function validate() {
+  if (!mainForm.value.expectedStart) {
+    return "실제 진행기간 시작 월을 선택해주세요.";
+  }
+  if (!mainForm.value.expectedEnd) {
+    return "실제 진행기간 종료 월을 선택해주세요.";
+  }
+  if (mainForm.value.expectedStart > mainForm.value.expectedEnd) {
+    return "실제 진행기간의 시작 월이 종료 월보다 늦을 수 없습니다.";
+  }
   if (!mainForm.value.goal.trim()) return "계획 목표를 입력해주세요.";
   if (!mainForm.value.publicContent.trim())
     return "계획 내용(일반용)을 입력해주세요.";

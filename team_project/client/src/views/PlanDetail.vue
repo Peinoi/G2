@@ -206,17 +206,44 @@
           </div>
         </div>
 
-        <!-- 🔥 관리자(3) 전용 승인/반려 버튼 영역 -->
+        <!-- 🔥 관리자(3) 전용 승인/반려 + 반려 이력 영역 -->
         <div
           v-if="role === 3 && (status === 'CC3' || status === 'CC6')"
-          class="flex justify-end gap-3 pt-4 border-t mt-4"
+          class="pt-4 border-t mt-4 space-y-3"
         >
-          <MaterialButton color="dark" size="sm" @click="handleApprove">
-            승인
-          </MaterialButton>
-          <MaterialButton color="dark" size="sm" @click="handleReject">
-            반려
-          </MaterialButton>
+          <!-- ⛔ 이전 반려 이력 표시 박스 (있을 때만) -->
+          <div
+            v-if="rejectionInfo && rejectionInfo.reason"
+            class="border rounded p-3 bg-red-50 text-xs text-red-800"
+          >
+            <div class="font-semibold mb-1">반려 이력</div>
+
+            <!-- 날짜 -->
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-gray-700"> 반려일자: </span>
+              <span class="font-medium">
+                {{ formattedRejectionDate }}
+              </span>
+            </div>
+
+            <!-- 사유 -->
+            <div>
+              <div class="font-medium">사유:</div>
+              <p class="whitespace-pre-line mt-1">
+                {{ rejectionInfo.reason }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 승인/반려 버튼 -->
+          <div class="flex justify-end gap-3">
+            <MaterialButton color="dark" size="sm" @click="handleApprove">
+              승인
+            </MaterialButton>
+            <MaterialButton color="dark" size="sm" @click="handleReject">
+              반려
+            </MaterialButton>
+          </div>
         </div>
       </div>
     </div>
@@ -304,6 +331,17 @@ const error = ref("");
 const rejectModalOpen = ref(false);
 const rejectReason = ref("");
 
+// 🔻 상세 화면에서 보여줄 마지막 반려 이력
+const rejectionInfo = ref({
+  reason: "",
+  date: "",
+});
+
+const formattedRejectionDate = computed(() => {
+  const v = rejectionInfo.value?.date;
+  return v ? String(v).slice(0, 10) : "-";
+});
+
 // 오늘 YYYY-MM-DD
 function getTodayStr() {
   const d = new Date();
@@ -368,6 +406,28 @@ async function loadDetail() {
     })) || [];
 }
 
+// 🔹 마지막 반려 이력 조회 (관리자용 표시)
+async function loadRejectionInfo() {
+  try {
+    const { data } = await axios.get(`/api/plans/${planCode}/rejection-reason`);
+
+    if (data?.success && data.result) {
+      const r = data.result;
+      rejectionInfo.value = {
+        reason: r.rejection_reason || "",
+        // sql 에서 approval_date AS rejection_date 로 넘겨주고 있다고 가정
+        date: r.rejection_date || r.approval_date || "",
+      };
+    } else {
+      rejectionInfo.value = { reason: "", date: "" };
+    }
+  } catch (e) {
+    console.error("[loadRejectionInfo]", e);
+    // 오류 나도 화면 망가지지 않게만 처리
+    rejectionInfo.value = { reason: "", date: "" };
+  }
+}
+
 onMounted(async () => {
   try {
     loading.value = true;
@@ -381,6 +441,11 @@ onMounted(async () => {
       promises.push(loadBasicInfo());
     }
     await Promise.all(promises);
+
+    // 🔹 관리자일 때만 반려 이력 조회
+    if (role.value === 3) {
+      await loadRejectionInfo();
+    }
   } catch (e) {
     console.error(e);
     error.value = e.message || "지원계획 조회 중 오류가 발생했습니다.";

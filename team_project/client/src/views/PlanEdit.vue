@@ -81,10 +81,10 @@
         />
       </div>
 
-      <!-- 계획 내용 (관자용 / 관리자용) -->
+      <!-- 계획 내용 (관리자용 / 관리자용) -->
       <div>
         <label class="block text-sm mb-1 font-medium">
-          계획 내용 (관자용)
+          계획 내용 (관리자용)
         </label>
         <MaterialTextarea
           id="plan-content-private"

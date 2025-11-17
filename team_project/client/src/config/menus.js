@@ -168,3 +168,33 @@ export const appReqMenu = [
     role: ["AA3", "AA4"],
   },
 ];
+
+export const surveyMenu = [
+  {
+    label: "조사지 목록",
+    path: "/survey-list",
+    collapseRef: "Survey",
+    role: ["AA1", "AA2", "AA3", "AA4"],
+  },
+  {
+    label: "버전별 조사지 목록",
+    path: "/survey-version",
+    collapseRef: "Survey",
+    role: ["AA4"],
+  },
+];
+
+export const spportMenu = [
+  {
+    label: "지원계획 목록",
+    path: "/plan-list",
+    collapseRef: "Plan",
+    role: ["AA1", "AA2", "AA3", "AA4"],
+  },
+  {
+    label: "지원결과 목록",
+    path: "/result-list",
+    collapseRef: "Result",
+    role: ["AA1", "AA2", "AA3", "AA4"],
+  },
+];

@@ -19,6 +19,8 @@ import Organization from "../views/Organization.vue";
 import { useMenuStore } from "@/store/sidebar";
 import { sponsorMenu } from "@/config/menus";
 import { eventMenu } from "@/config/menus";
+import { surveyMenu } from "@/config/menus";
+import { spportMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
 
@@ -279,7 +281,7 @@ const router = createRouter({
       component: () => import("../views/ResultEdit.vue"),
       props: true,
     },
-    // 지원계획 상세
+    // 지원결과 상세
     {
       path: "/result/detail/:resultCode",
       name: "resultDetail",
@@ -417,6 +419,23 @@ router.beforeEach((to, from, next) => {
     menu.setMenu(eventMenu);
   }
 
+  // 조사지 그룹
+  const serveyPages = ["surveyVersion", "surveyList"];
+
+  // 조사지 그룹 라우트일 경우 자동 메뉴 설정
+  if (serveyPages.includes(to.name)) {
+    menu.setPageTitle("조사지 페이지");
+    menu.setMenu(surveyMenu);
+  }
+
+  // 지원 그룹
+  const spportPages = ["planList", "resultList"];
+
+  // 지원 그룹 라우트일 경우 자동 메뉴 설정
+  if (spportPages.includes(to.name)) {
+    menu.setPageTitle("지원 페이지");
+    menu.setMenu(spportMenu);
+    
   // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
   if (appReqPages.includes(to.name)) {
     menu.setPageTitle("승인 요청 관리");

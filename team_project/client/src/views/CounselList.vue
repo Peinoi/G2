@@ -143,11 +143,21 @@
           {{ rejectReasonError }}
         </div>
 
-        <div
-          v-else
-          class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
-        >
-          {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+        <div v-else class="space-y-2">
+          <!-- 🔹 반려일자 -->
+          <div v-if="rejectReasonDate" class="text-xs text-gray-600">
+            반려일자:
+            <span class="font-medium">
+              {{ String(rejectReasonDate).slice(0, 10) }}
+            </span>
+          </div>
+
+          <!-- 🔹 반려사유 -->
+          <div
+            class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
+          >
+            {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+          </div>
         </div>
 
         <div class="modal-actions mt-4 flex justify-end gap-2">
@@ -183,26 +193,30 @@ const rejectReasonModalOpen = ref(false);
 const rejectReasonText = ref("");
 const rejectReasonLoading = ref(false);
 const rejectReasonError = ref("");
+const rejectReasonDate = ref("");
 
 // 반려 사유 모달 열기 + 서버에서 내용 조회
 async function openRejectReason(row) {
   rejectReasonModalOpen.value = true;
   rejectReasonText.value = "";
+  rejectReasonDate.value = ""; // 초기화
   rejectReasonError.value = "";
   rejectReasonLoading.value = true;
 
   try {
     const { data } = await axios.get(
-      `/api/counsel/${row.submit_code}/rejection-reason`
+      `/api/counsel/${row.submitCode}/rejection-reason`
     );
 
     if (data?.success === false) {
       throw new Error(data.message || "반려 사유를 불러오지 못했습니다.");
     }
 
-    // 백엔드에서 어떤 구조로 주는지에 따라 둘 중 하나에 걸리게
-    rejectReasonText.value =
-      data?.result?.rejection_reason ?? data?.rejection_reason ?? "";
+    // 🔥 백엔드에서 내려주는 두 가지 케이스 다 지원
+    const r = data.result || data;
+
+    rejectReasonText.value = r.rejection_reason || "";
+    rejectReasonDate.value = r.rejection_date || ""; // 여기!
   } catch (e) {
     console.error(e);
     rejectReasonError.value =

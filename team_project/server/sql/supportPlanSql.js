@@ -300,21 +300,22 @@ module.exports = {
       AND approval_type = 'AE4'
       AND state = 'BA1'
   `,
-  // 반려사유
+  // 반려사유 + 반려일자
   getRejectReasonByPlan: `
-    SELECT
-      rejection_reason
-    FROM request_approval
-    WHERE linked_table_name = 'support_plan'
-      AND linked_record_pk = ?
-      AND approval_type = 'AE4'
-      AND state = 'BA3'      -- 반려 상태
-    ORDER BY
-      approval_date DESC,
-      request_date DESC,
-      approval_code DESC
-    LIMIT 1
-  `,
+  SELECT
+    rejection_reason,
+    approval_date AS rejection_date
+  FROM request_approval
+  WHERE linked_table_name = 'support_plan'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE4'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC,
+    approval_code DESC
+  LIMIT 1
+`,
 
   // 🔹 plan_code 로 support_result 이미 있는지 확인
   getSupportResultByPlan: `

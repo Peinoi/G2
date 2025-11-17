@@ -257,12 +257,12 @@ const submitCode = Number(route.params.submitcode || 0);
 const submitInfo = ref({
   name: "",
   ssnFront: "",
-  planWrittenAt: "", // ✅ 계획서 제출일(작성일)
+  planSubmitAt: "",
 });
 
 const formattedPlanWrittenAt = computed(() => {
-  const v = submitInfo.value.planWrittenAt;
-  return v ? v.slice(0, 10) : "-";
+  const v = submitInfo.value.planSubmitAt;
+  return v ? String(v).slice(0, 10) : "-";
 });
 
 // 메인 결과 폼
@@ -311,11 +311,10 @@ async function loadData() {
 
     const res = data.result;
 
-    // 예: { submitCode, name, ssnFront, planWrittenAt }
     submitInfo.value = {
       name: res.name || "",
       ssnFront: (res.ssnFront || "").slice(0, 6),
-      planWrittenAt: res.planWrittenAt || "",
+      planSubmitAt: res.planSubmitAt || "",
     };
 
     // 결과 작성일 기본값이 없으면 오늘 날짜
@@ -481,6 +480,15 @@ function removeResultItem(id) {
 
 // 유효성 체크
 function validate() {
+  if (!mainForm.value.actualStart) {
+    return "실제 진행기간 시작 월을 선택해주세요.";
+  }
+  if (!mainForm.value.actualEnd) {
+    return "실제 진행기간 종료 월을 선택해주세요.";
+  }
+  if (mainForm.value.actualStart > mainForm.value.actualEnd) {
+    return "실제 진행기간의 시작 월이 종료 월보다 늦을 수 없습니다.";
+  }
   if (!mainForm.value.goal.trim()) return "계획했던 목표를 입력해주세요.";
   if (!mainForm.value.publicContent.trim())
     return "결과 내용(일반용)을 입력해주세요.";

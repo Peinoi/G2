@@ -213,33 +213,7 @@ module.exports = {
     WHERE sr.result_code = ?
   `,
 
-  // 🔹 resultCode로 지원결과 item들 조회 (메인 + 추가 결과)
-  getSupportResultItemsByResultCode: `
-    SELECT
-      result_item_code,
-      item_title,
-      content_for_user,
-      content_for_org,
-      written_at
-    FROM support_result_item
-    WHERE result_code = ?
-    ORDER BY result_item_code ASC
-  `,
-
-  // 🔹 resultCode 기준 첨부파일 목록 조회
-  getAttachmentsBySupportResult: `
-    SELECT
-      attach_code,
-      original_filename,
-      server_filename,
-      file_path
-    FROM attachment
-    WHERE linked_table_name = 'support_result'
-      AND linked_record_pk = ?
-    ORDER BY attach_code ASC
-  `,
-
-  // 🔹 result_code 기준으로 실제 진행기간만 수정 (수정 화면에서 사용)
+  // 🔹 result_code 기준으로 실제 진행기간만 수정
   updateSupportResultPeriodByCode: `
     UPDATE support_result
     SET
@@ -248,49 +222,15 @@ module.exports = {
     WHERE result_code = ?
   `,
 
-  // 🔹 기존 결과 item들 삭제
-  deleteSupportResultItemsByResultCode: `
-    DELETE FROM support_result_item
-    WHERE result_code = ?
-  `,
-
-  // 🔹 결과 item insert
-  insertSupportResultItem: `
-    INSERT INTO support_result_item (
-      result_code,
-      item_title,
-      content_for_user,
-      content_for_org,
-      written_at
-    ) VALUES (?, ?, ?, ?, ?)
-  `,
-
-  // 🔹 첨부파일 insert (plan과 공용으로 써도 됨)
-  insertAttachment: `
-    INSERT INTO attachment (
-      original_filename,
-      server_filename,
-      file_path,
-      linked_table_name,
-      linked_record_pk
-    ) VALUES (?, ?, ?, ?, ?)
-  `,
-
-  // 🔹 첨부파일 한 건 삭제 (support_result용)
-  deleteAttachmentByCodeForResult: `
-    DELETE FROM attachment
-    WHERE attach_code = ?
-      AND linked_table_name = 'support_result'
-  `,
-  // submit_code 기준으로 기본 정보 + 계획/결과 작성일 조회
+  // 🔹 submit_code 기준 기본 정보 + 계획/결과 작성일 조회
   getResultBasicBySubmitCode: `
     SELECT
       ss.submit_code,
       u.name             AS writer_name,
       u.ssn              AS ssn,
-      MIN(cn.written_at) AS counsel_submit_at,  -- 상담지 제출일 (옵션)
-      MAX(sp.written_at) AS plan_submit_at,     -- 계획서 작성일
-      MAX(sr.written_at) AS result_written_at   -- 결과 작성일(있다면)
+      MIN(cn.written_at) AS counsel_submit_at,
+      MAX(sp.written_at) AS plan_submit_at,
+      MAX(sr.written_at) AS result_written_at
     FROM survey_submission ss
     JOIN users u
       ON u.user_code = ss.written_by
@@ -305,5 +245,113 @@ module.exports = {
       ss.submit_code,
       u.name,
       u.ssn
+  `,
+  // 🔹 result_code 로 support_result 한 건 조회
+  getSupportResultByCode: `
+    SELECT *
+    FROM support_result
+    WHERE result_code = ?
+    LIMIT 1
+  `,
+
+  // 🔹 지원결과 상태 변경 (예: CD5: 승인, CD7: 반려 등)
+  updateSupportResultStatus: `
+    UPDATE support_result
+    SET status = ?
+    WHERE result_code = ?
+  `,
+
+  // 🔹 해당 지원결과(result_code)에 대한 승인요청이 이미 있는지 체크
+  getApprovalForResult: `
+    SELECT approval_code
+    FROM request_approval
+    WHERE linked_table_name = 'support_result'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE5'
+      AND state IN ('BA1', 'BA2', 'BA3')
+    LIMIT 1
+  `,
+
+  // 🔹 지원결과 승인요청 INSERT
+  insertRequestApprovalForResult: `
+    INSERT INTO request_approval (
+      requester_code,
+      processor_code,
+      approval_type,
+      request_date,
+      approval_date,
+      state,
+      rejection_reason,
+      linked_table_name,
+      linked_record_pk
+    ) VALUES (
+      ?,          -- requester_code (담당자 user_code)
+      ?,          -- processor_code (관리자 user_code, 임시로 1)
+      ?,          -- approval_type (예: 'AE5')
+      CURDATE(),  -- request_date
+      NULL,       -- approval_date
+      ?,          -- state (BA1: 요청)
+      NULL,       -- rejection_reason
+      ?,          -- linked_table_name ('support_result')
+      ?           -- linked_record_pk (result_code)
+    )
+  `,
+
+  // 🔹 지원결과 승인요청 → 승인(BA2)
+  updateApprovalApproveForResult: `
+    UPDATE request_approval
+    SET
+      state = 'BA2',          -- 승인
+      approval_date = CURDATE(),
+      rejection_reason = NULL
+    WHERE linked_table_name = 'support_result'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE5'
+      AND state = 'BA1'
+  `,
+
+  // 🔹 지원결과 승인요청 → 반려(BA3)
+  updateApprovalRejectForResult: `
+    UPDATE request_approval
+    SET
+      state = 'BA3',          -- 반려
+      approval_date = CURDATE(),
+      rejection_reason = ?
+    WHERE linked_table_name = 'support_result'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE5'
+      AND state = 'BA1'
+  `,
+
+  // 반려사유
+  getRejectReasonByResult: `
+  SELECT
+    rejection_reason,
+    approval_date   -- 🔥 반려된 날짜
+  FROM request_approval
+  WHERE linked_table_name = 'support_result'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE5'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC,
+    approval_code DESC
+  LIMIT 1
+`,
+
+  // 🔹 result_code 로 plan_code 찾기 (support_result → support_plan 연결)
+  getPlanCodeByResultCode: `
+    SELECT plan_code
+    FROM support_result
+    WHERE result_code = ?
+    LIMIT 1
+  `,
+
+  // 🔹 plan_code 기준으로 support_plan 상태 변경
+  updateSupportPlanStatusFromResult: `
+    UPDATE support_plan
+    SET status = ?
+    WHERE plan_code = ?
   `,
 };

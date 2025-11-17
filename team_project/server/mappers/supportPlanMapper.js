@@ -627,7 +627,7 @@ async function rejectSupportPlan(planCode, reason) {
   }
 }
 
-// 🔹 지원계획(plan)에 대한 반려 사유 조회
+// 🔹 지원계획(plan)에 대한 반려 사유,일자 조회
 async function getRejectionReason(planCode) {
   const conn = await pool.getConnection();
   try {
@@ -638,7 +638,7 @@ async function getRejectionReason(planCode) {
       return null;
     }
 
-    // { rejection_reason: '...' } 형태
+    // { rejection_reason, rejection_date } 형태
     return safeJSON(rows[0]);
   } finally {
     conn.release();
@@ -655,15 +655,6 @@ async function resubmitPlan(planCode, requesterCode) {
     const [plan] = await conn.query(sql.getSupportPlanByCode, [planCode]);
     if (!plan) {
       throw new Error("해당 plan_code의 지원계획을 찾을 수 없습니다.");
-    }
-
-    // (옵션) 진짜 반려 상태(CC7)일 때만 허용하고 싶으면 체크
-    if ((plan.status || "").trim().toUpperCase() !== "CC7") {
-      // 필요 없으면 이 if 블록 삭제해도 됨
-      console.warn(
-        "[resubmitPlan] CC7이 아닌 상태에서 재승인요청 시도:",
-        plan.status
-      );
     }
 
     // 2) support_plan 상태를 CC6(재승인요청)으로 변경
