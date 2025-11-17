@@ -10,14 +10,21 @@ import SignIn from "../views/SignIn.vue";
 import SignUp from "../views/SignUp.vue";
 import Test from "../views/Test.vue";
 import Sponsor from "../views/Sponsor/Sponsor.vue";
+import SponsorProgramList from "../views/Sponsor/ProgramList.vue";
 import EventMain from "../views/EventMain.vue";
 import EventList from "../views/EventList.vue";
 import EventForm from "../views/EventForm.vue";
 import EventInfo from "../views/EventInfo.vue";
 import Organization from "../views/Organization.vue";
+import { useMenuStore } from "@/store/sidebar";
+import { sponsorMenu } from "@/config/menus";
+import { eventMenu } from "@/config/menus";
 import UserInfo from '../views/UserInfo.vue';
 
-const routes = [
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    
   {
     path: '/',
     name: 'dashboard',
@@ -38,6 +45,11 @@ const routes = [
     path: "/sponsor",
     name: "Sponsor",
     component: Sponsor,
+  },
+  {
+      path: "/sponsorprogramlist",
+      name: "SponsorProgramList",
+      component: SponsorProgramList,
   },
   {
     path: "/organization",
@@ -351,12 +363,38 @@ const routes = [
     name: "EventAttendanceInfo",
     component: () => import("../views/EventAttendanceInfo.vue"),
   },
-];
 
-const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
-  routes,
+  ],
   linkActiveClass: "active",
 });
 
+// const router1 = createRouter({
+//   history: createWebHistory(process.env.BASE_URL),
+//   routes,
+//   linkActiveClass: "active",
+// });
+
+router.beforeEach((to, from, next) => {
+  const menu = useMenuStore();
+
+  // 후원 페이지 그룹
+  const sponsorPages = ["Sponsor", "SponsorProgramList"];
+
+  // event 그룹
+  const eventPages = ["EventMain", "EventList"];
+
+  // 후원 그룹 라우트일 경우 자동 메뉴 설정
+  if (sponsorPages.includes(to.name)) {
+    menu.setPageTitle("후원 관리자 페이지");
+    menu.setMenu(sponsorMenu);
+  }
+
+  // 이벤트 그룹 라우트일 경우 자동 메뉴 설정
+  if (eventPages.includes(to.name)) {
+    menu.setPageTitle("이벤트 페이지");
+    menu.setMenu(eventMenu);
+  }
+
+  next();
+});
 export default router;

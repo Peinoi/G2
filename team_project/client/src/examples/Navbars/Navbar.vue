@@ -32,7 +32,7 @@
         <router-link to="/sponsor" class="btn btn-outline-success btn-sm"
           >후원</router-link
         >
-        <router-link to="/test" class="btn btn-outline-success btn-sm"
+        <router-link to="/event" class="btn btn-outline-success btn-sm"
           >이벤트</router-link
         > -->
         <router-link
