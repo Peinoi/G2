@@ -36,10 +36,22 @@ export async function addOrg(orgData) {
 // 로그인
 export async function login(userData) {
   try {
-    const result = await axios.post('/api/user/login', userData);
+    const result = await axios.post('/api/userinfo/login', userData);
     return result.data;
   } catch (err) {
     console.log('[ user.js 로그인 실패 ]', err);
+    throw err;
+  }
+}
+
+// 회원정보
+export async function findUserInfo(userData) {
+  try {
+    const result = await axios.post('/api/user/findInfo', userData);
+    console.log(result);
+    return;
+  } catch (err) {
+    console.log('[ user.js 회원정보 가져오기 실패 ]', err);
     throw err;
   }
 }

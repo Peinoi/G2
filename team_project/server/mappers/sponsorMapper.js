@@ -7,7 +7,7 @@ async function sponsorSQL() {
     sponsorConn = await pool.getConnection();
     const sponsorRows = await sponsorConn.query(sponsorSql.sponsor_all);
     console.log("[ sponsorConn.js || 성공 ]");
-    console.log(sponsorRows);
+    //  console.log(sponsorRows);
     return sponsorRows;
   } catch (err) {
     console.error("[ sponsorConn.js || 실패 ]", err.message);
@@ -17,18 +17,36 @@ async function sponsorSQL() {
   }
 }
 
-async function programAddSQL(programDataArray) {
+async function programAddSQL(programDataArray, attachments) {
   let sponsorConn;
-  console.log(programDataArray);
   try {
     sponsorConn = await pool.getConnection();
-    //  쿼리와 함께 데이터 배열을 두 번째 인수로 전달
-    const sponsorRows = await sponsorConn.query(
+
+    // 구조분해 제거
+    const result = await sponsorConn.query(
       sponsorSql.sponsor_program,
-      programDataArray // <--- 이 배열이 쿼리의 Placeholder(?)에 순서대로 바인딩됨
+      programDataArray
     );
+
+    const program_code = result.insertId;
+    console.log("프로그램 코드:", program_code);
     console.log("[ sponsorConn.js || 프로그램 등록 쿼리 성공 ]");
-    return sponsorRows;
+
+    if (attachments && attachments.length > 0) {
+      console.log("업로드중");
+      for (const file of attachments) {
+        const attachParams = [
+          file.original_filename,
+          file.server_filename,
+          file.file_path,
+          "support_program",
+          program_code,
+        ];
+        await sponsorConn.query(sponsorSql.insertAttachment, attachParams);
+      }
+    }
+    await sponsorConn.commit();
+    return { programResult: result };
   } catch (err) {
     console.error("[ sponsorConn.js || 프로그램 등록 쿼리 실패 ]", err.message);
     throw err;
@@ -68,8 +86,12 @@ async function programSearch(programCode) {
       sponsorSql.sponsor_search,
       [programCode] // 단건 조회이므로 program_code만 배열로 전달
     );
+    const attachments = await sponsorConn.query(sponsorSql.selectAttachList, [
+      programCode,
+    ]);
+
     console.log("[ sponsorConn.js || 프로그램 단건 조회 쿼리 성공 ]");
-    return sponsorRows;
+    return { sponsorRows, attachments };
   } catch (err) {
     console.error(
       "[ sponsorConn.js || 프로그램 단건 조회 쿼리 실패 ]",

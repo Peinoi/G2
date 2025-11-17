@@ -92,10 +92,42 @@ const sponsor_update = `
     where program_code = ?
 `;
 
+// 첨부파일 등록
+const insertAttachment = `
+INSERT INTO attachment (
+  original_filename,
+  server_filename,
+  file_path,
+  linked_table_name,
+  linked_record_pk
+) VALUES (?, ?, ?, ?, ?)
+`;
+
+// 첨부파일 조회
+const selectAttachList = `
+SELECT
+    attach_code,
+    original_filename,
+    server_filename,
+    file_path
+FROM attachment
+WHERE linked_table_name = 'support_program'
+  AND linked_record_pk = ?
+`;
+
+// 첨부파일 한 건 삭제
+const deleteAttachmentByCode = `
+    DELETE FROM attachment
+    WHERE linked_record_pk = ?
+      AND linked_table_name = 'support_program'
+  `;
 module.exports = {
   sponsor_all,
   sponsor_program,
   sponsor_search,
   // sponsor_search_condition,
   sponsor_update,
+  insertAttachment,
+  selectAttachList,
+  deleteAttachmentByCode,
 };

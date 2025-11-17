@@ -19,6 +19,7 @@ import Organization from "../views/Organization.vue";
 import { useMenuStore } from "@/store/sidebar";
 import { sponsorMenu } from "@/config/menus";
 import { eventMenu } from "@/config/menus";
+import { appReqMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
 
 const router = createRouter({
@@ -390,6 +391,20 @@ router.beforeEach((to, from, next) => {
     "EventAttendanceList",
   ];
 
+  // 승인 요청 그룹
+  const appReqPages = [
+    "Organization",
+    "ManagerApprovals",
+    "StaffApprovals",
+    "PriorityApprovals",
+    "SupportPlanApprovals",
+    "SupportResultApprovals",
+    "EventPlanApprovals",
+    "EventResultApprovals",
+    "SponsorshipPlanApprovals",
+    "SponsorshipResultApprovals",
+  ];
+
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
     menu.setPageTitle("후원 관리자 페이지");
@@ -400,6 +415,12 @@ router.beforeEach((to, from, next) => {
   if (eventPages.includes(to.name)) {
     menu.setPageTitle("이벤트 페이지");
     menu.setMenu(eventMenu);
+  }
+
+  // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
+  if (appReqPages.includes(to.name)) {
+    menu.setPageTitle("승인 요청 관리");
+    menu.setMenu(appReqMenu);
   }
 
   next();
