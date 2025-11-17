@@ -94,6 +94,46 @@ router.post("/new", upload.array("mainFiles"), async (req, res) => {
   }
 });
 
+// 반려 사유 조회
+router.get("/:submitCode/rejection-reason", async (req, res) => {
+  try {
+    console.log("🔍 [REJECTION-REASON] params:", req.params);
+    console.log("🔍 [REJECTION-REASON] originalUrl:", req.originalUrl);
+    const submitCode = Number(req.params.submitCode);
+
+    if (!submitCode) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 제출번호가 아닙니다.",
+      });
+    }
+
+    const result = await counselService.getRejectionReason(submitCode);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "반려 사유를 찾을 수 없습니다.",
+      });
+    }
+
+    // 🔥 날짜 포함해서 내려주기!
+    res.json({
+      success: true,
+      result, // → { rejection_reason, rejection_date }
+      rejection_reason: result.rejection_reason,
+      rejection_date: result.rejection_date, // ← 추가!
+    });
+  } catch (e) {
+    console.error("[GET /counsel/:submitCode/rejection-reason]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+// 상세조회
 router.get("/:submitCode", async (req, res) => {
   try {
     const submitCode = Number(req.params.submitCode);
@@ -137,41 +177,6 @@ router.post("/:submitCode/reject", async (req, res) => {
   } catch (e) {
     console.error("[POST /counsel/:submitCode/reject]", e);
     res.status(500).json({ success: false, message: e.message });
-  }
-});
-
-// 반려 사유 조회
-router.get("/:submitCode/rejection-reason", async (req, res) => {
-  try {
-    const submitCode = Number(req.params.submitCode);
-
-    if (!submitCode) {
-      return res.status(400).json({
-        success: false,
-        message: "유효한 제출번호가 아닙니다.",
-      });
-    }
-
-    const result = await counselService.getRejectionReason(submitCode);
-
-    if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: "반려 사유를 찾을 수 없습니다.",
-      });
-    }
-
-    res.json({
-      success: true,
-      result,
-      rejection_reason: result.rejection_reason,
-    });
-  } catch (e) {
-    console.error("[GET /counsel/:submitCode/rejection-reason]", e);
-    res.status(500).json({
-      success: false,
-      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
-    });
   }
 });
 

@@ -143,9 +143,9 @@
 
         <!-- 우선순위 선택 -->
         <select v-model="priority" class="input w-28">
-          <option value="긴급">긴급</option>
-          <option value="중점">중점</option>
-          <option value="계획">계획</option>
+          <option value="BB1">긴급</option>
+          <option value="BB2">중점</option>
+          <option value="BB3">계획</option>
         </select>
 
         <!-- 작성 완료 -->
@@ -244,7 +244,7 @@ const removedAttachmentCodes = ref([]);
 
 // 추가 기록들
 const records = ref([]);
-const priority = ref("계획");
+const priority = ref("BB3");
 
 const loading = ref(false);
 const error = ref("");
@@ -369,7 +369,7 @@ async function handleLoad() {
       content: res.main?.content || "",
     };
 
-    priority.value = res.priority || "계획";
+    priority.value = res.priority || "BB3";
 
     records.value =
       (res.details || []).map((d, idx) => ({

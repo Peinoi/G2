@@ -76,7 +76,7 @@ async function saveCounsel(body, files = []) {
     let needApprovalRequest = false; // 🔹 이번 저장에서 승인요청을 새로 넣어야 하는지 여부
 
     if (exist.length === 0) {
-      // 🔹 첫 작성: status = CB3(검토전)으로 신규 생성 + 승인요청 필요
+      // 🔹 상담 처음 작성: status = CB3(검토전)으로 신규 생성 + 승인요청 필요
       const res = await conn.query(sql.insertCounselNote, [
         submitCode, // submit_code
         "CB3", // status
@@ -89,8 +89,16 @@ async function saveCounsel(body, files = []) {
       counsel_code = exist[0].counsel_code;
       const currentStatus = (exist[0].status || "").trim().toUpperCase();
 
-      if (currentStatus === "CB4") {
-        // ✅ 반려 상태에서 재작성하는 경우:
+      if (currentStatus === "CB1") {
+        // 🔥 임시저장(CB1) 상태에서 "작성 완료" → 실제 검토요청
+        await conn.query(sql.updateCounselNote, [
+          "CB3", // 임시 → 검토전
+          now, // written_at
+          counsel_code,
+        ]);
+        needApprovalRequest = true; // 👉 이번에 처음 승인요청 생성
+      } else if (currentStatus === "CB4") {
+        // 🔥 반려 상태에서 재작성하는 경우:
         //    - updateCounselNoteKeepStatus: status를 CB6 등으로 변경
         //    - 승인요청 다시 넣어야 함
         await conn.query(sql.updateCounselNoteKeepStatus, [
@@ -100,7 +108,7 @@ async function saveCounsel(body, files = []) {
         needApprovalRequest = true; // 👉 재작성이므로 승인요청 다시 생성
       } else {
         // ✅ 일반 수정:
-        //    - 기존 status 그대로 유지 (CB3면 CB3, CB5면 CB5 유지)
+        //    - 기존 status 그대로 유지 (CB3면 CB3, CB5면 CB5 유지 등)
         //    - 승인요청은 새로 만들지 않음
         await conn.query(sql.updateCounselNote, [
           currentStatus, // 기존 상태 그대로
@@ -135,7 +143,7 @@ async function saveCounsel(body, files = []) {
 
     // 4) 우선순위 처리
     await conn.query(sql.resetPriority, [submitCode]);
-    await conn.query(sql.insertPriority, [submitCode, priority || "계획", "Y"]);
+    await conn.query(sql.insertPriority, [submitCode, priority || "BB3", "Y"]);
 
     // 5) 🔥 첨부파일 처리
     // 5-1) 기존 첨부 중 "삭제 예정"으로 체크된 것만 삭제
@@ -164,15 +172,15 @@ async function saveCounsel(body, files = []) {
       }
     }
 
-    // 6) 🔥 승인요청은 "처음 작성" 또는 "반려 후 재작성"일 때만 생성
+    // 6) 🔥 승인요청은 "처음 작성" 또는 "임시저장 후 첫 제출", "반려 후 재작성"일 때만 생성
     if (needApprovalRequest) {
       await conn.query(sql.insertRequestApproval, [
         2, // requester_code (담당자, 임시)
         1, // processor_code (관리자, 임시)
         "AE3", // approval_type
         "BA1", // state (요청)
-        "counsel_note",
-        counsel_code,
+        "counsel_note", // linked_table_name
+        counsel_code, // linked_record_pk
       ]);
     }
 

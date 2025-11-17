@@ -80,7 +80,7 @@
       <!-- 결과 내용 (관자용 / 관리자용) -->
       <div>
         <label class="block text-sm mb-1 font-medium">
-          결과 내용 (관자용)
+          결과 내용 (관리자용)
         </label>
         <MaterialTextarea
           id="result-content-private"
@@ -183,7 +183,7 @@
       </MaterialButton>
 
       <MaterialButton color="dark" size="sm" @click="submitAll">
-        결과 수정 완료
+        {{ isResubmit ? "재작성 완료" : "수정 완료" }}
       </MaterialButton>
     </div>
 
@@ -297,6 +297,9 @@ const resultItems = ref([]);
 const loading = ref(false);
 const error = ref("");
 const status = ref("");
+
+//반려인 경우 재작성 모드
+const isResubmit = computed(() => status.value === "CD7");
 
 // 오늘 날짜 YYYY-MM-DD
 function getTodayStr() {
@@ -502,7 +505,17 @@ async function submitAll() {
       return;
     }
 
-    alert("지원결과가 수정되었습니다.");
+    // 2) 🔥 CC7(반려)에서 재작성 완료인 경우 → 재승인요청 API 추가 호출
+    if (isResubmit.value) {
+      // TODO: requesterCode는 나중에 로그인 세션 값으로 바꾸면 됨
+      await axios.post(`/api/result/${resultCode}/resubmit`, {
+        requesterCode: 2, // 지금은 임시 담당자 코드
+      });
+      alert("재작성된 지원계획이 재승인 요청으로 올라갔습니다.");
+    } else {
+      alert("지원계획이 수정되었습니다.");
+    }
+
     router.push({ name: "resultList" });
   } catch (e) {
     console.error(e);

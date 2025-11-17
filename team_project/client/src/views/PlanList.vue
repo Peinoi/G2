@@ -145,11 +145,22 @@
           {{ rejectReasonError }}
         </div>
 
-        <div
-          v-else
-          class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
-        >
-          {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+        <!-- 🔹 반려일자 + 사유 표시 -->
+        <div v-else>
+          <!-- 반려일자 -->
+          <p class="text-sm text-gray-600 mb-2">
+            반려일자:
+            <span class="font-medium">
+              {{ formatDate(rejectReasonDate) }}
+            </span>
+          </p>
+
+          <!-- 반려 사유 텍스트 박스 -->
+          <div
+            class="text-sm whitespace-pre-line text-gray-800 max-h-60 overflow-y-auto border rounded px-3 py-2 bg-gray-50"
+          >
+            {{ rejectReasonText || "등록된 반려 사유가 없습니다." }}
+          </div>
         </div>
 
         <div class="modal-actions mt-4 flex justify-end gap-2">
@@ -279,6 +290,7 @@ const rejectReasonModalOpen = ref(false);
 const rejectReasonText = ref("");
 const rejectReasonLoading = ref(false);
 const rejectReasonError = ref("");
+const rejectReasonDate = ref("");
 
 // 반려 사유 모달 열기 + 서버에서 내용 조회
 async function openRejectReason(row) {
@@ -286,6 +298,7 @@ async function openRejectReason(row) {
   rejectReasonText.value = "";
   rejectReasonError.value = "";
   rejectReasonLoading.value = true;
+  rejectReasonDate.value = "";
 
   try {
     const { data } = await axios.get(
@@ -296,9 +309,13 @@ async function openRejectReason(row) {
       throw new Error(data.message || "반려 사유를 불러오지 못했습니다.");
     }
 
-    // 백엔드에서 어떤 구조로 주는지에 따라 둘 중 하나에 걸리게
+    // 🔹 반려 사유
     rejectReasonText.value =
       data?.result?.rejection_reason ?? data?.rejection_reason ?? "";
+
+    // 🔹 반려 일자 (approval_date AS rejection_date)
+    rejectReasonDate.value =
+      data?.result?.rejection_date ?? data?.rejection_date ?? "";
   } catch (e) {
     console.error(e);
     rejectReasonError.value =

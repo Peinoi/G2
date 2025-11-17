@@ -174,6 +174,22 @@ async function saveResultWithItems(formJson, files = []) {
       }
     }
 
+    // 4) request_approval 에 승인요청 한 줄 넣기
+    const [existReq] = await conn.query(sql.getApprovalForResult, [resultCode]);
+
+    if (!existReq) {
+      const requesterCode = assiBy || null; // 담당자
+
+      await conn.query(sql.insertRequestApprovalForResult, [
+        requesterCode,
+        1, // processor_code (관리자: 임시로 1)
+        "AE5", // approval_type: 결과 승인
+        "BA1", // state: 요청
+        "support_result",
+        resultCode,
+      ]);
+    }
+
     await conn.commit();
     return safeJSON({ resultCode });
   } catch (e) {
@@ -559,6 +575,140 @@ async function updateResultWithItems(formJson, files) {
   }
 }
 
+// 🔹 지원결과 승인 (CD5 + request_approval BA2 / support_plan CC5)
+async function approveSupportResult(resultCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const id = Number(resultCode);
+    if (!id) {
+      throw new Error("유효한 resultCode가 아닙니다.");
+    }
+
+    // 0) result_code → plan_code 찾기
+    const planRows = await conn.query(sql.getPlanCodeByResultCode, [id]);
+    const planRow = planRows[0];
+
+    if (!planRow || !planRow.plan_code) {
+      throw new Error(
+        "해당 result_code에 연결된 지원계획(plan)을 찾을 수 없습니다."
+      );
+    }
+
+    const planCode = planRow.plan_code;
+
+    // 1) 지원결과 상태 CD5(승인)로 변경
+    await conn.query(sql.updateSupportResultStatus, ["CD5", id]);
+
+    // 2) 연결된 support_plan 상태 CC5(결과 승인 완료)로 변경
+    await conn.query(sql.updateSupportPlanStatusFromResult, ["CC5", planCode]);
+
+    // 3) request_approval 승인 처리 (BA2)
+    const result = await conn.query(sql.updateApprovalApproveForResult, [id]);
+
+    await conn.commit();
+    return safeJSON({
+      resultCode: id,
+      planCode,
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 지원결과 반려 (CD7 + request_approval BA3 + 사유)
+async function rejectSupportResult(resultCode, reason) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const id = Number(resultCode);
+    if (!id) {
+      throw new Error("유효한 resultCode가 아닙니다.");
+    }
+
+    // 1) 결과 상태 CD7(반려)로 변경
+    await conn.query(sql.updateSupportResultStatus, ["CD7", id]);
+
+    // 2) request_approval 반려 처리 + 사유 저장
+    const result = await conn.query(sql.updateApprovalRejectForResult, [
+      reason || "",
+      id,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 지원결과에 대한 반려 사유 조회
+async function getRejectionReason(resultCode) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.getRejectReasonByResult, [resultCode]);
+
+    if (!rows || rows.length === 0) {
+      // 반려 이력이 없으면 null
+      return null;
+    }
+
+    // { rejection_reason: '...' } 형태
+    return safeJSON(rows[0]);
+  } finally {
+    conn.release();
+  }
+}
+
+//재승인 신청
+async function resubmitResult(resultCode, requesterCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 현재 support_plan 확인 (상태/submit_code 등 필요하면 여기서 확인)
+    const [result] = await conn.query(sql.getSupportResultByCode, [resultCode]);
+    if (!result) {
+      throw new Error("해당 plan_code의 지원계획을 찾을 수 없습니다.");
+    }
+
+    // 2) support_plan 상태를 CC6(재승인요청)으로 변경
+    await conn.query(sql.updateSupportResultStatus, ["CD6", resultCode]);
+
+    // 3) request_approval에 새 승인요청 INSERT
+    await conn.query(sql.insertRequestApprovalForResult, [
+      requesterCode, // requester_code (담당자)
+      1, // processor_code (관리자, 임시)
+      "AE5", // approval_type
+      "BA1", // state: 요청
+      "support_result",
+      resultCode, // linked_record_pk = result_Code
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      resultCode,
+      status: "CD6",
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   listSupportResultsByRole,
   getResultBasic,
@@ -567,4 +717,8 @@ module.exports = {
   getResultFormDataBySubmit,
   getResultDetail,
   updateResultWithItems,
+  approveSupportResult,
+  rejectSupportResult,
+  getRejectionReason,
+  resubmitResult,
 };

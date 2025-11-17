@@ -229,10 +229,11 @@ module.exports = {
   WHERE counsel_code = ?
 `,
 
-  //  특정 상담(counsel_code)에 대한 반려 사유 조회
+  // 반려 사유 조회
   getRejectReasonByCounsel: `
   SELECT
-    rejection_reason
+    rejection_reason,
+    approval_date AS rejection_date   -- 🔥 반려 날짜
   FROM request_approval
   WHERE linked_table_name = 'counsel_note'
     AND linked_record_pk = ?

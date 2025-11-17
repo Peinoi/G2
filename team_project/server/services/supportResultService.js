@@ -2,7 +2,7 @@
 const supportResultMapper = require("../mappers/supportResultMapper.js");
 
 module.exports = {
-  // (이미 있을 수 있는) 목록보기
+  // 목록 보기
   listResults(role, userId) {
     return supportResultMapper.listSupportResultsByRole(
       Number(role),
@@ -10,7 +10,7 @@ module.exports = {
     );
   },
 
-  // 기본정보 (이름/생년월일/계획서 작성일)
+  // 기본정보 (이름/생년월일/계획서/결과일)
   getResultBasic(submitCode) {
     return supportResultMapper.getResultBasic(Number(submitCode));
   },
@@ -25,7 +25,7 @@ module.exports = {
     return supportResultMapper.saveResultTemp(formJson, files);
   },
 
-  // 임시저장/작성내용 불러오기
+  // 작성 화면 "불러오기"
   getResultFormData(submitCode) {
     return supportResultMapper.getResultFormDataBySubmit(Number(submitCode));
   },
@@ -35,8 +35,28 @@ module.exports = {
     return supportResultMapper.getResultDetail(Number(resultCode));
   },
 
-  // 수정
+  // 수
   updateResultWithItems(formJson, files) {
     return supportResultMapper.updateResultWithItems(formJson, files);
+  },
+
+  //승인
+  approveSupportResult(resultCode) {
+    return supportResultMapper.approveSupportResult(Number(resultCode));
+  },
+
+  //반려
+  rejectSupportResult(resultCode, reason) {
+    return supportResultMapper.rejectSupportResult(Number(resultCode), reason);
+  },
+
+  // 반려사유 조회
+  getRejectionReason(resultCode) {
+    return supportResultMapper.getRejectionReason(resultCode);
+  },
+
+  //재승인요청
+  resubmitResult(resultCode, requesterCode) {
+    return supportResultMapper.resubmitResult(resultCode, requesterCode);
   },
 };

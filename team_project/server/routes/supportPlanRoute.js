@@ -288,11 +288,12 @@ router.get("/:planCode/rejection-reason", async (req, res) => {
       });
     }
 
-    // { rejection_reason: '...' } 그대로 넘겨줌
+    // { rejection_reason, rejection_date } 그대로 넘겨줌
     return res.json({
       success: true,
       result,
       rejection_reason: result.rejection_reason,
+      rejection_date: result.rejection_date,
     });
   } catch (e) {
     console.error("[GET /api/plans/:planCode/rejection-reason]", e);

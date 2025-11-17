@@ -32,7 +32,7 @@
           수정하기
         </MaterialButton>
 
-        <!-- 🔥 CB4 → 재수정하기 (반려 시 담당자 전용) -->
+        <!-- CB4 → 재수정하기 (반려 시 담당자 전용) -->
         <MaterialButton
           v-else-if="role === 2 && status === 'CB4'"
           color="dark"
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <!-- ✅ CB1 / CB2 일 때: 내용 숨기고 안내만 -->
+      <!-- CB1 / CB2 일 때: 내용 숨기고 안내만 -->
       <div
         v-if="status === 'CB1' || status === 'CB2'"
         class="text-sm text-gray-500 mt-4"
@@ -91,7 +91,7 @@
         </template>
       </div>
 
-      <!-- ✅ CB1/CB2 가 아닐 때: 실제 상담 내용 / 기록 / 승인/반려 노출 -->
+      <!-- CB1/CB2 가 아닐 때: 실제 상담 내용 / 기록 / 승인/반려 노출 -->
       <template v-else>
         <!-- 메인 상담 -->
         <div class="border rounded p-4 bg-white space-y-3">
@@ -118,7 +118,7 @@
             </div>
           </div>
 
-          <!-- 🔹 첨부 파일 영역 -->
+          <!-- 첨부 파일 영역 -->
           <div class="mt-3">
             <div class="text-sm text-gray-500 mb-1">첨부 파일</div>
 
@@ -184,22 +184,47 @@
           추가 상담 기록이 없습니다.
         </div>
 
-        <!-- 🔥 관리자(3) 전용 승인/반려 버튼 영역 -->
+        <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
         <div
           v-if="role === 3 && (status === 'CB3' || status === 'CB6')"
-          class="flex justify-end gap-3 pt-4 border-t mt-4"
+          class="pt-4 border-t mt-4 space-y-3"
         >
-          <MaterialButton color="dark" size="sm" @click="handleApprove">
-            승인
-          </MaterialButton>
-          <MaterialButton color="dark" size="sm" @click="handleReject">
-            반려
-          </MaterialButton>
+          <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
+          <div
+            v-if="rejectionInfo.reason"
+            class="border rounded p-3 bg-red-50 text-xs text-red-800"
+          >
+            <div class="font-semibold mb-1">반려 이력</div>
+
+            <div class="mb-1">
+              반려일자:
+              <span class="font-medium">
+                {{ formattedRejectionDate }}
+              </span>
+            </div>
+
+            <div>
+              <div class="font-medium">사유:</div>
+              <p class="whitespace-pre-line mt-1">
+                {{ rejectionInfo.reason }}
+              </p>
+            </div>
+          </div>
+
+          <!-- 승인/반려 버튼 -->
+          <div class="flex justify-end gap-3">
+            <MaterialButton color="dark" size="sm" @click="handleApprove">
+              승인
+            </MaterialButton>
+            <MaterialButton color="dark" size="sm" @click="handleReject">
+              반려
+            </MaterialButton>
+          </div>
         </div>
       </template>
     </template>
 
-    <!-- 🔻 반려 사유 입력 모달 -->
+    <!-- 반려 사유 입력 모달 -->
     <div v-if="rejectModalOpen" class="modal-overlay">
       <div class="modal-container">
         <h3 class="text-lg font-semibold mb-3">반려 사유 입력</h3>
@@ -235,11 +260,13 @@ import MaterialTextarea from "@/components/MaterialTextarea.vue";
 
 const route = useRoute();
 const router = useRouter();
-const submitCode = Number(route.params.submitCode);
+const submitCode = computed(() =>
+  Number(route.params.submitCode || route.query.submitCode || 0)
+);
 
 const loading = ref(false);
 const error = ref("");
-const attachments = ref([]); // 🔹 첨부파일 목록
+const attachments = ref([]); // 첨부파일 목록
 
 // 쿼리로 넘어온 role (2: 담당자, 3: 관리자, 4: 시스템)
 const role = computed(() => Number(route.query.role || 0));
@@ -265,13 +292,26 @@ const records = ref([]);
 const priority = ref("계획");
 const status = ref("");
 
+const code = submitCode.value;
+
+// 🔻 마지막 반려 이력 (reason + date)
+const rejectionInfo = ref({
+  reason: "",
+  date: "",
+});
+
+const formattedRejectionDate = computed(() => {
+  const v = rejectionInfo.value.date;
+  return v ? String(v).slice(0, 10) : "-";
+});
+
 // 데이터 로딩
 async function loadData() {
   loading.value = true;
   error.value = "";
 
   try {
-    const { data } = await axios.get(`/api/counsel/${submitCode}`);
+    const { data } = await axios.get(`/api/counsel/${code}`);
 
     if (!data?.success || !data.result) {
       throw new Error(data?.message || "상담 정보를 찾을 수 없습니다.");
@@ -298,8 +338,12 @@ async function loadData() {
         content: d.content || "",
       })) || [];
 
-    // 🔹 첨부파일 세팅
     attachments.value = res.attachments || [];
+
+    // 🔹 관리자일 때만 반려 이력 조회
+    if (role.value === 3) {
+      await loadRejectionInfo();
+    }
   } catch (e) {
     console.error(e);
     error.value = e.message || "상담 정보 조회 중 오류";
@@ -308,8 +352,41 @@ async function loadData() {
   }
 }
 
+// 🔹 반려 이력 조회
+async function loadRejectionInfo() {
+  try {
+    // 👉 라우터에서 submitCode 다시 안전하게 가져오기
+    const code = Number(route.params.submitCode || route.query.submitCode || 0);
+
+    if (!Number.isInteger(code) || code <= 0) {
+      console.warn("[loadRejectionInfo] invalid submitCode:", {
+        params: route.params.submitCode,
+        query: route.query.submitCode,
+      });
+      rejectionInfo.value = { reason: "", date: "" };
+      return;
+    }
+
+    const { data } = await axios.get(`/api/counsel/${code}/rejection-reason`);
+
+    if (data?.success && data.result) {
+      const r = data.result;
+      rejectionInfo.value = {
+        reason: r.rejection_reason || "",
+        // SQL에서 approval_date AS rejection_date 로 내려준다고 가정
+        date: r.rejection_date || r.approval_date || "",
+      };
+    } else {
+      rejectionInfo.value = { reason: "", date: "" };
+    }
+  } catch (e) {
+    console.error("[loadRejectionInfo]", e);
+    rejectionInfo.value = { reason: "", date: "" };
+  }
+}
+
 function openSubmissionDetail() {
-  window.open(`/survey/submission/${submitCode}`, "_blank");
+  window.open(`/survey/submission/${code}`, "_blank");
 }
 function goBack() {
   router.push({ name: "counselList" });
@@ -327,7 +404,7 @@ const rejectReason = ref("");
 // 승인
 async function handleApprove() {
   try {
-    const { data } = await axios.post(`/api/counsel/${submitCode}/approve`);
+    const { data } = await axios.post(`/api/counsel/${code}/approve`);
     if (data?.success) {
       alert("승인되었습니다.");
       await loadData(); // 다시 조회
@@ -354,7 +431,7 @@ async function confirmReject() {
   }
 
   try {
-    const { data } = await axios.post(`/api/counsel/${submitCode}/reject`, {
+    const { data } = await axios.post(`/api/counsel/${code}/reject`, {
       reason: rejectReason.value,
     });
     if (data?.success) {
@@ -380,12 +457,12 @@ loadData();
 <style scoped>
 .modal-overlay {
   position: fixed;
-  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  inset: 0;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050; /* 다른 요소들 위로 */
+  z-index: 1050;
 }
 
 .modal-container {
