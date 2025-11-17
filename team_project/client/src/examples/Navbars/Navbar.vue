@@ -14,7 +14,7 @@
       <div
         class="header-button-group d-flex justify-content-center align-items-center gap-3 flex-grow-1"
       >
-        <router-link to="/test" class="btn btn-outline-primary btn-sm"
+        <!-- <router-link to="/test" class="btn btn-outline-primary btn-sm"
           >대기자</router-link
         >
         <router-link to="/survey-list" class="btn btn-outline-info btn-sm"
@@ -34,7 +34,16 @@
         >
         <router-link to="/test" class="btn btn-outline-success btn-sm"
           >이벤트</router-link
+        > -->
+        <router-link
+          v-for="(item, index) in menuList"
+          :key="index"
+          :to="item.path"
+          class="btn btn-sm"
+          :class="'btn-outline-' + item.color"
         >
+          {{ item.name }}
+        </router-link>
       </div>
 
       <!-- 오른쪽 영역 -->
@@ -63,8 +72,28 @@
               </div>
             </li>
 
+            <!-- 로그인 상태일 때만 보이는 '회원정보' 아이콘 -->
+            <li
+              v-if="piniaLogin.isLogin"
+              class="nav-item d-flex align-items-center ms-3"
+            >
+              <div
+                class="px-0 nav-link font-weight-bold lh-1"
+                :class="color ? color : 'text-body'"
+                @click="$router.push({ name: 'UserInfo' })"
+                style="cursor: pointer"
+              >
+                <i
+                  class="material-icons"
+                  :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
+                >
+                  face
+                </i>
+              </div>
+            </li>
+
             <!-- 모바일 사이드바 토글 -->
-            <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+            <!-- <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
               <a
                 href="#"
                 @click="toggleSidebar"
@@ -77,10 +106,10 @@
                   <i class="sidenav-toggler-line"></i>
                 </div>
               </a>
-            </li>
+            </li> -->
 
             <!-- 설정 아이콘 -->
-            <li class="px-3 nav-item d-flex align-items-center">
+            <!-- <li class="px-3 nav-item d-flex align-items-center">
               <a
                 class="p-0 nav-link lh-1"
                 @click="toggleConfigurator"
@@ -92,10 +121,10 @@
                   settings
                 </i>
               </a>
-            </li>
+            </li> -->
 
             <!-- 알림 메뉴 -->
-            <li
+            <!-- <li
               class="nav-item dropdown d-flex align-items-center"
               :class="isRTL ? 'ps-2' : 'pe-2'"
             >
@@ -219,7 +248,7 @@
                   </a>
                 </li>
               </ul>
-            </li>
+            </li> -->
           </ul>
         </div>
       </div>
@@ -227,36 +256,34 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from "../Breadcrumbs.vue";
-import { mapMutations, mapState } from "vuex";
-import { useAuthStore } from "@/store/authLogin";
+import Breadcrumbs from '../Breadcrumbs.vue';
+import { mapMutations, mapState } from 'vuex';
+import { useAuthStore } from '@/store/authLogin';
+import { roleMenu } from '@/examples/Menu/roleMenu';
 
 export default {
-  name: "navbar",
+  name: 'navbar',
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ["minNav", "color"],
+  props: ['minNav', 'color'],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
+    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
 
     toggleSidebar() {
       this.navbarMinimize();
     },
 
     loginCheck() {
-      const piniaLogin = useAuthStore();
-
-      if (piniaLogin.isLogin) {
-        piniaLogin.logout();
-        alert("로그아웃 완료");
-        this.$router.push({ name: "SignIn" });
-        return;
+      // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
+      if (this.piniaLogin.isLogin) {
+        this.piniaLogin.logout();
+        alert('로그아웃 완료');
       }
 
       this.$router.push({ name: "SignIn" });
@@ -266,10 +293,25 @@ export default {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(["isRTL", "isAbsolute"]),
+    ...mapState(['isRTL', 'isAbsolute']),
 
     currentRouteName() {
       return this.$route.name;
+    },
+
+    piniaLogin() {
+      return useAuthStore();
+    },
+
+    // 권한에 따라 메뉴 항목이 다름
+    // 비회원, AA1은 보이는 항목이 같음
+    // 신천형황, 지원, 조사지, 후원, 이벤트, 회원 정보 관리
+    // AA3
+    // 대기자 목록, 승인 요청 관리, 지원 계획, 조사지, 상담, 후원, 이벤트, 히스토리, 회원 정보 관리
+    // AA4
+    // 대기자 목록, 지원 계획, 조사지, 상담, 후원, 이벤트, 기관 및 요청 관리, 히스토리, 회원 정보 관리
+    menuList() {
+      return roleMenu[this.piniaLogin.role] || roleMenu.AA1;
     },
   },
 };

@@ -15,17 +15,24 @@ import EventList from "../views/EventList.vue";
 import EventForm from "../views/EventForm.vue";
 import EventInfo from "../views/EventInfo.vue";
 import Organization from "../views/Organization.vue";
+import UserInfo from '../views/UserInfo.vue';
 
 const routes = [
   {
-    path: "/",
-    name: "dashboard",
-    redirect: "/dashboard",
+    path: '/',
+    name: 'dashboard',
+    redirect: '/dashboard',
   },
   {
     path: "/test",
     name: "Test",
     component: Test,
+  },
+  // 회원정보
+  {
+    path: '/userinfo',
+    name: 'UserInfo',
+    component: UserInfo,
   },
   {
     path: "/sponsor",
@@ -48,34 +55,34 @@ const routes = [
     component: () => import("../views/StaffApprovals.vue"),
   },
   {
-    path: "/priorityApprovals",
-    name: "PriorityApprovals",
-    component: () => import("../views/PriorityApproval.vue"),
+    path: '/priorityApprovals',
+    name: 'PriorityApprovals',
+    component: () => import('../views/PriorityApproval.vue'),
   },
   {
-    path: "/supportPlanApprovals",
-    name: "SupportPlanApprovals",
-    component: () => import("../views/SupportPlanApproval.vue"),
+    path: '/supportPlanApprovals',
+    name: 'SupportPlanApprovals',
+    component: () => import('../views/SupportPlanApproval.vue'),
   },
   {
-    path: "/supportResultApprovals",
-    name: "SupportResultApprovals",
-    component: () => import("../views/SupportResultApproval.vue"),
+    path: '/supportResultApprovals',
+    name: 'SupportResultApprovals',
+    component: () => import('../views/SupportResultApproval.vue'),
   },
   {
-    path: "/eventPlanApprovals",
-    name: "EventPlanApprovals",
-    component: () => import("../views/EventPlanApproval.vue"),
+    path: '/eventPlanApprovals',
+    name: 'EventPlanApprovals',
+    component: () => import('../views/EventPlanApproval.vue'),
   },
   {
-    path: "/eventResultApprovals",
-    name: "EventResultApprovals",
-    component: () => import("../views/EventResultApproval.vue"),
+    path: '/eventResultApprovals',
+    name: 'EventResultApprovals',
+    component: () => import('../views/EventResultApproval.vue'),
   },
   {
-    path: "/sponsorshipPlanApprovals",
-    name: "SponsorshipPlanApprovals",
-    component: () => import("../views/SponsorshipPlanApproval.vue"),
+    path: '/sponsorshipPlanApprovals',
+    name: 'SponsorshipPlanApprovals',
+    component: () => import('../views/SponsorshipPlanApproval.vue'),
   },
   {
     path: "/sponsorshipResultApprovals",
@@ -216,9 +223,9 @@ const routes = [
   },
   // 지원계획목록
   {
-    path: "/plan-list",
-    name: "planList",
-    component: () => import("../views/PlanList.vue"),
+    path: '/plan-list',
+    name: 'planList',
+    component: () => import('../views/PlanList.vue'),
   },
   // 지원계획 작성
   {
@@ -286,8 +293,8 @@ const routes = [
   },
   // 이벤트 상세 및 수정
   {
-    path: "/event/info",
-    name: "EventInfo",
+    path: '/event/info',
+    name: 'EventInfo',
     component: EventInfo,
   },
   // 이벤트 신청 내역

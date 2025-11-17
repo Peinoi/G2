@@ -53,7 +53,7 @@
           <div class="org-sub">
             {{ org.address }} · {{ org.phone }} ·
             {{ fmtDate(org.startDate) }} 시작 ·
-            {{ org.endDate ? fmtDate(org.endDate) : "-" }} 종료
+            {{ org.endDate ? fmtDate(org.endDate) : '-' }} 종료
           </div>
         </div>
 
@@ -202,65 +202,65 @@ onMounted(() => {
 
 // DB/서버에서 온 어떤 날짜든 input[type=date]에 맞게 'YYYY-MM-DD'로 변환
 function toDateInput(val) {
-  if (!val) return "";
-  if (typeof val === "string") {
-    const s = val.replace(/\./g, "-");
+  if (!val) return '';
+  if (typeof val === 'string') {
+    const s = val.replace(/\./g, '-');
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   }
   const d = new Date(val);
-  if (Number.isNaN(d.getTime())) return "";
+  if (Number.isNaN(d.getTime())) return '';
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 
 /* ===== 상태 ===== */
-const searchType = ref("name");
-const keyword = ref("");
-const sortType = ref("recent");
-const statusType = ref("ALL");
+const searchType = ref('name');
+const keyword = ref('');
+const sortType = ref('recent');
+const statusType = ref('ALL');
 const list = ref([]);
 
 /* 상태 메타 정보 */
 const STATUS_META = {
-  AB1: { label: "운영중", class: "org-badge-green" },
-  AB2: { label: "임시중단", class: "org-badge-yellow" }, // 새로 하나 만들자
-  AB3: { label: "종료", class: "org-badge-gray" },
+  AB1: { label: '운영중', class: 'org-badge-green' },
+  AB2: { label: '임시중단', class: 'org-badge-yellow' }, // 새로 하나 만들자
+  AB3: { label: '종료', class: 'org-badge-gray' },
 };
 
 function getStatusMeta(code) {
-  return STATUS_META[code] || { label: "-", class: "org-badge-gray" };
+  return STATUS_META[code] || { label: '-', class: 'org-badge-gray' };
 }
 
 /* 모달 상태 */
 const isModalOpen = ref(false);
 const form = ref({
-  code: "",
-  name: "",
-  address: "",
-  phone: "",
-  startDate: "",
-  endDate: "",
-  status: "AB1",
+  code: '',
+  name: '',
+  address: '',
+  phone: '',
+  startDate: '',
+  endDate: '',
+  status: 'AB1',
 });
 
-let editingCode = "";
+let editingCode = '';
 
 /* ===== 유틸 ===== */
 function fmtDate(d) {
-  if (!d) return "-";
+  if (!d) return '-';
   const date = new Date(d);
-  if (isNaN(date.getTime())) return "-";
+  if (isNaN(date.getTime())) return '-';
   const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 
 /* ===== 데이터 로드 ===== */
 async function load() {
-  const res = await axios.get("/api/organization");
+  const res = await axios.get('/api/organization');
   const rows = Array.isArray(res.data?.data) ? res.data.data : [];
   list.value = rows.map((r) => ({
     id: r.org_code,
@@ -279,12 +279,12 @@ function openEdit(org) {
   editingCode = org.code;
   form.value = {
     code: org.code,
-    name: org.name ?? "",
-    address: org.address ?? "",
-    phone: org.phone ?? "",
-    startDate: org.startDate ?? "",
-    endDate: org.endDate ?? "",
-    status: org.status ?? "RUNNING",
+    name: org.name ?? '',
+    address: org.address ?? '',
+    phone: org.phone ?? '',
+    startDate: org.startDate ?? '',
+    endDate: org.endDate ?? '',
+    status: org.status ?? 'RUNNING',
   };
   isModalOpen.value = true;
 }
@@ -295,9 +295,9 @@ function closeModal() {
 
 // 저장(업데이트) 시 날짜 포함해서 전달
 async function onModalSave() {
-  if (!form.value.name.trim()) return alert("기관명을 입력하세요.");
-  if (!["AB1", "AB2", "AB3"].includes(form.value.status))
-    return alert("운영여부가 올바르지 않습니다.");
+  if (!form.value.name.trim()) return alert('기관명을 입력하세요.');
+  if (!['AB1', 'AB2', 'AB3'].includes(form.value.status))
+    return alert('운영여부가 올바르지 않습니다.');
 
   const payload = {
     org_name: form.value.name,
@@ -338,22 +338,22 @@ async function remove(org) {
 /* 추가 모달 상태 */
 const isAddOpen = ref(false);
 const addForm = ref({
-  name: "",
-  address: "",
-  phone: "",
-  startDate: "",
-  endDate: "",
-  status: "AB1",
+  name: '',
+  address: '',
+  phone: '',
+  startDate: '',
+  endDate: '',
+  status: 'AB1',
 });
 
 function openAdd() {
   addForm.value = {
-    name: "",
-    address: "",
-    phone: "",
-    startDate: "",
-    endDate: "",
-    status: "AB1",
+    name: '',
+    address: '',
+    phone: '',
+    startDate: '',
+    endDate: '',
+    status: 'AB1',
   };
   isAddOpen.value = true;
 }
@@ -363,9 +363,9 @@ function closeAdd() {
 
 // 추가 저장
 async function onAddSave() {
-  if (!addForm.value.name.trim()) return alert("기관명을 입력하세요.");
-  if (!["AB1", "AB2", "AB3"].includes(addForm.value.status))
-    return alert("운영여부가 올바르지 않습니다.");
+  if (!addForm.value.name.trim()) return alert('기관명을 입력하세요.');
+  if (!['AB1', 'AB2', 'AB3'].includes(addForm.value.status))
+    return alert('운영여부가 올바르지 않습니다.');
 
   const payload = {
     org_name: addForm.value.name,
@@ -376,7 +376,7 @@ async function onAddSave() {
     status: addForm.value.status,
   };
 
-  await axios.post("/api/organization", payload);
+  await axios.post('/api/organization', payload);
   await load();
   closeAdd();
 }
@@ -388,7 +388,7 @@ function onSearch() {}
 const filtered = computed(() => {
   let data = [...list.value];
 
-  if (statusType.value !== "ALL") {
+  if (statusType.value !== 'ALL') {
     data = data.filter((d) => d.status === statusType.value);
   }
 
@@ -396,27 +396,27 @@ const filtered = computed(() => {
   if (kw) {
     data = data.filter((d) => {
       const map = {
-        name: d.name ?? "",
-        code: d.code ?? "",
-        address: d.address ?? "",
-        phone: d.phone ?? "",
+        name: d.name ?? '',
+        code: d.code ?? '',
+        address: d.address ?? '',
+        phone: d.phone ?? '',
       };
-      return String(map[searchType.value] || "")
+      return String(map[searchType.value] || '')
         .toLowerCase()
         .includes(kw);
     });
   }
 
   switch (sortType.value) {
-    case "nameAsc":
-      data.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "ko"));
+    case 'nameAsc':
+      data.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'ko'));
       break;
-    case "startDesc":
+    case 'startDesc':
       data.sort(
         (a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0)
       );
       break;
-    case "endDesc":
+    case 'endDesc':
       data.sort((a, b) => new Date(b.endDate || 0) - new Date(a.endDate || 0));
       break;
   }
@@ -428,11 +428,11 @@ const paged = computed(() => filtered.value);
 
 /* 모달 열릴 때 스크롤 잠금 */
 watch(isModalOpen, (v) => {
-  document.documentElement.style.overflow = v ? "hidden" : "";
+  document.documentElement.style.overflow = v ? 'hidden' : '';
 });
 watch(isAddOpen, (v) => {
   // 추가 모달도 잠금
-  document.documentElement.style.overflow = v ? "hidden" : "";
+  document.documentElement.style.overflow = v ? 'hidden' : '';
 });
 
 onMounted(load);
@@ -569,7 +569,7 @@ onMounted(load);
 
 .org-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+    'Liberation Mono', 'Courier New', monospace;
 }
 
 .org-sep {
