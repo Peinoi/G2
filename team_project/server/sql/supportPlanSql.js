@@ -315,4 +315,32 @@ module.exports = {
       approval_code DESC
     LIMIT 1
   `,
+
+  // 🔹 plan_code 로 support_result 이미 있는지 확인
+  getSupportResultByPlan: `
+    SELECT
+      result_code
+    FROM support_result
+    WHERE plan_code = ?
+    LIMIT 1
+  `,
+
+  // 🔹 지원계획 승인 시 support_result 헤더 자동 생성
+  insertSupportResultFromPlan: `
+    INSERT INTO support_result (
+      plan_code,
+      actual_from,
+      actual_to,
+      status,
+      written_at,
+      assi_by
+    ) VALUES (
+      ?,          -- plan_code
+      NULL,       -- actual_from (추후 결과작성 시 채움)
+      NULL,       -- actual_to   (추후 결과작성 시 채움)
+      'CD3',      -- 초기 상태: 지원중(작성 중)
+      NULL,  
+      ?           -- assi_by: support_plan.assi_by
+    )
+  `,
 };

@@ -1,8 +1,9 @@
+<!-- src/views/ResultWrite.vue -->
 <template>
   <section class="p-6 max-w-5xl mx-auto space-y-6">
     <!-- 상단 타이틀 -->
     <header class="flex items-center justify-between">
-      <h2 class="text-2xl font-semibold">지원계획 작성</h2>
+      <h2 class="text-2xl font-semibold">지원결과 작성</h2>
 
       <div class="space-x-2 flex items-center">
         <MaterialButton color="dark" size="sm" @click="handleLoad">
@@ -30,76 +31,72 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-4 text-sm">
-        <!-- 상담지 제출일 -->
-        <MaterialButton color="dark" size="sm" @click="openCounselDetail">
-          상담지 제출일: {{ formattedCounselSubmitAt }}
+        <!-- ✅ 계획서 제출일 -->
+        <MaterialButton color="dark" size="sm" @click="openPlanDetail">
+          계획서 제출일: {{ formattedPlanWrittenAt }}
         </MaterialButton>
 
-        <!-- 계획 작성일 (오늘 날짜 표시) -->
+        <!-- ✅ 결과 작성일 (오늘 날짜 표시) -->
         <div class="flex items-center gap-2">
-          <span>계획 작성일:</span>
+          <span>결과 작성일:</span>
           <span class="px-2 py-1 border rounded bg-white">
-            {{ mainForm.planDate }}
+            {{ mainForm.resultDate }}
           </span>
         </div>
 
-        <!-- 예상 진행기간: YYYY-MM ~ YYYY-MM -->
+        <!-- ✅ 실제 진행기간: YYYY-MM ~ YYYY-MM -->
         <div class="flex items-center gap-2">
-          <span>예상 진행기간:</span>
+          <span>실제 진행기간:</span>
           <input
             type="month"
-            v-model="mainForm.expectedStart"
+            v-model="mainForm.actualStart"
             class="input h-8"
           />
           <span>~</span>
-          <input
-            type="month"
-            v-model="mainForm.expectedEnd"
-            class="input h-8"
-          />
+          <input type="month" v-model="mainForm.actualEnd" class="input h-8" />
         </div>
       </div>
     </div>
 
-    <!-- 메인 계획 입력 -->
+    <!-- 메인 결과 입력 -->
     <div class="space-y-4">
-      <!-- 계획 목표 -->
+      <!-- 계획했던 목표 -->
       <div>
-        <label class="block text-sm mb-1 font-medium">계획 목표</label>
+        <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
         <MaterialInput
           id="plan-goal"
           variant="outline"
           size="default"
           v-model="mainForm.goal"
-          placeholder="지원계획의 목표를 입력하세요"
+          placeholder="기존 지원계획에서 계획했던 목표를 입력하세요"
         />
       </div>
 
-      <!-- 계획 내용 (일반용) -->
+      <!-- 결과 내용 (일반용) -->
       <div>
         <label class="block text-sm mb-1 font-medium">
-          계획 내용 (일반용)
+          결과 내용 (일반용)
         </label>
         <MaterialTextarea
-          id="plan-content-public"
+          id="result-content-public"
           variant="outline"
           :rows="4"
-          placeholder="대상자/일반용 계획 내용을 입력하세요..."
+          placeholder="대상자/일반용 결과 내용을 입력하세요..."
           :value="mainForm.publicContent"
           @input="(e) => (mainForm.publicContent = e.target.value)"
         />
       </div>
 
-      <!-- 계획 내용 (관자용 / 관리자용) -->
+      <!-- 결과 내용 (관자용 / 관리자용) -->
       <div>
         <label class="block text-sm mb-1 font-medium">
-          계획 내용 (관리자용)
+          결과 내용 (관자용)
         </label>
         <MaterialTextarea
-          id="plan-content-private"
+          id="result-content-private"
           variant="outline"
           :rows="4"
-          placeholder="관계자/관리자용 내부 계획 내용을 입력하세요..."
+          placeholder="관계자/관리자용 결과 내용을 입력하세요..."
           :value="mainForm.privateContent"
           @input="(e) => (mainForm.privateContent = e.target.value)"
         />
@@ -167,14 +164,13 @@
     </div>
 
     <!-- 버튼 영역 -->
-
     <div class="flex items-center gap-3">
       <MaterialButton color="dark" size="sm" @click="goBack">
         작성 취소
       </MaterialButton>
 
-      <MaterialButton color="dark" size="sm" @click="addPlanItem">
-        + 계획 추가
+      <MaterialButton color="dark" size="sm" @click="addResultItem">
+        + 결과 추가
       </MaterialButton>
 
       <MaterialButton
@@ -187,50 +183,54 @@
       </MaterialButton>
     </div>
 
-    <!-- 추가 계획 기록들 -->
+    <!-- 추가 결과 기록들 -->
     <div
-      v-for="item in planItems"
+      v-for="item in resultItems"
       :key="item.id"
       class="border rounded p-4 bg-white space-y-4"
     >
       <div class="flex justify-between items-start">
-        <h4 class="font-medium text-sm">추가 계획</h4>
+        <h4 class="font-medium text-sm">추가 결과</h4>
 
-        <MaterialButton color="dark" size="sm" @click="removePlanItem(item.id)">
+        <MaterialButton
+          color="dark"
+          size="sm"
+          @click="removeResultItem(item.id)"
+        >
           -
         </MaterialButton>
       </div>
 
       <div>
-        <label class="block text-sm mb-1 font-medium">계획 목표</label>
+        <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
         <MaterialInput
-          :id="`plan-item-goal-${item.id}`"
+          :id="`result-item-goal-${item.id}`"
           variant="outline"
           size="default"
           v-model="item.goal"
-          placeholder="추가 계획의 목표를 입력하세요"
+          placeholder="해당 결과에 해당하는 계획 목표를 입력하세요"
         />
       </div>
 
       <div>
-        <label class="block text-sm mb-1 font-medium">계획 내용 (일반용)</label>
+        <label class="block text-sm mb-1 font-medium">결과 내용 (일반용)</label>
         <MaterialTextarea
-          :id="`plan-item-public-${item.id}`"
+          :id="`result-item-public-${item.id}`"
           variant="outline"
           :rows="3"
-          placeholder="대상자/일반용 내용을 입력하세요..."
+          placeholder="대상자/일반용 결과 내용을 입력하세요..."
           :value="item.publicContent"
           @input="(e) => (item.publicContent = e.target.value)"
         />
       </div>
 
       <div>
-        <label class="block text-sm mb-1 font-medium">계획 내용 (관자용)</label>
+        <label class="block text-sm mb-1 font-medium">결과 내용 (관자용)</label>
         <MaterialTextarea
-          :id="`plan-item-private-${item.id}`"
+          :id="`result-item-private-${item.id}`"
           variant="outline"
           :rows="3"
-          placeholder="관계자/관리자용 내용을 입력하세요..."
+          placeholder="관계자/관리자용 결과 내용을 입력하세요..."
           :value="item.privateContent"
           @input="(e) => (item.privateContent = e.target.value)"
         />
@@ -257,19 +257,19 @@ const submitCode = Number(route.params.submitcode || 0);
 const submitInfo = ref({
   name: "",
   ssnFront: "",
-  counselSubmitAt: "", // 상담지 제출일
+  planWrittenAt: "", // ✅ 계획서 제출일(작성일)
 });
 
-const formattedCounselSubmitAt = computed(() => {
-  const v = submitInfo.value.counselSubmitAt;
+const formattedPlanWrittenAt = computed(() => {
+  const v = submitInfo.value.planWrittenAt;
   return v ? v.slice(0, 10) : "-";
 });
 
-// 메인 계획 폼
+// 메인 결과 폼
 const mainForm = ref({
-  planDate: "", // 계획 작성일 (오늘 날짜)
-  expectedStart: "", // 예상 진행기간 시작 (YYYY-MM)
-  expectedEnd: "", // 예상 진행기간 종료 (YYYY-MM)
+  resultDate: "", // ✅ 결과 작성일 (오늘 날짜)
+  actualStart: "", // ✅ 실제 진행기간 시작 (YYYY-MM)
+  actualEnd: "", // ✅ 실제 진행기간 종료 (YYYY-MM)
   goal: "",
   publicContent: "",
   privateContent: "",
@@ -284,8 +284,8 @@ const existingFiles = ref([]);
 // 삭제할 첨부
 const removedAttachCodes = ref([]);
 
-// 추가 계획 목록
-const planItems = ref([]); // { id, goal, publicContent, privateContent }[]
+// 추가 결과 목록
+const resultItems = ref([]); // { id, goal, publicContent, privateContent }[]
 
 const loading = ref(false);
 const error = ref("");
@@ -296,14 +296,14 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
-// // 기본정보 로딩 (이름/생년월일/상담지 제출일 등)
+// 기본정보 로딩 (이름/생년월일/계획서 제출일 등)
 async function loadData() {
   loading.value = true;
   error.value = "";
 
   try {
-    // ✅ 백엔드 라우터: GET /plans/:submitCode 기준
-    const { data } = await axios.get(`/api/plans/${submitCode}`);
+    // ✅ 백엔드 라우터: GET /result/:submitCode (결과 작성용 기본정보)
+    const { data } = await axios.get(`/api/result/${submitCode}`);
 
     if (!data?.success || !data.result) {
       throw new Error(data?.message || "기본 정보를 찾을 수 없습니다.");
@@ -311,17 +311,16 @@ async function loadData() {
 
     const res = data.result;
 
-    // ✅ 백엔드에서 이렇게 내려준다고 가정:
-    // { submitCode, name, ssnFront, counselSubmitAt }
+    // 예: { submitCode, name, ssnFront, planWrittenAt }
     submitInfo.value = {
       name: res.name || "",
       ssnFront: (res.ssnFront || "").slice(0, 6),
-      counselSubmitAt: res.counselSubmitAt || "",
+      planWrittenAt: res.planWrittenAt || "",
     };
 
-    // 계획 작성일 기본값이 없으면 오늘 날짜
-    if (!mainForm.value.planDate) {
-      mainForm.value.planDate = getTodayStr();
+    // 결과 작성일 기본값이 없으면 오늘 날짜
+    if (!mainForm.value.resultDate) {
+      mainForm.value.resultDate = getTodayStr();
     }
   } catch (e) {
     console.error(e);
@@ -332,7 +331,7 @@ async function loadData() {
 }
 
 onMounted(() => {
-  mainForm.value.planDate = getTodayStr();
+  mainForm.value.resultDate = getTodayStr();
   loadData();
 });
 
@@ -365,34 +364,30 @@ function removeMainFile(index) {
 
 // 임시저장으로 있던 파일 삭제
 function removeExistingFile(index, attachCode) {
-  // 백엔드에서 지울 수 있도록 코드만 따로 보관
   if (attachCode && !removedAttachCodes.value.includes(attachCode)) {
     removedAttachCodes.value.push(attachCode);
   }
-
-  // 화면에서는 바로 지워버리기
   existingFiles.value.splice(index, 1);
 }
 
-// 임시 저장
+// ✅ 결과 임시 저장
 async function handleTempSave() {
   try {
     const formJson = {
       submitCode,
       mainForm: mainForm.value,
-      planItems: planItems.value,
+      resultItems: resultItems.value,
       removedAttachCodes: removedAttachCodes.value,
     };
 
     const formData = new FormData();
     formData.append("formJson", JSON.stringify(formJson));
 
-    // 🔹 지금 화면에서 선택한 파일들 같이 보냄
     mainFiles.value.forEach((file) => {
-      formData.append("planFiles", file);
+      formData.append("resultFiles", file);
     });
 
-    const res = await axios.post("/api/plans/temp", formData, {
+    const res = await axios.post("/api/result/temp", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -409,72 +404,69 @@ async function handleTempSave() {
   }
 }
 
-// 임시 저장 불러오기
+// ✅ 결과 임시 저장 불러오기
 async function handleLoad() {
   try {
-    const { data } = await axios.get(`/api/plans/form/${submitCode}`);
+    const { data } = await axios.get(`/api/result/form/${submitCode}`);
 
     if (!data?.success || !data.result) {
-      alert(data?.message || "불러올 지원계획 내용이 없습니다.");
+      alert(data?.message || "불러올 지원결과 내용이 없습니다.");
       return;
     }
 
     const res = data.result;
 
-    // 메인 계획
     mainForm.value = {
-      planDate: res.main?.planDate
-        ? String(res.main.planDate).slice(0, 10)
+      resultDate: res.main?.resultDate
+        ? String(res.main.resultDate).slice(0, 10)
         : getTodayStr(),
-      expectedStart: res.main?.expectedStart || "",
-      expectedEnd: res.main?.expectedEnd || "",
+      actualStart: res.main?.actualStart || "",
+      actualEnd: res.main?.actualEnd || "",
       goal: res.main?.goal || "",
       publicContent: res.main?.publicContent || "",
       privateContent: res.main?.privateContent || "",
     };
 
-    // 추가 계획
-    planItems.value =
+    resultItems.value =
       (res.items || []).map((d, idx) => ({
-        id: d.planItemCode || Date.now() + idx,
+        id: d.resultItemCode || Date.now() + idx,
         goal: d.goal || "",
         publicContent: d.publicContent || "",
         privateContent: d.privateContent || "",
       })) || [];
 
-    // ✅ 기존 첨부파일 (임시저장 때 올라간 것들)
     existingFiles.value =
       (res.attachments || []).map((a) => ({
         attachCode: a.attachCode,
         originalFilename: a.originalFilename,
-        url: a.url, // 백엔드에서 file_path + server_filename으로 만들어둔 것
+        url: a.url,
       })) || [];
 
-    // 삭제리스트 초기화
     removedAttachCodes.value = [];
 
-    alert("임시 저장된 지원계획을 불러왔습니다.");
+    alert("임시 저장된 지원결과를 불러왔습니다.");
   } catch (e) {
     console.error(e);
     alert(
-      "지원계획 불러오기 중 오류: " + (e.response?.data?.message || e.message)
+      "지원결과 불러오기 중 오류: " + (e.response?.data?.message || e.message)
     );
   }
 }
 
-//상담 상세로 연결
-function openCounselDetail() {
-  window.open(`/counsel/detail/${submitCode}`, "_blank");
+// ✅ 계획 상세로 연결
+function openPlanDetail() {
+  // 백엔드/프론트 라우트 구조에 맞게 수정해서 사용
+  window.open(`/plan/detail/${submitCode}`, "_blank");
 }
 
 // 목록으로 돌아가기
 function goBack() {
-  router.push({ name: "planList" });
+  router.push({ name: "resultList" });
 }
 
-// 추가 계획 한 블록 추가
-function addPlanItem() {
-  planItems.value.push({
+// 추가 결과 한 블록 추가
+function addResultItem() {
+  resultItems.value.push({
     id: Date.now(),
     goal: "",
     publicContent: "",
@@ -482,35 +474,31 @@ function addPlanItem() {
   });
 }
 
-// 추가 계획 삭제
-function removePlanItem(id) {
-  planItems.value = planItems.value.filter((p) => p.id !== id);
+// 추가 결과 삭제
+function removeResultItem(id) {
+  resultItems.value = resultItems.value.filter((p) => p.id !== id);
 }
 
 // 유효성 체크
 function validate() {
-  if (!mainForm.value.goal.trim()) return "계획 목표를 입력해주세요.";
+  if (!mainForm.value.goal.trim()) return "계획했던 목표를 입력해주세요.";
   if (!mainForm.value.publicContent.trim())
-    return "계획 내용(일반용)을 입력해주세요.";
+    return "결과 내용(일반용)을 입력해주세요.";
   if (!mainForm.value.privateContent.trim())
-    return "계획 내용(관자용)을 입력해주세요.";
+    return "결과 내용(관자용)을 입력해주세요.";
 
-  // 예상 기간은 선택 옵션으로 둘 거면 아래는 주석 처리
-  // if (!mainForm.value.expectedStart || !mainForm.value.expectedEnd)
-  //   return "예상 진행기간을 선택해주세요.";
-
-  for (const p of planItems.value) {
-    if (!p.goal.trim()) return "추가 계획의 목표를 입력해주세요.";
+  for (const p of resultItems.value) {
+    if (!p.goal.trim()) return "추가 결과의 계획 목표를 입력해주세요.";
     if (!p.publicContent.trim())
-      return "추가 계획의 내용(일반용)을 입력해주세요.";
+      return "추가 결과의 내용(일반용)을 입력해주세요.";
     if (!p.privateContent.trim())
-      return "추가 계획의 내용(관자용)을 입력해주세요.";
+      return "추가 결과의 내용(관자용)을 입력해주세요.";
   }
 
   return null;
 }
 
-// 제출하기: JSON + 파일 FormData로 전송
+// 제출하기
 async function submitAll() {
   const err = validate();
   if (err) {
@@ -522,7 +510,7 @@ async function submitAll() {
     const formJson = {
       submitCode,
       mainForm: mainForm.value,
-      planItems: planItems.value,
+      resultItems: resultItems.value,
       removedAttachCodes: removedAttachCodes.value,
     };
 
@@ -530,18 +518,18 @@ async function submitAll() {
     formData.append("formJson", JSON.stringify(formJson));
 
     mainFiles.value.forEach((file) => {
-      formData.append("planFiles", file);
+      formData.append("resultFiles", file);
     });
 
-    const res = await axios.post("/api/plans/new", formData, {
+    const res = await axios.post("/api/result/new", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
 
     if (res.data?.success) {
-      alert("지원계획이 저장되었습니다.");
-      router.push({ name: "planList" });
+      alert("지원결과가 저장되었습니다.");
+      router.push({ name: "resultList" });
     } else {
       alert(res.data.message || "저장 실패");
     }

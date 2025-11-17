@@ -26,7 +26,7 @@
         <router-link to="/plan-list" class="btn btn-outline-success btn-sm"
           >지원계획</router-link
         >
-        <router-link to="/test" class="btn btn-outline-success btn-sm"
+        <router-link to="/result-list" class="btn btn-outline-success btn-sm"
           >지원결과</router-link
         >
         <router-link to="/sponsor" class="btn btn-outline-success btn-sm"

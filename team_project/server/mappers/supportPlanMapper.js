@@ -548,7 +548,7 @@ async function getPlanFormDataBySubmit(submitCode) {
   }
 }
 
-// 🔹 지원계획 승인 (CC4 + request_approval BA2)
+// 🔹 지원계획 승인 (CC4 + request_approval BA2 + support_result 생성)
 async function approveSupportPlan(planCode) {
   const conn = await pool.getConnection();
   try {
@@ -564,6 +564,24 @@ async function approveSupportPlan(planCode) {
 
     // 2) request_approval 상태 BA2(승인)로 변경
     const result = await conn.query(sql.updateApprovalApproveForPlan, [planId]);
+
+    // 3) ✅ support_result 헤더 자동 생성 (이미 있으면 생성 안 함)
+    const [existingResult] = await conn.query(sql.getSupportResultByPlan, [
+      planId,
+    ]);
+
+    if (!existingResult) {
+      // plan 정보에서 assi_by 가져오기
+      const [planRow] = await conn.query(sql.getSupportPlanByCode, [planId]);
+      if (!planRow) {
+        throw new Error("지원계획 정보를 찾을 수 없습니다.");
+      }
+
+      const assiBy = planRow.assi_by || null;
+
+      // support_result 에 CD3 상태로 한 줄 생성
+      await conn.query(sql.insertSupportResultFromPlan, [planId, assiBy]);
+    }
 
     await conn.commit();
     return safeJSON({
