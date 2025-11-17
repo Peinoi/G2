@@ -5,7 +5,6 @@ export const roleMenu = {
     { name: '조사지', path: '/test', color: 'success' },
     { name: '후원', path: '/test', color: 'success' },
     { name: '이벤트', path: '/test', color: 'success' },
-    { name: '회원 정보 관리', path: '/test', color: 'success' },
   ],
 
   AA2: [
@@ -16,7 +15,6 @@ export const roleMenu = {
     { name: '상담', path: '/test', color: 'success' },
     { name: '후원', path: '/test', color: 'success' },
     { name: '이벤트', path: '/test', color: 'success' },
-    { name: '회원 정보 관리', path: '/test', color: 'success' },
   ],
 
   AA3: [
@@ -28,7 +26,6 @@ export const roleMenu = {
     { name: '후원', path: '/sponsor', color: 'success' },
     { name: '이벤트', path: '/test', color: 'success' },
     { name: '히스토리', path: '/test', color: 'success' },
-    { name: '회원 정보 관리', path: '/test', color: 'success' },
   ],
 
   AA4: [
@@ -40,6 +37,5 @@ export const roleMenu = {
     { name: '이벤트', path: '/test', color: 'success' },
     { name: '기관 및 요청 관리', path: '/test', color: 'success' },
     { name: '히스토리', path: '/test', color: 'success' },
-    { name: '회원 정보 관리', path: '/test', color: 'success' },
   ],
 };
