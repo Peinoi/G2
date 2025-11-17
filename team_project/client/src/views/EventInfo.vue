@@ -53,7 +53,7 @@
       class="card"
     >
       <h3>예약 가능한 일정</h3>
-      <FullCalendar :options="calendarOptions" />
+      <FullCalendar ref="calendarRef" :options="calendarOptions" />
     </div>
 
     <!-- 첨부파일 -->
@@ -74,13 +74,24 @@
 
     <!-- 신청제일 경우: 하단 신청 버튼 -->
     <div v-if="event.event_type === 'DD1'" class="apply-button-wrap">
-      <button class="apply-btn" @click="applySimple">신청하기</button>
+      <button v-if="!isApplied" class="apply-btn" @click="applySimple">
+        신청하기
+      </button>
+
+      <button
+        v-else
+        class="apply-btn"
+        disabled
+        style="background: gray; cursor: not-allowed"
+      >
+        신청 완료
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
@@ -90,14 +101,24 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
+const getLoginUserCode = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.user_code || null;
+  } catch {
+    return null;
+  }
+};
+
+const calendarRef = ref(null);
+
 const route = useRoute();
 const event = ref({
   sub_events: [],
   attachments: [],
 });
-
-// 로그인한 사용자 코드 (서버에서 받아오거나 store에서 가져오기)
-const currentUserCode = 1; // 예시, 실제 값으로 변경
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -111,55 +132,87 @@ const formatDate = (d) => (d ? dateFormat(d, "yyyy-MM-dd") : "");
 // 대표 이미지
 const mainImage = ref("");
 
+const isApplied = ref(false);
+
 const fetchEvent = async () => {
-  const code = route.query.code;
-  const res = await axios.get(`/api/event/${code}`);
-  event.value = res.data.data;
+  try {
+    const code = route.query.code;
+    const res = await axios.get(`/api/event/${code}`);
+    event.value = res.data.data;
 
-  // 대표 이미지 설정
-  const img = event.value.attachments.find((x) =>
-    /\.(jpg|jpeg|png|gif)$/i.test(x.original_filename)
-  );
-  mainImage.value = img ? img.file_path : "";
+    // 대표 이미지 설정
+    const img = event.value.attachments.find((x) =>
+      /\.(jpg|jpeg|png|gif)$/i.test(x.original_filename)
+    );
+    mainImage.value = img ? img.file_path : "";
 
-  // 캘린더 이벤트 구성
-  calendarOptions.value.events = event.value.sub_events.map((s) => ({
-    title: s.sub_event_name,
-    start: s.sub_event_start_date,
-    end: s.sub_event_end_date,
-    extendedProps: {
-      code: s.sub_event_code,
-      max: s.sub_recruit_count,
-    },
-  }));
+    // 캘린더 이벤트 구성
+    calendarOptions.value.events = event.value.sub_events.map((s) => ({
+      id: String(s.sub_event_code),
+      title: s.sub_event_name,
+      start: s.sub_event_start_date,
+      end: s.sub_event_end_date,
+      extendedProps: {
+        code: s.sub_event_code,
+        max: s.sub_recruit_count,
+        isApplied: !!s.applied,
+      },
+      color: s.applied ? "gray" : undefined, // 이미 신청한 일정은 회색표시
+    }));
+
+    // 이미 신청했으면 버튼 비활성화
+    isApplied.value = !!event.value.alreadyApplied;
+    await nextTick();
+  } catch (err) {
+    console.error("fetchEvent error:", err);
+  }
 };
 
 // 신청 공통 함수 (신청제 / 예약제)
 const applyEvent = async ({ sub_event_code = null }) => {
-  try {
-    const res = await axios.post("/api/event/apply", {
-      apply_type: event.value.event_type, // DD1 / DD2
-      event_code: event.value.event_code,
-      sub_event_code,
-      user_code: currentUserCode,
-    });
+  const userCode = getLoginUserCode();
+  if (!userCode) {
+    alert("로그인 상태가 아닙니다.");
+    return false;
+  }
 
-    if (res.data.success) {
-      alert("신청 완료! 내 신청 내역에 등록되었습니다.");
-    } else {
-      alert("신청 실패: " + res.data.message);
-    }
-  } catch (err) {
-    console.error(err);
-    alert("신청 중 오류가 발생했습니다.");
+  const res = await axios.post("/api/event/apply", {
+    apply_type: event.value.event_type,
+    event_code: event.value.event_code,
+    sub_event_code,
+    user_code: userCode,
+  });
+
+  if (res.data && res.data.status) {
+    alert("신청 완료! 내 신청 내역에 등록되었습니다.");
+    return true;
+  } else {
+    alert("신청 실패: " + res.data.message);
+    return false;
   }
 };
 
 // 신청제: 단순 신청하기
-const applySimple = () => applyEvent({});
+const applySimple = async () => {
+  if (isApplied.value) {
+    alert("이미 신청한 일정입니다.");
+    return; // 이미 신청했으면 그냥 종료
+  }
+
+  const ok = await applyEvent({});
+  if (!ok) return;
+
+  // 신청 성공 시 바로 버튼 상태 변경
+  isApplied.value = true;
+};
 
 // 예약제: 캘린더 일정 클릭
-const onEventClick = (info) => {
+const onEventClick = async (info) => {
+  if (info.event.extendedProps.isApplied) {
+    alert("이미 신청한 일정입니다.");
+    return;
+  }
+
   const formatDateTime = (date) => {
     if (!date) return "";
     const d = new Date(date);
@@ -179,7 +232,27 @@ const onEventClick = (info) => {
   );
   if (!ok) return;
 
-  applyEvent({ sub_event_code: info.event.extendedProps.code });
+  const success = await applyEvent({
+    sub_event_code: info.event.extendedProps.code,
+  });
+
+  if (!success) return;
+
+  // ★ 1) FullCalendar UI 즉시 반영
+  info.event.setProp("color", "gray");
+  info.event.setExtendedProp("isApplied", true);
+
+  // ★ 2) Vue 데이터에도 반영해줘야 화면 새로고침 없이 동일하게 유지됨
+  const idx = event.value.sub_events.findIndex(
+    (s) => s.sub_event_code === info.event.extendedProps.code
+  );
+
+  if (idx !== -1) {
+    event.value.sub_events[idx].applied = true;
+  }
+
+  // ★ 3) 캘린더 다시 렌더링 (진짜 중요)
+  calendarRef.value.getApi().render();
 };
 
 onMounted(fetchEvent);

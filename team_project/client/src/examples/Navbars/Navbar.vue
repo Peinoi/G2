@@ -62,6 +62,7 @@
                 class="px-0 nav-link font-weight-bold lh-1"
                 @click="loginCheck"
                 :class="color ? color : 'text-body'"
+                style="cursor: pointer"
               >
                 <i
                   class="material-icons"
@@ -286,7 +287,7 @@ export default {
         alert("로그아웃 완료");
       }
 
-      this.$router.push({ name: "SignIn" });
+      this.$router.push({ name: 'SignIn' });
     },
   },
   components: {

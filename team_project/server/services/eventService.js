@@ -63,9 +63,14 @@ async function createEvent(data) {
   }
 }
 
-// 이벤트 신청 내역 등록
+// 이벤트 신청 내역 등록 (중복 체크 포함)
 async function createEventApply(data) {
   try {
+    const exists = await eventMapper.checkDuplicateApply(data);
+    if (exists) {
+      throw new Error("이미 신청한 이벤트입니다.");
+    }
+
     const result = await eventMapper.addEventApply(data);
     return result;
   } catch (err) {
