@@ -105,7 +105,7 @@ async function findApprovalWithUser({ approvalCode }) {
 }
 
 // 기관 담당자 승인 요청 목록 조회
-async function staffApprovalList({ state, keyword, page, size }) {
+async function staffApprovalList({ state, keyword, page, size, loginId }) {
   const conn = await pool.getConnection();
   try {
     const st = state || "";
@@ -117,12 +117,17 @@ async function staffApprovalList({ state, keyword, page, size }) {
     const params = [
       st,
       st, // 상태 필터
+
       kw,
       kw,
       kw,
       kw,
       kw,
-      kw,
+      kw, // 검색어 필터 (이름/아이디/기관명/연락처/이메일)
+
+      // 🔽 추가: 로그인한 기관 관리자 아이디 (org 필터용)
+      loginId,
+
       offset,
       sizeNum,
     ];
@@ -137,6 +142,8 @@ async function staffApprovalList({ state, keyword, page, size }) {
       st,
       "| keyword:",
       kw,
+      "| loginId:",
+      loginId,
       "| page:",
       pageNum
     );
@@ -191,12 +198,20 @@ async function updateApprovalStateForStaff({ approvalCode, nextState }) {
 }
 
 // 우선순위 승인 요청 목록 조회 (페이징 + 검색/정렬)
-async function priorityApprovalList({ page, size, keyword, state, orderBy }) {
+async function priorityApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+  loginId, // 🔹 추가
+}) {
   const conn = await pool.getConnection();
   try {
     const st = state || "";
     const kw = keyword || "";
     const ob = orderBy || "latest";
+    const lg = loginId || ""; // 🔹 추가
 
     const pageNum = Number(page) > 0 ? Number(page) : 1;
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
@@ -213,6 +228,9 @@ async function priorityApprovalList({ page, size, keyword, state, orderBy }) {
       kw,
       kw, // 검색어 필터 (child, parent, mgr, org)
 
+      lg, // 🔹 org 필터용 (loginId)
+      lg, // 🔹 org 필터용 (loginId)
+
       ob, // orderBy for latest
       ob, // orderBy for oldest
       ob, // orderBy for name
@@ -225,8 +243,8 @@ async function priorityApprovalList({ page, size, keyword, state, orderBy }) {
     const retRows = await conn.query(approvalSQL.priorityApprovalList, params);
     const rows = rowsFrom(retRows);
 
-    // totalCount도 상태/검색어 필터를 동일하게 사용
-    const countParams = [st, st, kw, kw, kw, kw, kw];
+    // totalCount도 상태/검색어 + org 필터 동일 적용
+    const countParams = [st, st, kw, kw, kw, kw, kw, lg, lg];
 
     const retCount = await conn.query(
       approvalSQL.priorityApprovalTotalCount,
@@ -244,6 +262,8 @@ async function priorityApprovalList({ page, size, keyword, state, orderBy }) {
       kw,
       "| orderBy:",
       ob,
+      "| loginId:",
+      lg,
       "| page:",
       pageNum,
       "| size:",
@@ -270,6 +290,7 @@ async function supportPlanApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
 }) {
   const conn = await pool.getConnection();
   try {
@@ -283,18 +304,21 @@ async function supportPlanApprovalList({
 
     const params = [
       st,
-      st, // 상태 필터
+      st,
 
       kw,
       kw,
       kw,
       kw,
-      kw, // 검색어 필터
+      kw,
 
-      ob, // latest
-      ob, // oldest
-      ob, // name
-      ob, // priority
+      loginId, // 🔥 기관 필터 (org_code = loginId 기준 기관)
+      loginId,
+
+      ob,
+      ob,
+      ob,
+      ob,
 
       offset,
       sizeNum,
@@ -306,7 +330,7 @@ async function supportPlanApprovalList({
     );
     const rows = rowsFrom(retRows);
 
-    const countParams = [st, st, kw, kw, kw, kw, kw];
+    const countParams = [st, st, kw, kw, kw, kw, kw, loginId, loginId];
 
     const retCount = await conn.query(
       approvalSQL.supportPlanApprovalTotalCount,
@@ -570,6 +594,164 @@ async function eventResultApprovalList({
   }
 }
 
+// 🔹 후원 계획 승인 요청 목록 조회 (AE8, 페이징 + 검색/정렬)
+async function sponsorshipPlanApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+}) {
+  const conn = await pool.getConnection();
+  try {
+    const st = state || "";
+    const kw = keyword || "";
+    const ob = orderBy || "latest";
+
+    const pageNum = Number(page) > 0 ? Number(page) : 1;
+    const sizeNum = Number(size) > 0 ? Number(size) : 20;
+    const offset = (pageNum - 1) * sizeNum;
+
+    // 💡 approvalSQL.sponsorshipPlanApprovalList 에 맞춘 파라미터 순서
+    const params = [
+      st,
+      st, // 상태 필터
+
+      kw,
+      kw,
+      kw, // 프로그램명 / 후원유형명 검색
+
+      ob, // latest
+      ob, // oldest
+      ob, // name
+      ob, // goal
+
+      offset,
+      sizeNum,
+    ];
+
+    const retRows = await conn.query(
+      approvalSQL.sponsorshipPlanApprovalList,
+      params
+    );
+    const rows = rowsFrom(retRows);
+
+    const countParams = [st, st, kw, kw, kw];
+
+    const retCount = await conn.query(
+      approvalSQL.sponsorshipPlanApprovalTotalCount,
+      countParams
+    );
+    const countRows = rowsFrom(retCount);
+    const totalCount = countRows[0]?.totalCount || 0;
+
+    console.log(
+      "[approvalMapper] sponsorshipPlanApprovalList rows:",
+      rows.length,
+      "| state:",
+      st,
+      "| keyword:",
+      kw,
+      "| orderBy:",
+      ob,
+      "| page:",
+      pageNum,
+      "| size:",
+      sizeNum,
+      "| totalCount:",
+      totalCount
+    );
+
+    return {
+      rows,
+      totalCount,
+      page: pageNum,
+      size: sizeNum,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 후원 결과 승인 요청 목록 조회 (AE9, 페이징 + 검색/정렬)
+async function sponsorshipResultApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+}) {
+  const conn = await pool.getConnection();
+  try {
+    const st = state || "";
+    const kw = keyword || "";
+    const ob = orderBy || "latest";
+
+    const pageNum = Number(page) > 0 ? Number(page) : 1;
+    const sizeNum = Number(size) > 0 ? Number(size) : 20;
+    const offset = (pageNum - 1) * sizeNum;
+
+    // approvalSQL.sponsorshipResultApprovalList 의 ? 순서에 맞춘 파라미터
+    const params = [
+      st,
+      st, // 상태 필터
+
+      kw,
+      kw,
+      kw, // 검색어 필터 (프로그램명 / 후원유형명)
+
+      ob, // latest
+      ob, // oldest
+      ob, // name
+      ob, // goal
+
+      offset,
+      sizeNum,
+    ];
+
+    const retRows = await conn.query(
+      approvalSQL.sponsorshipResultApprovalList,
+      params
+    );
+    const rows = rowsFrom(retRows);
+
+    const countParams = [st, st, kw, kw, kw];
+
+    const retCount = await conn.query(
+      approvalSQL.sponsorshipResultApprovalTotalCount,
+      countParams
+    );
+    const countRows = rowsFrom(retCount);
+    const totalCount = countRows[0]?.totalCount || 0;
+
+    console.log(
+      "[approvalMapper] sponsorshipResultApprovalList rows:",
+      rows.length,
+      "| state:",
+      st,
+      "| keyword:",
+      kw,
+      "| orderBy:",
+      ob,
+      "| page:",
+      pageNum,
+      "| size:",
+      sizeNum,
+      "| totalCount:",
+      totalCount
+    );
+
+    return {
+      rows,
+      totalCount,
+      page: pageNum,
+      size: sizeNum,
+    };
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   managerApprovalList,
   updateApprovalState,
@@ -581,4 +763,6 @@ module.exports = {
   supportResultApprovalList,
   eventPlanApprovalList,
   eventResultApprovalList,
+  sponsorshipPlanApprovalList,
+  sponsorshipResultApprovalList,
 };

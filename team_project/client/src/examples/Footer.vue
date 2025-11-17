@@ -14,7 +14,7 @@
               href="https://www.creative-tim.com"
               class="font-weight-bold"
               target="_blank"
-              >Creative Tim</a
+              >4강2조</a
             >
             for a better web.
           </div>

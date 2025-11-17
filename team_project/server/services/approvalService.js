@@ -79,12 +79,13 @@ async function reject({ approvalCode, reason }) {
 }
 
 /** ✅ 기관 담당자 승인 목록 (AE2) */
-async function staffApprovalList({ state, keyword, page, size }) {
+async function staffApprovalList({ state, keyword, page, size, loginId }) {
   return await approvalMapper.staffApprovalList({
     state,
     keyword,
     page,
     size,
+    loginId,
   });
 }
 
@@ -157,6 +158,7 @@ async function getPriorityApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
 }) {
   return await approvalMapper.priorityApprovalList({
     page,
@@ -164,6 +166,7 @@ async function getPriorityApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
   });
 }
 
@@ -174,6 +177,7 @@ async function getSupportPlanApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
 }) {
   return await approvalMapper.supportPlanApprovalList({
     page,
@@ -181,6 +185,7 @@ async function getSupportPlanApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
   });
 }
 
@@ -235,6 +240,40 @@ async function getEventResultApprovalList({
   });
 }
 
+// 🔹 후원 계획 승인 목록 (AE8, 페이징 + 검색/정렬)
+async function getSponsorshipPlanApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+}) {
+  return await approvalMapper.sponsorshipPlanApprovalList({
+    page,
+    size,
+    keyword,
+    state,
+    orderBy,
+  });
+}
+
+// 🔹 후원 결과 승인 목록 (AE9, 페이징 + 검색/정렬)
+async function getSponsorshipResultApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+}) {
+  return await approvalMapper.sponsorshipResultApprovalList({
+    page,
+    size,
+    keyword,
+    state,
+    orderBy,
+  });
+}
+
 module.exports = {
   managerApprovalList,
   approve,
@@ -247,4 +286,6 @@ module.exports = {
   getSupportResultApprovalList,
   getEventPlanApprovalList,
   getEventResultApprovalList,
+  getSponsorshipPlanApprovalList,
+  getSponsorshipResultApprovalList,
 };

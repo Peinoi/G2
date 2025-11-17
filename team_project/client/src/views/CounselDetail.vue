@@ -4,12 +4,6 @@
     <header class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-2xl font-semibold">상담 상세</h2>
-        <p class="text-sm text-gray-500">
-          제출 코드: {{ submitCode }}
-          <span v-if="status" class="ml-2 text-xs px-2 py-0.5 border rounded">
-            상태: {{ status }}
-          </span>
-        </p>
       </div>
 
       <div class="space-x-2 flex items-center">
@@ -18,7 +12,7 @@
           ← 목록으로
         </MaterialButton>
 
-        <!-- BEFORE → 작성하기 (담당자만 / CB1, CB2) -->
+        <!-- 작성하기 (담당자만 / CB1, CB2) -->
         <MaterialButton
           v-if="role === 2 && (status === 'CB1' || status === 'CB2')"
           color="dark"

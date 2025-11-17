@@ -77,7 +77,35 @@
           있습니다.
         </p>
 
-        <!-- 선택된 파일 목록 -->
+        <!-- 🔹 기존(임시저장/작성된) 첨부파일 목록 -->
+        <ul
+          v-if="existingFiles.length"
+          class="mt-2 text-xs text-gray-700 space-y-1"
+        >
+          <li
+            v-for="file in existingFiles"
+            :key="file.attachCode"
+            class="flex items-center justify-between gap-2"
+          >
+            <a
+              :href="file.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="truncate underline"
+            >
+              {{ file.originalFilename }}
+            </a>
+            <button
+              type="button"
+              class="shrink-0 px-2 py-0.5 border rounded text-[11px] text-gray-600 hover:bg-gray-100"
+              @click="removeExistingFile(file.attachCode)"
+            >
+              삭제
+            </button>
+          </li>
+        </ul>
+
+        <!-- 🔹 이번에 새로 선택한 파일 목록 -->
         <ul
           v-if="mainFiles.length"
           class="mt-2 text-xs text-gray-700 space-y-1"
@@ -88,7 +116,7 @@
             class="flex items-center justify-between gap-2"
           >
             <span class="truncate">
-              • {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+              {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
             </span>
             <button
               type="button"
@@ -204,9 +232,15 @@ const mainForm = ref({
   content: "",
 });
 
-// ✅ 메인 상담 첨부 파일들
+// 메인 상담 첨부 파일들
 const mainFiles = ref([]); // File[]
 const fileInputRef = ref(null); // <input type="file">
+
+// 기존 첨부파일 (임시저장/작성에서 이미 올라간 것들)
+const existingFiles = ref([]);
+
+// 삭제할 기존 첨부파일 코드들
+const removedAttachmentCodes = ref([]);
 
 // 추가 기록들
 const records = ref([]);
@@ -264,22 +298,44 @@ function onMainFilesChange(e) {
   }
 }
 
-// ✅ 파일 개별 삭제
+// 파일 개별 삭제
 function removeMainFile(index) {
   mainFiles.value.splice(index, 1);
 }
+// 기존 첨부 삭제
+function removeExistingFile(attachCode) {
+  if (!removedAttachmentCodes.value.includes(attachCode)) {
+    removedAttachmentCodes.value.push(attachCode);
+  }
+  existingFiles.value = existingFiles.value.filter(
+    (f) => f.attachCode !== attachCode
+  );
+}
 
-// 임시 저장 (JSON만)
+// 임시 저장
 async function handleTempSave() {
   try {
-    const payload = {
+    const formJson = {
       submitCode,
       priority: priority.value,
       mainForm: mainForm.value,
       records: records.value,
+      removeAttachmentCodes: removedAttachmentCodes.value, // 🔥 삭제할 첨부
     };
 
-    const res = await axios.post("/api/counsel/temp", payload);
+    const formData = new FormData();
+    formData.append("formJson", JSON.stringify(formJson));
+
+    // 🔹 이번에 새로 선택한 파일들
+    mainFiles.value.forEach((file) => {
+      formData.append("mainFiles", file);
+    });
+
+    const res = await axios.post("/api/counsel/temp", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
 
     if (res.data?.success) {
       alert("임시 저장이 완료되었습니다.");
@@ -322,6 +378,18 @@ async function handleLoad() {
         title: d.title || "",
         content: d.content || "",
       })) || [];
+
+    // 🔹 기존 첨부파일 세팅
+    existingFiles.value =
+      (res.attachments || []).map((a) => ({
+        attachCode: a.attachCode,
+        originalFilename: a.originalFilename,
+        url: a.url,
+      })) || [];
+
+    // 새로 추가한 파일/삭제 목록 초기화
+    mainFiles.value = [];
+    removedAttachmentCodes.value = [];
 
     alert("임시 저장된 내용을 불러왔습니다.");
   } catch (e) {
@@ -381,6 +449,7 @@ async function submitAll() {
       priority: priority.value,
       mainForm: mainForm.value,
       records: records.value,
+      removeAttachmentCodes: removedAttachmentCodes.value,
     };
 
     const formData = new FormData();

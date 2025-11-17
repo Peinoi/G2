@@ -1,16 +1,16 @@
-const pool = require('../configs/db');
-const signUserSQL = require('../sql/signUserSQL');
+const pool = require("../configs/db");
+const signUserSQL = require("../sql/signUserSQL");
 
 // 중복 확인
 async function findUserId(id) {
   try {
     const rows = await pool.query(signUserSQL.FIND_ID, [id]);
     if (rows.length > 0) {
-      return { ok: false, message: '이미 사용중인 아이디입니다.' };
+      return { ok: false, message: "이미 사용중인 아이디입니다." };
     }
-    return { ok: true, message: '사용 가능한 아이디입니다.' };
+    return { ok: true, message: "사용 가능한 아이디입니다." };
   } catch (err) {
-    console.error('[ findUserId 실패 ] : ', err);
+    console.error("[ findUserId 실패 ] : ", err);
     throw err;
   }
 }
@@ -36,9 +36,9 @@ async function addUser(data) {
 
     await pool.query(signUserSQL.INSERT_USER, userData);
 
-    return { ok: true, message: '회원가입 완료' };
+    return { ok: true, message: "회원가입 완료" };
   } catch (err) {
-    console.error('[ addUser 실패 ] : ', err);
+    console.error("[ addUser 실패 ] : ", err);
     throw err;
   }
 }
@@ -52,7 +52,7 @@ async function findOrgCode(orgName) {
     }
     return rows[0].org_code;
   } catch (err) {
-    console.error('[ findOrgCode 찾기 실패 ] : ', err);
+    console.error("[ findOrgCode 찾기 실패 ] : ", err);
     throw err;
   }
 }
@@ -78,9 +78,9 @@ async function addOrg(data) {
 
     await pool.query(signUserSQL.INSERT_USER, userData);
 
-    return { ok: true, message: '기관 회원가입 완료' };
+    return { ok: true, message: "기관 회원가입 완료" };
   } catch (err) {
-    console.error('[ insertOrgUser 실패 ]', err);
+    console.error("[ insertOrgUser 실패 ]", err);
     throw err;
   }
 }
@@ -93,12 +93,12 @@ async function authLogin(data) {
       data.userPw,
     ]);
     if (result.length == 0) {
-      console.log('값 없음');
-      return { ok: false, message: '로그인 실패' };
+      console.log("값 없음");
+      return { ok: false, message: "로그인 실패" };
     }
-    return { ok: true, message: '로그인 성공', ...result[0] };
+    return { ok: true, message: "로그인 성공", ...result[0] };
   } catch (err) {
-    console.error('[ authLogin 실패 ]', err);
+    console.error("[ authLogin 실패 ]", err);
     throw err;
   }
 }
