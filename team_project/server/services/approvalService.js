@@ -79,13 +79,21 @@ async function reject({ approvalCode, reason }) {
 }
 
 /** ✅ 기관 담당자 승인 목록 (AE2) */
-async function staffApprovalList({ state, keyword, page, size, loginId }) {
+async function staffApprovalList({
+  state,
+  keyword,
+  page,
+  size,
+  loginId,
+  role,
+}) {
   return await approvalMapper.staffApprovalList({
     state,
     keyword,
     page,
     size,
     loginId,
+    role,
   });
 }
 
@@ -159,6 +167,7 @@ async function getPriorityApprovalList({
   state,
   orderBy,
   loginId,
+  role,
 }) {
   return await approvalMapper.priorityApprovalList({
     page,
@@ -167,6 +176,7 @@ async function getPriorityApprovalList({
     state,
     orderBy,
     loginId,
+    role,
   });
 }
 
@@ -178,6 +188,7 @@ async function getSupportPlanApprovalList({
   state,
   orderBy,
   loginId,
+  role,
 }) {
   return await approvalMapper.supportPlanApprovalList({
     page,
@@ -186,6 +197,7 @@ async function getSupportPlanApprovalList({
     state,
     orderBy,
     loginId,
+    role,
   });
 }
 
@@ -196,6 +208,8 @@ async function getSupportResultApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   return await approvalMapper.supportResultApprovalList({
     page,
@@ -203,6 +217,8 @@ async function getSupportResultApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
+    role,
   });
 }
 

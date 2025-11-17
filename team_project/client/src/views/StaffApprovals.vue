@@ -30,7 +30,7 @@
             <th>승인코드</th>
             <th>이름</th>
             <th>아이디</th>
-            <th>기관명</th>
+            <th v-if="isOrgVisible">기관명</th>
             <th>연락처</th>
             <th>이메일</th>
             <th>상태</th>
@@ -41,13 +41,15 @@
         </thead>
         <tbody>
           <tr v-if="!loading && rows.length === 0">
-            <td colspan="10" class="apv-empty">데이터가 없습니다.</td>
+            <td :colspan="isOrgVisible ? 10 : 9" class="apv-empty">
+              데이터가 없습니다.
+            </td>
           </tr>
           <tr v-for="r in rows" :key="r.approval_code">
             <td>{{ r.approval_code }}</td>
             <td>{{ r.user_name }}</td>
             <td>{{ r.login_id }}</td>
-            <td>{{ r.organization_name }}</td>
+            <td v-if="isOrgVisible">{{ r.organization_name }}</td>
             <td>{{ r.phone }}</td>
             <td>{{ r.email }}</td>
             <td>
@@ -60,7 +62,8 @@
 
             <!-- 요청 상태(BA1)인 경우에만 승인/반려 버튼 -->
             <td class="apv-actions-cell">
-              <template v-if="r.state === 'BA1'">
+              <!-- 🔹 요청 상태(BA1)이고, 기관 관리자(AA3)일 때만 버튼 노출 -->
+              <template v-if="r.state === 'BA1' && auth.role === 'AA3'">
                 <button
                   class="apv-btn apv-btn-xs apv-btn-primary"
                   @click="onApprove(r)"
@@ -138,15 +141,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
-import { useAuthStore } from "@/store/authLogin";
+import { useAuthStore } from "@/store/authLogin.js";
 import { useRouter } from "vue-router";
 
 const API_BASE = "/api/approvals/staff";
 
 const auth = useAuthStore();
 const router = useRouter();
+
+// 🔹 기관명 컬럼 표시 여부 (기관 관리자 AA3 이면 숨김)
+const isOrgVisible = computed(() => auth.role !== "AA3");
 
 /* 상태 */
 const rows = ref([]);
@@ -194,7 +200,6 @@ async function fetchList() {
   error.value = "";
 
   try {
-    // 🔽 혹시라도 안전하게 한번 더 체크
     if (!auth.userId) {
       error.value = "로그인 정보가 없습니다.";
       loading.value = false;
@@ -207,8 +212,8 @@ async function fetchList() {
         keyword: keyword.value,
         page: page.value,
         size: size.value,
-        // 🔽 로그인한 기관 관리자 아이디 같이 보냄
-        loginId: auth.userId,
+        loginId: auth.userId, // 🔹 로그인 아이디
+        role: auth.role, // 🔹 역할 코드(AA3 / AA4)
       },
     });
 
@@ -292,20 +297,19 @@ async function confirmReject() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 로컬스토리지 → pinia 복구
   auth.reload();
 
-  // 로그인 안 되어 있으면
   if (!auth.isLogin || !auth.userId) {
     alert("로그인 정보가 없습니다. 다시 로그인 해주세요.");
     router.push("/sign-in");
     return;
   }
 
-  // 기관 관리자(AA3)가 아니면 접근 불가
-  if (auth.role !== "AA3") {
-    alert("기관 관리자만 접근 가능한 메뉴입니다.");
+  // 🔹 기관 관리자(AA3), 시스템 관리자(AA4)만 접근 가능
+  if (auth.role !== "AA3" && auth.role !== "AA4") {
+    alert("기관 관리자 및 시스템 관리자만 접근 가능한 메뉴입니다.");
     router.push("/");
     return;
   }

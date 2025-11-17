@@ -42,6 +42,7 @@
             <th>모집기간</th>
             <th>시행기간</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -67,10 +68,11 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+            <td>{{ formatDate(item.approval_date) }}</td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="8">데이터가 없습니다.</td>
+            <td class="priority-empty" colspan="9">데이터가 없습니다.</td>
           </tr>
         </tbody>
       </table>

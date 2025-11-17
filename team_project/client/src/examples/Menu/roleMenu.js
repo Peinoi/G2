@@ -19,7 +19,7 @@ export const roleMenu = {
 
   AA3: [
     { name: '대기자 목록', path: '/test', color: 'primary' },
-    { name: '승인 요청 관리', path: '/test', color: 'info' },
+    { name: "승인 요청 관리", path: "/staffApprovals", color: "info" },
     { name: '지원 계획', path: '/test', color: 'success' },
     { name: '조사지', path: '/test', color: 'success' },
     { name: '상담', path: '/test', color: 'success' },
@@ -35,7 +35,7 @@ export const roleMenu = {
     { name: '상담', path: '/test', color: 'success' },
     { name: '후원', path: '/sponsor', color: 'success' },
     { name: '이벤트', path: '/test', color: 'success' },
-    { name: '기관 및 요청 관리', path: '/test', color: 'success' },
+    { name: "기관 및 요청 관리", path: "/organization", color: "success" },
     { name: '히스토리', path: '/test', color: 'success' },
   ],
 };
