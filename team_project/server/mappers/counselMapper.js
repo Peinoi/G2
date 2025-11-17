@@ -97,6 +97,9 @@ async function saveCounsel(body, files = []) {
           counsel_code,
         ]);
         needApprovalRequest = true; // 👉 이번에 처음 승인요청 생성
+      } else if (currentStatus === "CB2") {
+        await conn.query(sql.updateCounselNote, ["CB3", now, counsel_code]);
+        needApprovalRequest = true;
       } else if (currentStatus === "CB4") {
         // 🔥 반려 상태에서 재작성하는 경우:
         //    - updateCounselNoteKeepStatus: status를 CB6 등으로 변경

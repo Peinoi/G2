@@ -1,139 +1,154 @@
 <template>
   <section class="p-6 max-w-5xl mx-auto relative">
+    <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+      ← 목록으로
+    </MaterialButton>
     <!-- 관리자 전용: 우상단 담당자 배정 버튼 -->
-    <div v-if="isAdmin" class="absolute right-6 top-6">
+    <div v-if="isAdmin" class="absolute right-8 top-6 z-10">
       <MaterialButton color="dark" size="sm" @click="goAssignPage">
         담당자 배정
       </MaterialButton>
     </div>
 
-    <header class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-2xl font-semibold">조사지 답변 상세</h2>
-        <p class="text-gray-500 text-sm">
-          제출번호 {{ submitCode }} • 상태:
-          <span class="font-medium">{{ submission?.status ?? "-" }}</span>
-        </p>
-      </div>
-      <MaterialButton color="dark" size="sm" @click="goBack">
-        ← 목록으로
-      </MaterialButton>
-    </header>
+    <div class="detail-card">
+      <!-- 헤더 -->
+      <header class="flex justify-between items-start detail-header">
+        <h2 class="text-2xl font-semibold mb-1">조사지 답변 상세보기</h2>
 
-    <!-- 로딩/에러 -->
-    <div v-if="loading" class="text-gray-500">불러오는 중...</div>
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
-    <div v-else-if="!submission" class="text-gray-500">데이터가 없습니다.</div>
+        <span class="status-pill">
+          상태: {{ statusLabel(submission?.status) }}
+        </span>
+      </header>
 
-    <!-- 본문 -->
-    <div v-else>
-      <div class="mb-5 text-sm text-gray-700">
-        <div class="mb-1">
-          <span class="font-medium">템플릿 코드:</span>
-          {{ submission.template_code }}
-        </div>
-        <div class="mb-1">
-          <span class="font-medium">버전:</span>
-          {{ submission.version_no }} / {{ submission.version_detail_no }}
-        </div>
-        <div class="mb-1">
-          <span class="font-medium">제출일:</span> {{ fmt(submission.submit_at) }}
-          <span class="mx-2 text-gray-400">|</span>
-          <span class="font-medium">수정일:</span>
-          {{ fmt(submission.updated_at) }}
-        </div>
-        <div class="mb-1">
-          <span class="font-medium">작성자:</span>
-          {{ submission.written_by ?? "-" }}
-          <span class="mx-2 text-gray-400">|</span>
-          <span class="font-medium">담당자:</span>
-          {{ submission.assi_by ?? "-" }}
-        </div>
+      <!-- 로딩/에러 -->
+      <div v-if="loading" class="text-gray-500 py-6">불러오는 중...</div>
+      <div v-else-if="error" class="text-red-600 py-6">{{ error }}</div>
+      <div v-else-if="!submission" class="text-gray-500 py-6">
+        데이터를 찾을 수 없습니다.
       </div>
 
-      <!-- 섹션/서브섹션/문항 -->
-      <div
-        v-for="(section, sIdx) in submission.sections"
-        :key="section.section_code"
-        class="border rounded p-4 mb-6"
-      >
-        <h3 class="text-lg font-semibold mb-1">
-          {{ sIdx + 1 }}. {{ section.section_title }}
-        </h3>
-        <p v-if="section.section_desc" class="text-gray-600 mb-3">
-          {{ section.section_desc }}
-        </p>
+      <!-- 본문 -->
+      <div v-else class="detail-body">
+        <!-- 상단 메타 정보 -->
+        <div class="meta-card">
+          <div class="meta-row">
+            <span class="meta-label">템플릿 코드</span>
+            <span class="meta-value">{{ submission.template_code }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">버전</span>
+            <span class="meta-value">
+              {{ submission.version_no }} / {{ submission.version_detail_no }}
+            </span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">제출일</span>
+            <span class="meta-value">{{ fmt(submission.submit_at) }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">수정일</span>
+            <span class="meta-value">{{ fmt(submission.updated_at) }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">작성자</span>
+            <span class="meta-value">{{ submission.written_by ?? "-" }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">담당자</span>
+            <span class="meta-value">{{ submission.assi_by ?? "-" }}</span>
+          </div>
+        </div>
 
+        <!-- 섹션/서브섹션/문항 -->
         <div
-          v-for="(sub, subIdx) in section.subsections"
-          :key="sub.subsection_code"
-          class="border-t pt-3 mt-3"
+          v-for="(section, sIdx) in submission.sections"
+          :key="section.section_code"
+          class="section-block"
         >
-          <h4 class="font-medium mb-2">
-            {{ sIdx + 1 }}.{{ subIdx + 1 }} {{ sub.subsection_title }}
-          </h4>
-          <p v-if="sub.subsection_desc" class="text-gray-600 mb-3">
-            {{ sub.subsection_desc }}
-          </p>
+          <div class="section-header">
+            <div>
+              <h3 class="section-title">
+                {{ sIdx + 1 }}. {{ section.section_title }}
+              </h3>
+              <p v-if="section.section_desc" class="section-desc">
+                {{ section.section_desc }}
+              </p>
+            </div>
+          </div>
 
-          <ul class="space-y-3">
-            <li
-              v-for="(item, iIdx) in sub.items"
-              :key="item.item_code"
-              class="border p-3 rounded"
-            >
-              <div class="font-medium mb-1">
-                {{ sIdx + 1 }}.{{ subIdx + 1 }}.{{ iIdx + 1 }}
-                {{ item.question_text }}
-                <span v-if="item.is_required === 'Y'" class="text-red-500">*</span>
+          <div
+            v-for="(sub, subIdx) in section.subsections"
+            :key="sub.subsection_code"
+            class="subsection-block"
+          >
+            <div class="sub-header">
+              <div>
+                <h4 class="sub-title">
+                  {{ sIdx + 1 }}.{{ subIdx + 1 }} {{ sub.subsection_title }}
+                </h4>
+                <p v-if="sub.subsection_desc" class="sub-desc">
+                  {{ sub.subsection_desc }}
+                </p>
               </div>
+            </div>
 
-              <div class="text-sm text-gray-700">
-                <span class="inline-block w-12 text-gray-500">유형</span> :
-                {{ item.question_type }}
-              </div>
-
-              <div class="mt-1">
-                <span class="inline-block w-12 text-gray-500 text-sm">답변</span> :
-                <template v-if="Array.isArray(renderAnswer(item))">
-                  <span class="text-gray-900">
-                    {{ renderAnswer(item).join(", ") || "-" }}
-                  </span>
-                </template>
-                <template v-else>
-                  <span class="text-gray-900">
-                    {{ renderAnswer(item) || "-" }}
-                  </span>
-                </template>
-              </div>
-
-              <div
-                v-if="isChoiceType(item.question_type) && item.option_values?.length"
-                class="mt-2 text-xs text-gray-500"
+            <ul class="space-y-3">
+              <li
+                v-for="(item, iIdx) in sub.items"
+                :key="item.item_code"
+                class="question-item"
               >
-                (선택지:
-                {{
-                  item.option_values
-                    .map((o) => o.label ?? o.value)
-                    .join(", ")
-                }})
-              </div>
-            </li>
-          </ul>
+                <div class="question-top">
+                  <div class="question-title">
+                    {{ sIdx + 1 }}.{{ subIdx + 1 }}.{{ iIdx + 1 }}
+                    {{ item.question_text }}
+                    <span v-if="item.is_required === 'Y'" class="required-mark">
+                      *필수
+                    </span>
+                  </div>
+                </div>
+
+                <div class="answer-row">
+                  <span class="answer-label">답변</span>
+                  <span class="answer-value">
+                    <template v-if="Array.isArray(renderAnswer(item))">
+                      {{ renderAnswer(item).join(", ") || "-" }}
+                    </template>
+                    <template v-else>
+                      {{ renderAnswer(item) || "-" }}
+                    </template>
+                  </span>
+                </div>
+
+                <div
+                  v-if="
+                    isChoiceType(item.question_type) &&
+                    item.option_values?.length
+                  "
+                  class="option-hint"
+                >
+                  선택지:
+                  {{
+                    item.option_values.map((o) => o.label ?? o.value).join(", ")
+                  }}
+                </div>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-
-      <!-- 일반 전용: 우하단 수정 버튼 -->
-      <MaterialButton
-        v-if="isGeneral"
-        color="dark"
-        size="sm"
-        class="fixed right-6 bottom-6 shadow-lg rounded-full"
-        @click="goEdit"
-      >
-        수정하기
-      </MaterialButton>
     </div>
+
+    <!-- 일반 전용: 우하단 수정 버튼 -->
+    <MaterialButton
+      v-if="isGeneral"
+      color="dark"
+      size="sm"
+      class="fixed right-6 bottom-6 shadow-lg rounded-full"
+      @click="goEdit"
+    >
+      수정하기
+    </MaterialButton>
   </section>
 </template>
 
@@ -203,6 +218,18 @@ function goEdit() {
   });
 }
 
+/* ---------- 상태 라벨 ---------- */
+function statusLabel(code) {
+  switch (code) {
+    case "CA1":
+      return "미검토";
+    case "CA3":
+      return "검토완료";
+    default:
+      return code || "-";
+  }
+}
+
 /* ---------- 렌더/정규화 유틸 ---------- */
 const CHOICE_TYPES = ["RADIO", "CHECKBOX"];
 function isChoiceType(t) {
@@ -239,14 +266,11 @@ function parseAnswerText(answer_text) {
 }
 
 function renderAnswer(item) {
-  const options = Array.isArray(item.option_values)
-    ? item.option_values
-    : [];
+  const options = Array.isArray(item.option_values) ? item.option_values : [];
   const raw = parseAnswerText(item.answer_text);
 
   if (isChoiceType(item.question_type)) {
-    if (Array.isArray(raw))
-      return raw.map((v) => mapValueToLabel(v, options));
+    if (Array.isArray(raw)) return raw.map((v) => mapValueToLabel(v, options));
     if (raw == null || raw === "") return "";
     return mapValueToLabel(raw, options);
   }
@@ -293,5 +317,153 @@ function fmt(v) {
 <style scoped>
 section {
   color: #111;
+}
+
+/* 바깥 카드 */
+.detail-card {
+  background: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* 헤더 */
+.detail-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: #111827;
+  color: #f9fafb;
+}
+
+/* 메타 정보 카드 */
+.meta-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.meta-row + .meta-row {
+  margin-top: 0.25rem;
+}
+.meta-label {
+  display: inline-block;
+  width: 4.5rem;
+  color: #6b7280;
+}
+.meta-value {
+  color: #111827;
+}
+
+/* 섹션 카드 */
+.section-block {
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1.1rem 1rem;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  margin-bottom: 1rem;
+}
+
+.section-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.section-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* 서브섹션 카드 */
+.subsection-block {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.85rem 0.9rem;
+  margin-top: 0.7rem;
+}
+
+.sub-header {
+  margin-bottom: 0.5rem;
+}
+.sub-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.sub-desc {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+/* 질문 */
+.question-item {
+  border-radius: 0.7rem;
+  border: 1px dashed #d1d5db;
+  background-color: #ffffff;
+  padding: 0.75rem 0.8rem;
+}
+
+.question-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.45rem;
+}
+
+.question-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #111827;
+}
+.question-type {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+.required-mark {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  color: #dc2626;
+}
+
+/* 답변 영역 */
+.answer-row {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: 0.15rem;
+}
+.answer-label {
+  flex: 0 0 2.5rem;
+  color: #6b7280;
+}
+.answer-value {
+  flex: 1;
+  color: #111827;
+}
+
+/* 선택지 힌트 */
+.option-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
 }
 </style>

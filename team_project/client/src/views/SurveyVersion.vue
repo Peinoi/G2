@@ -1,61 +1,130 @@
 <template>
   <section class="p-6">
-    <h2 class="text-2xl font-semibold mb-4">버전별 조사지 목록</h2>
+    <!-- 🔥 전체 내용을 가운데로 모으는 래퍼 -->
+    <div class="max-w-5xl mx-auto">
+      <div class="header-row mb-4">
+        <div class="header-title">
+          <span
+            class="text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap align-middle"
+          >
+            버전별 조사지 목록
+          </span>
+        </div>
 
-    <div v-if="loading">불러오는 중...</div>
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
-    <table v-else class="w-full border-collapse">
-      <thead>
-        <tr>
-          <th class="border p-2">template_ver_code</th>
-          <th class="border p-2">template_code</th>
-          <th class="border p-2">version_no</th>
-          <th class="border p-2">version_detail_no</th>
-          <th class="border p-2">is_current</th>
-          <th class="border p-2">effective_from</th>
-          <th class="border p-2">effective_to</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="row in list"
-          :key="row.template_ver_code"
-          class="cursor-pointer hover:bg-gray-100"
-          @click="goToDetail(row.template_ver_code)"
-        >
-          <td class="border p-2">{{ row.template_ver_code }}</td>
-          <td class="border p-2">{{ row.template_code }}</td>
-          <td class="border p-2">{{ row.version_no }}</td>
-          <td class="border p-2">{{ row.version_detail_no }}</td>
-          <td class="border p-2">{{ row.is_current }}</td>
-          <td class="border p-2">{{ row.effective_from?.slice?.(0, 10) }}</td>
-          <td class="border p-2">
-            {{ row.effective_to?.slice?.(0, 10) || "-" }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+        <div class="header-action">
+          <MaterialButton
+            color="dark"
+            size="sm"
+            @click="goToNew"
+            class="inline-flex"
+          >
+            조사지 제작하기
+          </MaterialButton>
+        </div>
+      </div>
 
-    <div class="mt-4 text-right space-x-2">
-      <button
-        @click="goToNew"
-        class="border px-4 py-2 rounded bg-black text-white"
-      >
-        조사지 제작하기
-      </button>
+      <div v-if="loading">불러오는 중...</div>
+      <div v-else-if="error" class="text-red-600">{{ error }}</div>
+
+      <!-- 🔥 카드 형태 테이블 -->
+      <div v-else class="table-card">
+        <table class="nice-table">
+          <thead>
+            <tr>
+              <th class="th-cell">템플릿코드</th>
+              <th class="th-cell">템플릿버전코드</th>
+              <th class="th-cell">버전번호</th>
+              <th class="th-cell">버전세부번호</th>
+              <th class="th-cell">사용여부</th>
+              <th class="th-cell">유효시작일</th>
+              <th class="th-cell">유효종료일</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              v-for="row in paginatedData"
+              :key="row.template_ver_code"
+              class="table-row-item"
+              :class="{ 'is-current': row.is_current === 'Y' }"
+              @click="goToDetail(row.template_ver_code)"
+            >
+              <td class="td-cell mono">{{ row.template_code }}</td>
+              <td class="td-cell mono">{{ row.template_ver_code }}</td>
+              <td class="td-cell">{{ row.version_no }}</td>
+              <td class="td-cell">{{ row.version_detail_no }}</td>
+
+              <td class="td-cell">
+                <span v-if="row.is_current === 'Y'" class="badge badge-active">
+                  사용중
+                </span>
+                <span v-else class="badge badge-inactive"> 미사용 </span>
+              </td>
+
+              <td class="td-cell">
+                {{ row.effective_from?.slice?.(0, 10) || "-" }}
+              </td>
+              <td class="td-cell">
+                {{ row.effective_to?.slice?.(0, 10) || "-" }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 페이지네이션 -->
+      <div class="mt-6 text-center">
+        <MaterialPagination color="dark" size="md">
+          <MaterialPaginationItem
+            prev
+            :disabled="currentPage === 1"
+            @click="changePage(currentPage - 1)"
+          />
+          <MaterialPaginationItem
+            v-for="page in totalPages"
+            :key="page"
+            :label="page"
+            :active="page === currentPage"
+            @click="changePage(page)"
+          />
+          <MaterialPaginationItem
+            next
+            :disabled="currentPage === totalPages"
+            @click="changePage(currentPage + 1)"
+          />
+        </MaterialPagination>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+import MaterialPagination from "@/components/MaterialPagination.vue";
+import MaterialPaginationItem from "@/components/MaterialPaginationItem.vue";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const router = useRouter();
 const list = ref([]);
 const loading = ref(false);
 const error = ref(null);
+
+const currentPage = ref(1);
+const pageSize = 10;
+
+const totalPages = computed(() => Math.ceil(list.value.length / pageSize));
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return list.value.slice(start, start + pageSize);
+});
+
+function changePage(page) {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+}
 
 onMounted(async () => {
   loading.value = true;
@@ -74,6 +143,145 @@ function goToNew() {
 }
 
 function goToDetail(templateVerCode) {
-  router.push({ name: "survey-detail-by-ver", params: { templateVerCode } });
+  router.push({
+    name: "survey-detail-by-ver",
+    params: { templateVerCode },
+  });
 }
 </script>
+
+<style scoped>
+.pagination {
+  display: inline-flex !important;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap; /* 🔒 두 줄로 절대 나눠지지 않게 */
+  width: 100%;
+}
+
+/* 왼쪽 제목 영역은 필요하면 줄 잘리게 */
+.header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 오른쪽 버튼은 줄바꿈 없이 고정 */
+.header-action {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* 카드 컨테이너 */
+.table-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+/* 🔥 테이블이 항상 카드 전체를 꽉 채우도록 */
+.nice-table {
+  width: 100%;
+  table-layout: fixed; /* 칼럼 폭 균등 분배 */
+  border-collapse: collapse;
+}
+
+/* 헤더 셀 */
+.th-cell {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* 바디 셀 */
+.td-cell {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-cell.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+/* 행 스타일 */
+.table-row-item {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+  cursor: pointer;
+}
+
+/* 줄무늬 */
+.table-row-item:nth-child(odd) {
+  background-color: #ffffff;
+}
+.table-row-item:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* 호버 효과 */
+.table-row-item:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+/* 현재 사용중 강조 */
+.table-row-item.is-current {
+  border-left: 3px solid #111827;
+  background: linear-gradient(
+    to right,
+    rgba(17, 24, 39, 0.06),
+    rgba(249, 250, 251, 1)
+  );
+}
+
+table th,
+table td {
+  font-size: 14px;
+  font-weight: 400;
+  font-family: "Noto Sans KR", sans-serif;
+}
+
+/* 뱃지 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.badge-active {
+  background-color: #111827;
+  color: #f9fafb;
+}
+
+.badge-inactive {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+</style>

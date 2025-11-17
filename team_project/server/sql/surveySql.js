@@ -29,9 +29,7 @@ module.exports = {
     LIMIT 1
   `,
 
-  /* -------------------------------
-    조사지 등록
-  --------------------------------*/
+  // 조사지 등록
   insertTemplate: `
     INSERT INTO survey_template (
       version_no, status, created_by, created_at
@@ -64,9 +62,7 @@ module.exports = {
     ) VALUES (?, ?, ?, ?, ?)
   `,
 
-  /* -------------------------------
-    최신 조사지 조회용
-  --------------------------------*/
+  //최근 조사지
   getLatestTemplateVer: `
     SELECT
       stv.template_ver_code,
@@ -124,9 +120,7 @@ module.exports = {
     ORDER BY item_code
   `,
 
-  /* -------------------------------
-    답변 저장용
-  --------------------------------*/
+  // 답변 저장
   insertSubmission: `
     INSERT INTO survey_submission (
       template_ver_code, submit_at, updated_at,
@@ -161,6 +155,7 @@ module.exports = {
   /* -------------------------------
     제출본 목록 (역할별)
   --------------------------------*/
+  // 일반: 내가 작성한 것
   listSubmissionsByWriter: `
     SELECT
       ss.submit_code,
@@ -168,19 +163,26 @@ module.exports = {
       ss.submit_at,
       ss.updated_at,
       ss.written_by,
+      w.name  AS writer_name,
       ss.assi_by,
+      a.name  AS assignee_name,
       ss.app_by,
       ss.status,
       stv.template_code,
       stv.version_detail_no,
-      st.version_no
+      st.version_no,
+      org.org_name
     FROM survey_submission ss
     JOIN survey_template_ver stv ON stv.template_ver_code = ss.template_ver_code
-    JOIN survey_template st      ON st.template_code      = stv.template_code
+    JOIN survey_template      st  ON st.template_code      = stv.template_code
+    LEFT JOIN users           w   ON w.user_code           = ss.written_by
+    LEFT JOIN users           a   ON a.user_code           = ss.assi_by
+    LEFT JOIN organization    org ON org.org_code          = w.org_code
     WHERE ss.written_by = ?
     ORDER BY ss.submit_at DESC, ss.submit_code DESC
   `,
 
+  // 담당자: 나에게 배정된 것
   listSubmissionsByAssignee: `
     SELECT
       ss.submit_code,
@@ -188,19 +190,53 @@ module.exports = {
       ss.submit_at,
       ss.updated_at,
       ss.written_by,
+      w.name  AS writer_name,
       ss.assi_by,
+      a.name  AS assignee_name,
       ss.app_by,
       ss.status,
       stv.template_code,
       stv.version_detail_no,
-      st.version_no
+      st.version_no,
+      org.org_name
     FROM survey_submission ss
     JOIN survey_template_ver stv ON stv.template_ver_code = ss.template_ver_code
-    JOIN survey_template st      ON st.template_code      = stv.template_code
+    JOIN survey_template      st  ON st.template_code      = stv.template_code
+    LEFT JOIN users           w   ON w.user_code           = ss.written_by
+    LEFT JOIN users           a   ON a.user_code           = ss.assi_by
+    LEFT JOIN organization    org ON org.org_code          = w.org_code
     WHERE ss.assi_by = ?
     ORDER BY ss.submit_at DESC, ss.submit_code DESC
   `,
 
+  // 관리자: 내 org_code에 속한 작성자들의 제출본만
+  listSubmissionsByOrg: `
+    SELECT
+      ss.submit_code,
+      ss.template_ver_code,
+      ss.submit_at,
+      ss.updated_at,
+      ss.written_by,
+      w.name  AS writer_name,
+      ss.assi_by,
+      a.name  AS assignee_name,
+      ss.app_by,
+      ss.status,
+      stv.template_code,
+      stv.version_detail_no,
+      st.version_no,
+      org.org_name
+    FROM survey_submission ss
+    JOIN survey_template_ver stv ON stv.template_ver_code = ss.template_ver_code
+    JOIN survey_template      st  ON st.template_code      = stv.template_code
+    LEFT JOIN users           w   ON w.user_code           = ss.written_by
+    LEFT JOIN users           a   ON a.user_code           = ss.assi_by
+    LEFT JOIN organization    org ON org.org_code          = w.org_code
+    WHERE w.org_code = ?
+    ORDER BY ss.submit_at DESC, ss.submit_code DESC
+  `,
+
+  // 시스템: 전체
   listAllSubmissions: `
     SELECT
       ss.submit_code,
@@ -208,16 +244,30 @@ module.exports = {
       ss.submit_at,
       ss.updated_at,
       ss.written_by,
+      w.name  AS writer_name,
       ss.assi_by,
+      a.name  AS assignee_name,
       ss.app_by,
       ss.status,
       stv.template_code,
       stv.version_detail_no,
-      st.version_no
+      st.version_no,
+      org.org_name
     FROM survey_submission ss
     JOIN survey_template_ver stv ON stv.template_ver_code = ss.template_ver_code
-    JOIN survey_template st      ON st.template_code      = stv.template_code
+    JOIN survey_template      st  ON st.template_code      = stv.template_code
+    LEFT JOIN users           w   ON w.user_code           = ss.written_by
+    LEFT JOIN users           a   ON a.user_code           = ss.assi_by
+    LEFT JOIN organization    org ON org.org_code          = w.org_code
     ORDER BY ss.submit_at DESC, ss.submit_code DESC
+  `,
+
+  // 🔹 관리자용 org_code 조회
+  getUserOrgByUserCode: `
+    SELECT org_code
+    FROM users
+    WHERE user_code = ?
+    LIMIT 1
   `,
 
   // 제출본 헤더
