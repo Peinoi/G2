@@ -284,11 +284,65 @@ const routes = [
     name: "EventAdd",
     component: EventForm,
   },
-  // 이벤트 상세
+  // 이벤트 상세 및 수정
   {
     path: "/event/info",
     name: "EventInfo",
     component: EventInfo,
+  },
+  // 이벤트 신청 내역
+  {
+    path: "/event/apply-list",
+    name: "EventApplyList",
+    component: () => import("../views/EventApplyList.vue"),
+  },
+  // 이벤트 결과보고서 등록
+  {
+    path: "/event/result-add",
+    name: "EventResultAdd",
+    component: () => import("../views/EventResultAdd.vue"),
+  },
+  // 이벤트 계획/결과 목록 (역할별)
+  {
+    path: "/event/apply-result",
+    name: "EventApplyResult",
+    component: () => import("../views/EventApplyResult.vue"),
+  },
+  // 이벤트 계획 상세 보기 (역할별)
+  {
+    path: "/event/apply-info",
+    name: "EventApplyInfo",
+    component: () => import("../views/EventApplyInfo.vue"),
+  },
+  // 이벤트 결과보고서 상세 보기 (역할별)
+  {
+    path: "/event/result-info",
+    name: "EventResultInfo",
+    component: () => import("../views/EventResultInfo.vue"),
+  },
+  // 이벤트 담당자 목록(역할별)
+  {
+    path: "/event/manager-list",
+    name: "EventManagerList",
+    component: () => import("../views/EventManagerList.vue"),
+  },
+  // 이벤트 담당자 상세 보기 및 수정(역할별)
+  {
+    path: "/event/manager-info",
+    name: "EventManagerInfo",
+    component: () => import("../views/EventManagerInfo.vue"),
+  },
+  // 이벤트 참가자 목록
+  {
+    path: "/event/attendance-list",
+    name: "EventAttendanceList",
+    component: () => import("../views/EventApplyList.vue"),
+  },
+  // 이벤트 참가자 상세 및 승인
+  {
+    path: "/event/attendance-info",
+    name: "EventAttendanceInfo",
+    component: () => import("../views/EventAttendanceInfo.vue"),
   },
 ];
 
