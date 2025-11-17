@@ -108,8 +108,11 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/store/authLogin"; // 🔹 추가
 
 const router = useRouter();
+const auth = useAuthStore(); // 🔹 추가
+
 const list = ref([]);
 
 const page = ref(1);
@@ -124,6 +127,23 @@ const totalPages = computed(() =>
 const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
+
+// 🔹 로그인 아이디 / 역할 계산
+const loginId = computed(() => {
+  // 프로젝트에 따라 사용하는 필드 맞춰서 쓸 것
+  return (
+    auth.userId || // 예: userId
+    auth.loginId || // 예: loginId
+    auth.id || // 예: id
+    (auth.user && auth.user.userId) ||
+    ""
+  );
+});
+
+const isOrgManager = computed(() => {
+  // roleCode = 'AA3' 이거나, roleName이 '기관 관리자' 같은 케이스
+  return auth.role === "AA3" || (auth.user && auth.user.roleCode === "AA3");
+});
 
 // 공통코드 매핑
 const CODE_LABEL_MAP = {
@@ -186,16 +206,19 @@ function formatDate(value) {
 
 // 🔹 리스트 로딩 (서버 페이징)
 async function loadList() {
+  // 기관 관리자만 요청
+  if (!isOrgManager.value) return;
+
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/priority", {
-      // support-plan이면 변경
       params: {
         page: page.value,
         size: pageSize.value,
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
+        loginId: loginId.value, // 🔹 자신의 로그인 아이디 전달
       },
     });
 
@@ -236,7 +259,14 @@ function goDetail(item) {
   });
 }
 
-onMounted(loadList);
+onMounted(() => {
+  if (!isOrgManager.value) {
+    alert("기관 관리자만 접근 가능합니다.");
+    router.push("/"); // 필요하면 관리자용 대시보드로 변경
+    return;
+  }
+  loadList();
+});
 </script>
 
 <style scoped>

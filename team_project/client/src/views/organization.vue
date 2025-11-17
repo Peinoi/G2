@@ -184,6 +184,21 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import axios from "axios";
+import { useAuthStore } from "../store/authLogin"; // 권한 체크용
+import { useRouter } from "vue-router";
+
+// ★ 권한 체크
+const auth = useAuthStore();
+const router = useRouter();
+
+onMounted(() => {
+  auth.reload(); // 새로고침 대비
+
+  if (auth.role !== "AA4") {
+    alert("접근 권한이 없습니다.");
+    router.push("/"); // 홈이나 대시보드 등 적절한 곳
+  }
+});
 
 // DB/서버에서 온 어떤 날짜든 input[type=date]에 맞게 'YYYY-MM-DD'로 변환
 function toDateInput(val) {
