@@ -1,5 +1,41 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// 업로드 경로와 파일명 설정
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, "../uploads");
+    console.log("--- MULTER LOG: Destination Path ---", uploadPath); // 로그 추가!
+    if (!fs.existsSync(uploadPath))
+      console.log("--- MULTER LOG: Creating Upload Directory ---"); // 로그 추가!
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    // 한글 지원
+    const originalName = Buffer.from(file.originalname, "latin1").toString(
+      "utf8"
+    );
+
+    // 날짜 접미사 (yyyyMMdd)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = ("0" + (now.getMonth() + 1)).slice(-2);
+    const day = ("0" + now.getDate()).slice(-2);
+    const dateSuffix = `${year}${month}${day}`;
+
+    const ext = path.extname(originalName);
+    const baseName = path.basename(originalName, ext);
+
+    cb(null, `${baseName}_${dateSuffix}${ext}`);
+  },
+});
+
+const upload = multer({ storage });
+
 const {
   sponsorUsersList,
   sponsorProgramAdd,
@@ -15,7 +51,7 @@ router.get("/", async (req, res) => {
 
     // 파라미터가 있으면 조건 검색, 없으면 전체 검색을 서비스에서 처리합니다.
     const serviceSponsor = await sponsorUsersList(searchParams);
-    console.log("Route Layer | 검색 파라미터:", serviceSponsor);
+    // console.log("Route Layer | 검색 파라미터:", serviceSponsor);
     console.log("[ sponsorRoute.js || 전체/조건 조회 성공]");
     res.status(200).json({
       status: "success",
@@ -53,11 +89,20 @@ router.get("/:no", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", upload.array("attachments"), async (req, res) => {
   try {
     const clientData = req.body;
     console.log(clientData);
-    const serviceSponsor = await sponsorProgramAdd(clientData);
+    // 첨부파일 정보
+    const attachments = req.files.map((file) => ({
+      original_filename: Buffer.from(file.originalname, "latin1").toString(
+        "utf8"
+      ),
+      server_filename: file.filename,
+      file_path: `/uploads/${file.filename}`,
+    }));
+
+    const serviceSponsor = await sponsorProgramAdd(clientData, attachments);
     console.log("[ ProgramADD.js || routeProgramADD 성공]");
     res.status(200).json({
       status: "success",

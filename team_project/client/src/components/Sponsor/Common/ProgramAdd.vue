@@ -118,11 +118,24 @@
             <option value="승인 완료" :disabled="!isEditMode">승인 완료</option>
           </select>
         </div>
+        <!-- 첨부파일 -->
+        <label>포스터</label>
 
-        <label>첨부파일</label>
+        <!-- <h3>첨부파일</h3> -->
         <div class="field-container">
-          <input type="file" />
+          <input
+            v-if="!isEditMode"
+            type="file"
+            multiple
+            @change="handleFileChange"
+            class="file-input"
+          />
         </div>
+        <ul>
+          <li v-for="file in formData.attachments" :key="file.server_filename">
+            {{ file.original_filename }}
+          </li>
+        </ul>
       </div>
 
       <div class="button-group-footer">
@@ -165,7 +178,7 @@ const formData = ref({
   end_date: null,
   goal_amount: null,
   approval_status: "승인전",
-  file_attachment: null,
+  attachments: [],
 });
 
 // 숫자 포맷팅 임시 함수 (실제로는 utils/numberFormat 파일이 필요합니다)
@@ -187,7 +200,7 @@ const resetFormData = () => {
     end_date: null,
     goal_amount: null,
     approval_status: "승인전",
-    file_attachment: null,
+    attachments: [],
   };
   amountSettingType.value = "지정";
   amountUnits.value = [];
@@ -247,6 +260,18 @@ watch(
       isEditMode.value = false;
       resetFormData();
     }
+    // if (newVal.attachments && newVal.attachments.length > 0) {
+    //   // attachments 객체 형식 맞추기 (name, server_filename 등)
+    //   formData.value.attachments = newVal.attachments.map((file) => ({
+    //     name: file.original_filename, // 화면에 표시할 이름
+    //     server_filename: file.server_filename, // 실제 서버 파일명
+    //     file_path: file.file_path, // 경로
+    //     isExisting: true, // 기존 파일임을 표시
+    //   }));
+    // } else {
+    //   isEditMode.value = false;
+    //   resetFormData();
+    // }
   },
   { immediate: true }
 );
@@ -289,7 +314,13 @@ const addUnitInput = () => {
 const removeUnitInput = (id) => {
   amountUnits.value = amountUnits.value.filter((unit) => unit.id !== id);
 };
+const handleFileChange = (event) => {
+  // 선택된 FileList를 JavaScript Array로 변환하여 formData에 저장
+  formData.value.attachments = Array.from(event.target.files);
 
+  // 디버깅을 위해 이 시점에서 로그를 찍어볼 수 있습니다.
+  console.log("Files selected:", formData.value.attachments.length);
+};
 // ----------------------------------------------------
 // 최종 제출 로직 (등록/수정)
 // ----------------------------------------------------
@@ -297,47 +328,60 @@ const programAdd = async () => {
   const actionText = isEditMode.value ? "수정" : "등록";
 
   // 1. 금액 단위 문자열 생성
-  let donationUnit;
+  let donationUnit = null;
   if (amountSettingType.value === "지정") {
     const validUnits = amountUnits.value
       .map((unit) => unit.value)
       .filter((value) => value !== null && value > 0);
     donationUnit = validUnits.length > 0 ? validUnits.join(",") : null;
-  } else {
-    donationUnit = null;
   }
 
-  // 2. 공통 데이터 객체 생성
-  let obj = {
-    program_name: formData.value.program_name,
-    sponsor_type: formData.value.sponsor_type,
-    status: formData.value.status,
-    start_date: formData.value.start_date,
-    end_date: formData.value.end_date,
-    donation_type: amountSettingType.value,
-    donation_unit: donationUnit,
-    goal_amount: formData.value.goal_amount || 0,
-    approval_status: formData.value.approval_status,
+  // 2. FormData 생성
+  const form = new FormData();
 
-    // 3. 등록/수정에 따라 달라지는 필드 처리
-    program_code: props.initialProgram?.program_code, // 수정 시에만 필요
-    current_amount: props.initialProgram?.current_amount || 0, // 수정 시 기존 값 유지
-    writer: props.initialProgram?.writer || "admin_temp", // 수정 시 기존 값 유지
-    create_date: new Date().toISOString().slice(0, 10), // 등록 시 오늘 날짜
-  };
+  form.append("program_name", formData.value.program_name);
+  form.append("sponsor_type", formData.value.sponsor_type);
+  form.append("status", formData.value.status);
+  form.append("start_date", formData.value.start_date);
+  form.append("end_date", formData.value.end_date);
+  form.append("donation_type", amountSettingType.value);
+  form.append("donation_unit", donationUnit);
+  form.append("goal_amount", formData.value.goal_amount || 0);
+  form.append("approval_status", formData.value.approval_status);
 
-  console.log(`${actionText}을 위한 최종 데이터 객체:`, obj);
+  // 수정 시 필요한 필드
+  if (isEditMode.value) {
+    form.append("program_code", props.initialProgram?.program_code);
+    form.append("current_amount", props.initialProgram?.current_amount || 0);
+    form.append("writer", props.initialProgram?.writer || "admin_temp");
+  } else {
+    form.append("create_date", new Date().toISOString().slice(0, 10));
+    form.append("writer", "admin_temp");
+  }
+
+  // 3. 첨부파일 추가 (여러 개 가능)
+  if (formData.value.attachments && formData.value.attachments.length > 0) {
+    formData.value.attachments.forEach((file) => {
+      form.append("attachments", file);
+    });
+  }
 
   try {
     let response;
     if (isEditMode.value) {
-      //  수정 요청: PUT/PATCH /api/sponsor/:code (백엔드 구현 필요)
-      // 임시로 POST 사용하지만, 백엔드에서 PUT/PATCH로 변경해야 합니다.
-      // URL: /api/sponsor/:code
-      response = await axios.put(`/api/sponsor/${obj.program_code}`, obj);
+      // 수정 요청
+      response = await axios.put(
+        `/api/sponsor/${props.initialProgram.program_code}`,
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
     } else {
-      // 등록 요청: POST /api/sponsor
-      response = await axios.post("/api/sponsor", obj);
+      // 등록 요청
+      response = await axios.post("/api/sponsor", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
     }
 
     console.log(` 프로그램 ${actionText} 성공:`, response.data);
