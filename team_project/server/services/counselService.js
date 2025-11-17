@@ -33,7 +33,7 @@ module.exports = {
     return await counselMapper.getRejectionReason(submitCode);
   },
   //임시저장
-  async saveCounselTemp(body) {
-    return counselMapper.saveCounselTemp(body);
+  async saveCounselTemp(body, files) {
+    return counselMapper.saveCounselTemp(body, files);
   },
 };

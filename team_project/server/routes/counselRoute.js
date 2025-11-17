@@ -175,10 +175,15 @@ router.get("/:submitCode/rejection-reason", async (req, res) => {
   }
 });
 
-// 상담 임시저장 (임시저장에는 파일 안 받는 버전 그대로 사용)
-router.post("/temp", async (req, res) => {
+// 상담 임시저장
+router.post("/temp", upload.array("mainFiles"), async (req, res) => {
   try {
-    const result = await counselService.saveCounselTemp(req.body);
+    const rawJson = req.body.formJson || "{}";
+    const body = JSON.parse(rawJson);
+
+    const files = req.files || []; // multer가 저장한 파일들
+
+    const result = await counselService.saveCounselTemp(body, files);
     res.json({ success: true, result });
   } catch (e) {
     console.error("[POST /counsel/temp]", e);

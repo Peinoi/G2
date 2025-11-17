@@ -1,9 +1,9 @@
-<!-- src/views/PlanList.vue -->
+<!-- src/views/ResultList.vue -->
 <template>
   <section class="p-6 max-w-screen-xl mx-auto">
     <!-- 상단 타이틀 + 역할 선택 -->
     <header class="flex items-center justify-between mb-2">
-      <h2 class="text-2xl font-semibold">지원계획 목록</h2>
+      <h2 class="text-2xl font-semibold">지원결과 목록</h2>
 
       <div class="flex items-center gap-2 text-sm">
         <span class="text-gray-600">역할 선택</span>
@@ -19,7 +19,7 @@
     <!-- 선택된 역할 안내 -->
     <p class="text-xs text-gray-500 mb-2">현재 역할: {{ roleLabel }}</p>
 
-    <!-- ★ 카드 & 테이블: 가로 꽉 채우기 -->
+    <!-- 카드 & 테이블 -->
     <div class="border rounded-lg overflow-hidden bg-white w-full">
       <table class="w-full text-sm">
         <thead class="bg-gray-100 text-xs text-gray-600">
@@ -30,6 +30,8 @@
             <th class="px-3 py-2 text-left">담당자</th>
             <th class="px-3 py-2 text-left">조사지 제출일</th>
             <th class="px-3 py-2 text-left">계획 작성일</th>
+            <!-- 🔹 결과 작성일 추가 -->
+            <th class="px-3 py-2 text-left">결과 작성일</th>
             <th class="px-3 py-2 text-center">상태</th>
             <th class="px-3 py-2 text-center">작업</th>
           </tr>
@@ -66,10 +68,15 @@
               {{ formatDate(row.writtenAt) }}
             </td>
 
+            <!-- 🔹 결과 작성일 표시 (필드명: resultWrittenAt 가정) -->
+            <td class="px-3 py-2 whitespace-nowrap">
+              {{ formatDate(row.resultWrittenAt) }}
+            </td>
+
             <td class="px-3 py-2 text-center whitespace-nowrap">
-              <!-- CC7(반려)일 때만 클릭 가능 + 모달 오픈 -->
+              <!-- 🔹 CD7(반려)일 때만 클릭 가능 + 모달 오픈 -->
               <span
-                v-if="row.status === 'CC7' && role !== '1'"
+                v-if="row.status === 'CD7' && role !== '1'"
                 class="text-red-600 underline cursor-pointer"
                 @click.stop="openRejectReason(row)"
               >
@@ -86,27 +93,27 @@
             <td class="px-3 py-2">
               <div class="flex items-center justify-center">
                 <template v-if="role === '2'">
-                  <!-- CC1, CC2 → 작성하기 -->
+                  <!-- 🔹 CD1, CD3 → 작성하기 -->
                   <button
-                    v-if="row.status === 'CC1' || row.status === 'CC2'"
+                    v-if="row.status === 'CD1' || row.status === 'CD3'"
                     class="px-3 py-1 border rounded text-xs text-gray-700 hover:bg-gray-100"
                     @click.stop="handleWrite(row)"
                   >
                     작성하기
                   </button>
 
-                  <!-- CC3 → 수정하기 -->
+                  <!-- 🔹 CD4 → 수정하기 -->
                   <button
-                    v-else-if="row.status === 'CC3'"
+                    v-else-if="row.status === 'CD4'"
                     class="px-3 py-1 border rounded text-xs text-gray-700 hover:bg-gray-100"
                     @click.stop="handleEdit(row)"
                   >
                     수정하기
                   </button>
 
-                  <!-- CC7 → 재수정하기 -->
+                  <!-- 🔹 CD7 → 재수정하기 (계속 사용) -->
                   <button
-                    v-else-if="row.status === 'CC7'"
+                    v-else-if="row.status === 'CD7'"
                     class="px-3 py-1 border rounded text-xs text-gray-700 hover:bg-gray-100"
                     @click.stop="handleReEdit(row)"
                   >
@@ -124,8 +131,8 @@
           </tr>
 
           <tr v-if="!plans.length">
-            <td colspan="8" class="px-3 py-6 text-center text-gray-500">
-              등록된 지원계획이 없습니다.
+            <td colspan="9" class="px-3 py-6 text-center text-gray-500">
+              등록된 지원결과가 없습니다.
             </td>
           </tr>
         </tbody>
@@ -201,30 +208,29 @@ const formatDate = (v) => {
   return String(v).slice(0, 10);
 };
 
+// 🔹 결과 상태 코드 라벨
 function statusLabel(code) {
   switch (code) {
-    case "CC1":
-      return "상담전"; // 임시저장이지만 목록에선 상담전으로 표시
-    case "CC2":
-      return "상담전";
-    case "CC3":
+    case "CD1":
+      return "지원중"; // (작성 전)
+    case "CD3":
+      return "지원중"; // (작성 중)
+    case "CD4":
       return "검토중";
-    case "CC4":
-      return "진행중";
-    case "CC5":
+    case "CD5":
       return "지원완료";
-    case "CC6":
+    case "CD6":
       return "재승인요청";
-    case "CC7":
+    case "CD7":
       return "반려";
     default:
       return code || "-";
   }
 }
 
-// 목록조회
+// 🔹 목록조회 (api/result)
 const loadList = async () => {
-  const res = await axios.get("api/plans", {
+  const res = await axios.get("api/result", {
     params: { role: role.value },
   });
   plans.value = res.data.result || [];
@@ -240,37 +246,41 @@ onMounted(() => {
   loadList();
 });
 
+// 🔹 작성하기: result-write 로 이동
 const handleWrite = (row) => {
-  console.log("작성하기 클릭:", row);
+  console.log("지원결과 작성하기 클릭:", row);
   router.push({
-    name: "plan-write",
+    name: "result-write",
     params: { submitcode: row.submitCode },
   });
 };
 
+// 🔹 수정하기: result-edit 로 이동
 const handleEdit = (row) => {
-  console.log("수정하기 클릭:", row);
+  console.log("지원결과 수정하기 클릭:", row);
   router.push({
-    name: "plan-edit",
-    params: { planCode: row.planCode },
-    query: { submitCode: row.submitCode }, // 상담지/조사지 상세 이동 등에 쓸 수 있음
+    name: "result-edit",
+    params: { resultCode: row.resultCode },
+    query: { planCode: row.planCode, submitCode: row.submitCode },
   });
 };
 
+// 🔹 재수정하기: result-edit 로 이동 (동일)
 const handleReEdit = (row) => {
-  console.log("재수정하기 클릭:", row);
+  console.log("지원결과 재수정하기 클릭:", row);
   router.push({
-    name: "plan-edit",
+    name: "result-edit",
     params: { planCode: row.planCode },
     query: { submitCode: row.submitCode },
   });
 };
 
+// 🔹 상세: resultDetail 로 이동
 function goDetail(row) {
   router.push({
-    name: "planDetail",
+    name: "resultDetail",
     params: { planCode: row.planCode },
-    query: { submitCode: row.submitCode, role: role.value }, // 있으면 기본정보까지 같이 불러옴
+    query: { submitCode: row.submitCode, role: role.value },
   });
 }
 
@@ -280,7 +290,7 @@ const rejectReasonText = ref("");
 const rejectReasonLoading = ref(false);
 const rejectReasonError = ref("");
 
-// 반려 사유 모달 열기 + 서버에서 내용 조회
+// 🔹 반려 사유 모달 열기 + 서버에서 내용 조회 (api/result)
 async function openRejectReason(row) {
   rejectReasonModalOpen.value = true;
   rejectReasonText.value = "";
@@ -289,14 +299,13 @@ async function openRejectReason(row) {
 
   try {
     const { data } = await axios.get(
-      `/api/plans/${row.planCode}/rejection-reason`
+      `/api/result/${row.planCode}/rejection-reason`
     );
 
     if (data?.success === false) {
       throw new Error(data.message || "반려 사유를 불러오지 못했습니다.");
     }
 
-    // 백엔드에서 어떤 구조로 주는지에 따라 둘 중 하나에 걸리게
     rejectReasonText.value =
       data?.result?.rejection_reason ?? data?.rejection_reason ?? "";
   } catch (e) {
@@ -312,6 +321,7 @@ function closeRejectReasonModal() {
   rejectReasonModalOpen.value = false;
 }
 </script>
+
 <style scoped>
 .modal-overlay {
   position: fixed;

@@ -220,6 +220,52 @@ const routes = [
     name: "planList",
     component: () => import("../views/PlanList.vue"),
   },
+  // 지원계획 작성
+  {
+    path: "/plan/write/:submitcode",
+    name: "plan-write",
+    component: () => import("../views/PlanWrite.vue"),
+    props: true,
+  },
+  //지원계획 수정
+  {
+    path: "/plan/edit/:planCode",
+    name: "plan-edit",
+    component: () => import("../views/PlanEdit.vue"),
+    props: true,
+  },
+  // 지원계획 상세
+  {
+    path: "/plans/detail/:planCode",
+    name: "planDetail",
+    component: () => import("../views/PlanDetail.vue"),
+  },
+  // 지원결과 목록
+  {
+    path: "/result-list",
+    name: "resultList",
+    component: () => import("../views/ResultList.vue"),
+  },
+  // 지원결과 작성
+  {
+    path: "/result/write/:submitcode",
+    name: "result-write",
+    component: () => import("../views/ResultWrite.vue"),
+    props: true,
+  },
+  //지원결과 수정
+  {
+    path: "/result/edit/:resultCode",
+    name: "result-edit",
+    component: () => import("../views/ResultEdit.vue"),
+    props: true,
+  },
+  // 지원계획 상세
+  {
+    path: "/result/detail/:resultCode",
+    name: "resultDetail",
+    component: () => import("../views/ResultDetail.vue"),
+  },
   // 이벤트 메인페이지
   {
     path: "/event",
