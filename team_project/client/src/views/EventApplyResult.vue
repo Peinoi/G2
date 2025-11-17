@@ -1,7 +1,7 @@
 <!-- src/views/EventApplyResult.vue -->
 <template>
   <section class="p-6 max-w-6xl mx-auto space-y-4">
-    <h2 class="text-2xl font-semibold mb-4">이벤트 요청 / 결과 목록</h2>
+    <h2 class="text-2xl font-semibold mb-4">이벤트 계획 / 결과 목록</h2>
 
     <div class="border rounded-lg overflow-hidden bg-white">
       <table class="w-full text-sm">
@@ -11,7 +11,7 @@
             <th class="px-3 py-2 text-left w-48">이벤트명</th>
             <th class="px-3 py-2 text-left w-36">이벤트 요청일</th>
             <th class="px-3 py-2 text-left w-36">메인 매니저</th>
-            <th class="px-3 py-2 text-left w-24">요청 상태</th>
+            <th class="px-3 py-2 text-left w-24">계획 진행</th>
             <th class="px-3 py-2 text-left w-24">결과 진행</th>
             <th class="px-3 py-2 text-left w-32">진행계획</th>
             <th class="px-3 py-2 text-left w-32">진행결과</th>

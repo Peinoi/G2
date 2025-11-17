@@ -92,11 +92,6 @@ const routes = [
     name: "Billing",
     component: Billing,
   },
-  // {
-  //   path: "/rtl-page",
-  //   name: "RTL",
-  //   component: RTL,
-  // },
   {
     path: "/notifications",
     name: "Notifications",
@@ -261,7 +256,7 @@ const routes = [
   {
     path: "/event/apply-info",
     name: "EventApplyInfo",
-    component: () => import("../views/EventApplyList.vue"),
+    component: () => import("../views/EventApplyInfo.vue"),
   },
   // 이벤트 결과보고서 상세 보기 (역할별)
   {

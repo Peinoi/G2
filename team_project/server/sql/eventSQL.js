@@ -104,7 +104,11 @@ INSERT INTO manager (
 
 // 매니저 조회
 const selectManager = `
-SELECT 
+SELECT
+    u.user_id,
+    u.phone,
+    u.email,
+    u.department,
     m.manager_num,
     u.name AS manager_name,
     m.manager_type,
@@ -162,6 +166,17 @@ INSERT INTO event (
 VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
 `;
 
+// 이벤트 신청 내역
+const insertEventApply = `
+INSERT INTO event_apply (
+  apply_date
+ ,apply_type 
+ ,user_code
+ ,event_code
+ ,sub_event_code)
+VALUES ( ?, ?, ?, ?, ? )
+`;
+
 // 이벤트 수정
 const updateEvent = `
 UPDATE event
@@ -215,6 +230,7 @@ module.exports = {
   selectEventList,
   selectEventOne,
   insertEvent,
+  insertEventApply,
   updateEvent,
   deleteEvent,
   selectSubEventList,

@@ -49,11 +49,10 @@
 
     <!-- 예약제일 경우: 달력 표시 -->
     <div
-      v-if="event.event_type_name === '예약제' && event.sub_events.length"
+      v-if="event.event_type === 'DD2' && event.sub_events.length"
       class="card"
     >
       <h3>예약 가능한 일정</h3>
-
       <FullCalendar :options="calendarOptions" />
     </div>
 
@@ -74,7 +73,7 @@
     </div>
 
     <!-- 신청제일 경우: 하단 신청 버튼 -->
-    <div v-if="event.event_type_name === '신청제'" class="apply-button-wrap">
+    <div v-if="event.event_type === 'DD1'" class="apply-button-wrap">
       <button class="apply-btn" @click="applySimple">신청하기</button>
     </div>
   </div>
@@ -96,6 +95,9 @@ const event = ref({
   sub_events: [],
   attachments: [],
 });
+
+// 로그인한 사용자 코드 (서버에서 받아오거나 store에서 가져오기)
+const currentUserCode = 1; // 예시, 실제 값으로 변경
 
 const calendarOptions = ref({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -132,11 +134,32 @@ const fetchEvent = async () => {
   }));
 };
 
-// 캘린더 일정 클릭 시 신청
-const onEventClick = async (info) => {
-  const sub_event_code = info.event.extendedProps.code;
+// 신청 공통 함수 (신청제 / 예약제)
+const applyEvent = async ({ sub_event_code = null }) => {
+  try {
+    const res = await axios.post("/api/event/apply", {
+      apply_type: event.value.event_type, // DD1 / DD2
+      event_code: event.value.event_code,
+      sub_event_code,
+      user_code: currentUserCode,
+    });
 
-  // 날짜 포맷 함수
+    if (res.data.success) {
+      alert("신청 완료! 내 신청 내역에 등록되었습니다.");
+    } else {
+      alert("신청 실패: " + res.data.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("신청 중 오류가 발생했습니다.");
+  }
+};
+
+// 신청제: 단순 신청하기
+const applySimple = () => applyEvent({});
+
+// 예약제: 캘린더 일정 클릭
+const onEventClick = (info) => {
   const formatDateTime = (date) => {
     if (!date) return "";
     const d = new Date(date);
@@ -156,25 +179,7 @@ const onEventClick = async (info) => {
   );
   if (!ok) return;
 
-  try {
-    await axios.post("/api/event/apply-sub", { sub_event_code });
-    alert("신청 완료!");
-  } catch (err) {
-    alert("신청 실패");
-    console.error(err);
-  }
-};
-
-// 신청제: 단순 신청하기
-const applySimple = async () => {
-  try {
-    await axios.post("/api/event/apply", {
-      event_code: event.value.event_code,
-    });
-    alert("신청 완료!");
-  } catch (err) {
-    alert("신청 실패");
-  }
+  applyEvent({ sub_event_code: info.event.extendedProps.code });
 };
 
 onMounted(fetchEvent);

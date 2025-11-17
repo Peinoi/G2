@@ -302,6 +302,32 @@ async function addEvent(data) {
   }
 }
 
+// 이벤트 신청 내역 등록
+async function addEventApply(data) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const params = [
+      moment(data.apply_date).format("YYYY-MM-DD"),
+      data.apply_type,
+      data.user_code,
+      data.event_code,
+      data.sub_event_code,
+    ];
+    const rows = await conn.query(eventSQL.insertEventApply, params);
+    console.log("[eventMapper.js || 이벤트 신청 내역 등록 성공]");
+    return rows;
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트 신청 내역 등록 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 // 이벤트 + 세부 이벤트 수정
 async function updateEventWithSub(data, event_code) {
   let conn;
@@ -477,6 +503,7 @@ module.exports = {
   addEventWithSub,
   addEvent,
   updateEventWithSub,
+  addEventApply,
   updateEvent,
   deleteEvent,
   selectSubEventList,
