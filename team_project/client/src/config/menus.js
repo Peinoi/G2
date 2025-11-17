@@ -63,3 +63,72 @@ export const eventMenu = [
     role: ["AA2", "AA3"],
   },
 ];
+
+export const appReqMenu = [
+  {
+    label: "가입 기관 관리",
+    path: "/organization",
+    collapseRef: "Organization",
+    role: ["AA4"],
+  },
+  {
+    label: "기관 관리자 승인",
+    path: "/managerApprovals",
+    collapseRef: "ManagerApprovals",
+    role: ["AA4"],
+  },
+  {
+    label: "기관 담당자 승인",
+    path: "/staffApprovals",
+    collapseRef: "StaffApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "우선순위 승인",
+    path: "/priorityApprovals",
+    collapseRef: "PriorityApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "지원 계획 승인",
+    path: "/supportPlanApprovals",
+    collapseRef: "SupportPlanApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "지원 결과 승인",
+    path: "/supportResultApprovals",
+    collapseRef: "SupportResultApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "이벤트 계획 승인",
+    path: "/eventPlanApprovals",
+    collapseRef: "EventPlanApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "이벤트 결과 승인",
+    path: "/eventResultApprovals",
+    collapseRef: "EventResultApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "후원 계획 승인",
+    path: "/sponsorshipPlanApprovals",
+    collapseRef: "SponsorshipPlanApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "후원 결과 승인",
+    path: "/sponsorshipResultApprovals",
+    collapseRef: "SponsorshipResultApprovals",
+    role: ["AA3", "AA4"],
+  },
+  {
+    label: "권한 이전",
+    path: "/sponsorshipResultApprovals",
+    collapseRef: "SponsorshipResultApprovals",
+    role: ["AA3", "AA4"],
+  },
+];
