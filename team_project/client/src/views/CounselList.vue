@@ -204,8 +204,15 @@ async function openRejectReason(row) {
   rejectReasonLoading.value = true;
 
   try {
+    // 🔥 여기! submit_code를 제대로 사용
+    const submitCode = Number(row.submit_code);
+
+    if (!submitCode) {
+      throw new Error("유효한 제출번호가 없습니다. (submit_code 없음)");
+    }
+
     const { data } = await axios.get(
-      `/api/counsel/${row.submitCode}/rejection-reason`
+      `/api/counsel/${submitCode}/rejection-reason`
     );
 
     if (data?.success === false) {
@@ -215,8 +222,8 @@ async function openRejectReason(row) {
     // 🔥 백엔드에서 내려주는 두 가지 케이스 다 지원
     const r = data.result || data;
 
-    rejectReasonText.value = r.rejection_reason || "";
-    rejectReasonDate.value = r.rejection_date || ""; // 여기!
+    rejectReasonText.value = r.rejection_reason ?? data.rejection_reason ?? "";
+    rejectReasonDate.value = r.rejection_date ?? data.rejection_date ?? ""; // 반려 날짜
   } catch (e) {
     console.error(e);
     rejectReasonError.value =
