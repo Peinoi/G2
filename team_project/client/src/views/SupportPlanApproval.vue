@@ -29,19 +29,21 @@
     <div class="priority-card">
       <!-- 🔹 로딩 중일 때만 표시 -->
       <div v-if="loading" class="priority-loading">불러오는 중...</div>
+
       <!-- 🔹 로딩이 끝났을 때만 테이블 표시 -->
       <table v-else class="priority-table">
         <thead>
           <tr>
             <th>승인코드</th>
             <th>이름</th>
+            <th>장애유형</th>
             <th>보호자</th>
             <th>담당자</th>
-            <th>기관</th>
+            <th v-if="isOrgVisible">기관</th>
             <th>계획 작성일</th>
-            <th>장애유형</th>
             <th>우선순위</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -53,11 +55,11 @@
           >
             <td>{{ item.approval_code }}</td>
             <td>{{ item.child_name }}</td>
+            <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <td>{{ item.org_name }}</td>
+            <td v-if="isOrgVisible">{{ item.org_name }}</td>
             <td>{{ formatDate(item.written_at) }}</td>
-            <td>{{ item.disability_type }}</td>
             <td>
               <span
                 class="priority-chip"
@@ -71,13 +73,24 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+            <td>
+              {{
+                item.state === "BA1" || !item.approval_date
+                  ? "-"
+                  : formatDate(item.approval_date)
+              }}
+            </td>
           </tr>
+
           <!-- 🔹 로딩이 끝났고 + 데이터 없을 때만 메시지 -->
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="9">데이터가 없습니다.</td>
+            <td class="priority-empty" :colspan="isOrgVisible ? 10 : 9">
+              데이터가 없습니다.
+            </td>
           </tr>
         </tbody>
       </table>
+
       <!-- 🔹 페이징도 로딩 끝난 뒤에만 -->
       <div v-if="!loading && totalPages > 1" class="priority-pagination">
         <button
@@ -112,6 +125,40 @@ import { useAuthStore } from "@/store/authLogin.js";
 
 const router = useRouter();
 const auth = useAuthStore();
+
+// 유저 역할 코드 (AA3 / AA4 등)
+const userRole = computed(() => {
+  return (
+    auth.role || // 예: 'AA3', 'AA4'
+    (auth.user && auth.user.roleCode) ||
+    ""
+  );
+});
+
+// 로그인 아이디 (기관 필터 기준)
+const loginId = computed(() => {
+  return (
+    auth.userId ||
+    auth.loginId ||
+    auth.id ||
+    (auth.user && auth.user.userId) ||
+    ""
+  );
+});
+
+// 기관 관리자 여부 (AA3)
+const isOrgManager = computed(() => userRole.value === "AA3");
+
+// 시스템 관리자 여부 (AA4)
+const isSystemAdmin = computed(() => userRole.value === "AA4");
+
+// 이 페이지 접근 가능 여부 (AA3 또는 AA4)
+const canViewSupportPlanPage = computed(
+  () => isOrgManager.value || isSystemAdmin.value
+);
+
+// 기관 컬럼 표시 여부 (기관 관리자면 숨김)
+const isOrgVisible = computed(() => !isOrgManager.value);
 
 const list = ref([]);
 
@@ -190,14 +237,14 @@ async function loadList() {
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/support-plan", {
-      // support-plan이면 변경
       params: {
         page: page.value,
         size: pageSize.value,
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
-        loginId: auth.userId,
+        loginId: loginId.value, // 🔹 로그인 아이디
+        role: userRole.value, // 🔹 역할 (AA3 / AA4)
       },
     });
 
@@ -228,7 +275,7 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 지원계획 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "support-plan-detail", // 실제 등록된 라우트 이름에 맞게만 수정
+    name: "planDetail", // 실제 등록된 라우트 이름에 맞게만 수정
     params: { planCode: item.plan_code }, // 상세에서 어떤 파라미터 쓰는지에 맞춰서
     query: {
       role: 3, // 관리자 화면에서 열면 3
@@ -238,13 +285,13 @@ function goDetail(item) {
 
 // 기관 관리자(AA3) 아닐 경우 접근 차단
 onMounted(() => {
-  if (!auth.isAA3) {
-    alert("기관 관리자만 접근할 수 있습니다.");
+  if (!canViewSupportPlanPage.value) {
+    alert("기관 관리자 및 시스템 관리자만 접근할 수 있습니다.");
     router.push("/");
     return;
   }
 
-  loadList(); // 권한 확인 후 목록 로드
+  loadList();
 });
 </script>
 

@@ -93,7 +93,7 @@
             </li>
 
             <!-- 모바일 사이드바 토글 -->
-            <!-- <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+            <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
               <a
                 href="#"
                 @click="toggleSidebar"
@@ -106,7 +106,7 @@
                   <i class="sidenav-toggler-line"></i>
                 </div>
               </a>
-            </li> -->
+            </li>
 
             <!-- 설정 아이콘 -->
             <!-- <li class="px-3 nav-item d-flex align-items-center">
@@ -256,24 +256,24 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from '../Breadcrumbs.vue';
-import { mapMutations, mapState } from 'vuex';
-import { useAuthStore } from '@/store/authLogin';
-import { roleMenu } from '@/examples/Menu/roleMenu';
+import Breadcrumbs from "../Breadcrumbs.vue";
+import { mapMutations, mapState } from "vuex";
+import { useAuthStore } from "@/store/authLogin";
+import { roleMenu } from "@/examples/Menu/roleMenu";
 
 export default {
-  name: 'navbar',
+  name: "navbar",
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ['minNav', 'color'],
+  props: ["minNav", "color"],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
+    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
 
     toggleSidebar() {
       this.navbarMinimize();
@@ -283,7 +283,7 @@ export default {
       // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
       if (this.piniaLogin.isLogin) {
         this.piniaLogin.logout();
-        alert('로그아웃 완료');
+        alert("로그아웃 완료");
       }
 
       this.$router.push({ name: "SignIn" });
@@ -293,7 +293,7 @@ export default {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(['isRTL', 'isAbsolute']),
+    ...mapState(["isRTL", "isAbsolute"]),
 
     currentRouteName() {
       return this.$route.name;
