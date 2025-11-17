@@ -164,9 +164,9 @@ router.post("/apply", async (req, res) => {
     });
   } catch (err) {
     console.error("[eventRoute.js || 이벤트 신청 내역 등록 실패]", err.message);
-    res.status(500).json({
+    res.status(err.message === "이미 신청한 이벤트입니다." ? 400 : 500).json({
       status: "error",
-      message: "이벤트 신청 내역 등록 중 에러 발생",
+      message: err.message,
     });
   }
 });

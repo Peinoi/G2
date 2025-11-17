@@ -53,13 +53,49 @@ export const eventMenu = [
   {
     label: "이벤트 메인페이지",
     path: "/event",
-    collapseRef: "Event",
-    role: ["AA1", "AA2", "AA3"],
+    collapseRef: "EventMain",
+    role: ["AA1", "AA2"],
   },
   {
     label: "이벤트 목록",
     path: "/event/list",
     collapseRef: "EventList",
+    role: ["AA1", "AA2"],
+  },
+  {
+    label: "이벤트 신청 내역",
+    path: "/event/apply-list",
+    collapseRef: "EventApplyList",
+    role: ["AA1"],
+  },
+  {
+    label: "이벤트 등록",
+    path: "/event/add",
+    collapseRef: "EventAdd",
     role: ["AA2", "AA3"],
+  },
+  {
+    label: "결과보고서 등록",
+    path: "/event/result-add",
+    collapseRef: "EventResultAdd",
+    role: ["AA2"],
+  },
+  {
+    label: "계획/결과 목록",
+    path: "/event/apply-result",
+    collapseRef: "EventApplyResult",
+    role: ["AA2", "AA3"],
+  },
+  {
+    label: "담당자 목록",
+    path: "/event/manager-list",
+    collapseRef: "EventManagerList",
+    role: ["AA2", "AA3"],
+  },
+  {
+    label: "참가자 목록",
+    path: "/event/attendance-list",
+    collapseRef: "EventAttendanceList",
+    role: ["AA2"],
   },
 ];
