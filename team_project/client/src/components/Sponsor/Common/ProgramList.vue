@@ -122,14 +122,31 @@ const getSponsorList = async (params = {}) => {
   }
   const res = result.data.serviceSponsor;
 
-  // 1. 테이블 목록 갱신
-  sponsorList.value = JSON.parse(JSON.stringify(res));
+  // // 1. 테이블 목록 갱신
+  // const list = JSON.parse(JSON.stringify(res));
+  // sponsorList.value = JSON.parse(JSON.stringify(res));
+  // console.log(list);
+const userJsonString = localStorage.getItem("user");
 
-  console.log(sponsorList.value);
+let userId = null; 
+
+const userObject = JSON.parse(userJsonString);
+
+userId = String(userObject.user_id); 
+
+let list = JSON.parse(JSON.stringify(res));
+
+// 🚨 이 부분이 핵심입니다: filter의 반환값을 list에 다시 할당 (재할당)
+list = list.filter((item) => {
+    // 안정성을 위해 String() 변환을 유지
+    return String(item.writer) === userId; 
+}); 
+
+  sponsorList.value = list;
   // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
   //    (검색 결과는 programList에 영향을 주지 않아야 함)
   if (Object.keys(params).length === 0) {
-    programList.value = JSON.parse(JSON.stringify(res));
+    programList.value = list;
   }
   console.log(JSON.parse(JSON.stringify(sponsorList.value)));
 };
