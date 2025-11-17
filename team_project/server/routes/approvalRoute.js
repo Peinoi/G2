@@ -91,12 +91,15 @@ router.get("/staff", async (req, res) => {
     const keyword = req.query.keyword || "";
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
+    // 🔽 추가: 로그인한 기관 관리자 아이디
+    const loginId = req.query.loginId || "";
 
     const list = await approvalService.staffApprovalList({
       state,
       keyword,
       page,
       size,
+      loginId,
     });
 
     return res.status(200).json({
@@ -185,12 +188,16 @@ router.get("/priority", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    // 🔹 추가: 로그인한 기관 관리자 아이디
+    const loginId = req.query.loginId || "";
+
     const result = await approvalService.getPriorityApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId, // 🔹 추가
     });
 
     return res.status(200).json({
@@ -216,12 +223,15 @@ router.get("/support-plan", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    const loginId = req.query.loginId || "";
+
     const result = await approvalService.getSupportPlanApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
     });
 
     return res.status(200).json({
@@ -326,6 +336,74 @@ router.get("/event-result", async (req, res) => {
     });
   } catch (err) {
     console.error("[GET /api/approvals/event-result] 실패:", err.stack || err);
+    return res.status(500).json({
+      status: "error",
+      message: "서버 오류",
+    });
+  }
+});
+
+// 🔹 후원 계획 승인 요청 목록 (AE8, 페이징 + 검색/정렬)
+router.get("/sponsorship-plan", async (req, res) => {
+  try {
+    const state = req.query.state || "";
+    const keyword = req.query.keyword || "";
+    const orderBy = req.query.orderBy || "latest";
+
+    const page = parseInt(req.query.page || "1", 10);
+    const size = parseInt(req.query.size || "20", 10);
+
+    const result = await approvalService.getSponsorshipPlanApprovalList({
+      page,
+      size,
+      state,
+      keyword,
+      orderBy,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      data: result, // { rows, totalCount, page, size }
+    });
+  } catch (err) {
+    console.error(
+      "[GET /api/approvals/sponsorship-plan] 실패:",
+      err.stack || err
+    );
+    return res.status(500).json({
+      status: "error",
+      message: "서버 오류",
+    });
+  }
+});
+
+// 🔹 후원 결과 승인 요청 목록 (AE9, 페이징 + 검색/정렬)
+router.get("/sponsorship-result", async (req, res) => {
+  try {
+    const state = req.query.state || "";
+    const keyword = req.query.keyword || "";
+    const orderBy = req.query.orderBy || "latest";
+
+    const page = parseInt(req.query.page || "1", 10);
+    const size = parseInt(req.query.size || "20", 10);
+
+    const result = await approvalService.getSponsorshipResultApprovalList({
+      page,
+      size,
+      state,
+      keyword,
+      orderBy,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      data: result, // { rows, totalCount, page, size }
+    });
+  } catch (err) {
+    console.error(
+      "[GET /api/approvals/sponsorship-result] 실패:",
+      err.stack || err
+    );
     return res.status(500).json({
       status: "error",
       message: "서버 오류",

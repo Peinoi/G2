@@ -106,8 +106,8 @@ module.exports = {
   // 상담 상세 INSERT
   insertCounselDetail: `
     INSERT INTO counsel_detail (
-      counsel_code, counsel_date, title, content, attach_code
-    ) VALUES (?, ?, ?, ?, ?)
+      counsel_code, counsel_date, title, content
+    ) VALUES (?, ?, ?, ?)
   `,
 
   // 우선순위 초기화
@@ -149,8 +149,7 @@ module.exports = {
       counsel_code,
       counsel_date,
       title,
-      content,
-      attach_code
+      content
     FROM counsel_detail
     WHERE counsel_code = ?
     ORDER BY counsel_date ASC, detail_code ASC

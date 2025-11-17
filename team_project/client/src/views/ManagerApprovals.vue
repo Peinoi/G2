@@ -140,6 +140,20 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useAuthStore } from "@/store/authLogin";
+import { useRouter } from "vue-router";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+onMounted(() => {
+  auth.reload(); // 새로고침 시 로그인 복원
+
+  if (auth.role !== "AA4") {
+    alert("접근 권한이 없습니다.");
+    router.push("/");
+  }
+});
 
 /* 상태 */
 const rows = ref([]);
