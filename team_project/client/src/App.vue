@@ -45,7 +45,6 @@ import Configurator from "@/examples/Configurator.vue";
 import Navbar from "@/examples/Navbars/Navbar.vue";
 import AppFooter from "@/examples/Footer.vue";
 import { mapMutations, mapState } from "vuex";
-// import { useSidebarStore } from "@/store/sidebar";
 
 export default {
   name: "App",

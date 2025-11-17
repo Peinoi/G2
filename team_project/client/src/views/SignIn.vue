@@ -3,7 +3,7 @@
   <div
     class="page-header align-items-start min-vh-100"
     style="
-      background-image: url('https://images.unsplash.com/photo-1497294815431-9365093b7331?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80');
+      background-image: url(&quot;https://images.unsplash.com/photo-1497294815431-9365093b7331?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80&quot;);
     "
   >
     <span class="mask bg-gradient-dark opacity-6"></span>
@@ -152,15 +152,18 @@
 </template>
 
 <script>
-import Navbar from '@/examples/PageLayout/Navbar.vue';
-import MaterialInput from '@/components/MaterialInput.vue';
+import Navbar from "@/examples/PageLayout/Navbar.vue";
+import MaterialInput from "@/components/MaterialInput.vue";
 // import MaterialSwitch from '@/components/MaterialSwitch.vue';
-import MaterialButton from '@/components/MaterialButton.vue';
-import { mapMutations } from 'vuex';
-import { useAuthStore } from '../store/authLogin';
+import MaterialButton from "@/components/MaterialButton.vue";
+import { mapMutations } from "vuex";
+import { useAuthStore } from "../store/authLogin";
+//로그인 권한에 따른 사이드바 렌더링
+import { useMenuStore } from "@/store/sidebar";
 
 export default {
-  name: 'sign-in',
+  name: "sign-in",
+
   components: {
     Navbar,
     MaterialInput,
@@ -169,8 +172,8 @@ export default {
   },
   data() {
     return {
-      userId: '',
-      userPw: '',
+      userId: "",
+      userPw: "",
     };
   },
   beforeMount() {
@@ -184,12 +187,13 @@ export default {
   methods: {
     async login() {
       if (!this.userId || !this.userPw) {
-        alert('아이디 및 비밀번호 입력해주세요');
+        alert("아이디 및 비밀번호 입력해주세요");
         return;
       }
 
       const piniaLogin = useAuthStore();
-
+      const menu = useMenuStore();
+      // menu.loadUserRole();
       try {
         const result = await piniaLogin.login({
           userId: this.userId,
@@ -197,12 +201,14 @@ export default {
         });
 
         alert(`반갑습니다 ${result.user_id}(${result.role})님`);
-        this.$router.push({ name: 'dashboard' });
+        this.$router.push({ name: "dashboard" });
+        localStorage.setItem("user", JSON.stringify(result));
+        menu.setRole(result.role); // 즉시 반영
       } catch (err) {
-        alert('로그인 실패: 아이디 및 패스워드 틀림');
+        alert("로그인 실패: 아이디 및 패스워드 틀림");
       }
     },
-    ...mapMutations(['toggleEveryDisplay', 'toggleHideConfig']),
+    ...mapMutations(["toggleEveryDisplay", "toggleHideConfig"]),
   },
 };
 </script>

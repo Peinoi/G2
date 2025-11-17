@@ -23,11 +23,15 @@
         <router-link to="/test" class="btn btn-outline-success btn-sm"
           >상담</router-link
         >
-        <router-link to="/sponsor" class="btn btn-outline-success btn-sm"
+        <router-link
+          to="/sponsorprogramlist"
+          class="btn btn-outline-success btn-sm"
           >후원</router-link
         >
-        <router-link to="/test" class="btn btn-outline-success btn-sm"
+        <router-link to="/event" class="btn btn-outline-success btn-sm"
           >이벤트</router-link
+        ><router-link to="/organization" class="btn btn-outline-success btn-sm"
+          >승인 관리</router-link
         >
       </div>
 
@@ -221,9 +225,9 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from '../Breadcrumbs.vue';
-import { mapMutations, mapState } from 'vuex';
-import { useAuthStore } from '@/store/authLogin';
+import Breadcrumbs from "../Breadcrumbs.vue";
+import { mapMutations, mapState } from "vuex";
+import { useAuthStore } from "@/store/authLogin";
 
 export default {
   name: "navbar",
@@ -248,12 +252,12 @@ export default {
 
       if (piniaLogin.isLogin) {
         piniaLogin.logout();
-        alert('로그아웃 완료');
-        this.$router.push({ name: 'SignIn' });
+        alert("로그아웃 완료");
+        this.$router.push({ name: "SignIn" });
         return;
       }
 
-      this.$router.push({ name: 'SignIn' });
+      this.$router.push({ name: "SignIn" });
     },
   },
   components: {

@@ -18,7 +18,10 @@
 <script setup>
 import ProgramList from "@/components/Sponsor/Common/ProgramList.vue";
 import ProgramAdd from "@/components/Sponsor/Common/ProgramAdd.vue";
-import { ref } from "vue";
+// import { useMenuStore } from "@/store/sidebar";
+import { useMenuStore } from "@/store/sidebar";
+import { sponsorMenu } from "@/config/menus";
+import { ref, onMounted } from "vue";
 let programListRef = ref(null);
 let showList = ref(true); // 화면 상태 관리
 let selectedProgram = ref(null); //  선택된 프로그램 정보를 저장할 ref
@@ -44,42 +47,9 @@ const selectProgramForEdit = (programData) => {
   showList.value = false; // ProgramAdd 화면 표시 (수정 모드 진입)
 };
 
-// // 사이드 바 메뉴 출력
-// import { useSidebarStore } from "@/store/sidebar";
-// const sideList = [
-//   {
-//     name: "후원 프로그램 관리",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "담당자 관리",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "전체 후원 거래 내역서",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "활동 보고서",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "총괄표 관리",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "후원 보고서 관리",
-//     link: "sponsor",
-//   },
-//   {
-//     name: "분기 통지 / 발송 이력",
-//     link: "sponsor",
-//   },
-// ];
-// const sidebar = useSidebarStore();
-// sidebar.setMenu({
-//   title: "후원 프로그램 관리",
-//   role: "관리자",
-//   obj: sideList,
-// });
+const menu = useMenuStore();
+onMounted(() => {
+  menu.setPageTitle("후원 관리자 페이지");
+  menu.setMenu(sponsorMenu);
+});
 </script>
