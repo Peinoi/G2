@@ -170,13 +170,11 @@ const clear = () => {
   approval_status.value = "";
   getSponsorList(); // 전체 리스트 다시 조회
 };
+// client/comments/Sponsor/ProgramList.vue
 
 const selectProgram = async (program) => {
-  // async 함수로 변경
   console.log("선택된 프로그램:", program);
 
-  // 1. 단건 조회 API 호출
-  // 단건 조회 API 경로가 /api/sponsor/:no 형태라고 가정하고 호출합니다.
   let result;
   try {
     result = await axios.get(`/api/sponsor/${program.program_code}`);
@@ -186,12 +184,19 @@ const selectProgram = async (program) => {
     return;
   }
 
-  // 2. 응답 데이터 처리
-  const programDetail = result.data.serviceSponsor[0]; // 보통 단건 조회는 배열의 첫 번째 요소입니다.
+  // 1. 응답 데이터 처리
+  // ProgramList.vue에서는 sponsorRows[0]와 attachments를 분리하여 받아야 합니다.
+  const programDetail = result.data.serviceSponsor.sponsorRows[0];
+  const attachments = result.data.serviceSponsor.attachments; // ✨ 첨부파일 데이터 추출
 
-  // 3. 상위 컴포넌트로 데이터와 함께 이벤트 발생
+  // 2. 상위 컴포넌트로 데이터와 함께 이벤트 발생
   if (programDetail) {
-    emit("select-program", programDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
+    // 프로그램 상세 정보에 첨부파일 목록을 합쳐서 전달합니다.
+    const fullDetail = {
+      ...programDetail,
+      attachments: attachments, // ✨ 첨부파일 목록을 추가
+    };
+    emit("select-program", fullDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
   }
 };
 </script>

@@ -435,7 +435,7 @@ router.beforeEach((to, from, next) => {
   if (spportPages.includes(to.name)) {
     menu.setPageTitle("지원 페이지");
     menu.setMenu(spportMenu);
-    
+  }
   // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
   if (appReqPages.includes(to.name)) {
     menu.setPageTitle("승인 요청 관리");
@@ -444,4 +444,5 @@ router.beforeEach((to, from, next) => {
 
   next();
 });
+
 export default router;
