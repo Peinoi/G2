@@ -14,6 +14,18 @@ router.post('/findInfo', async (req, res) => {
   }
 });
 
+// 사용자, 기관, 자녀 정보 수정
+router.put('/updateInfo', async (req, res) => {
+  const { type, role, data } = req.body;
+  try {
+    const result = await userInfoService.infoUpdate(type, role, data);
+    res.json(result);
+  } catch (err) {
+    console.error('[ updateInfo 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: '[ updateInfo 라우터 오류 ]' });
+  }
+});
+
 // 자녀 추가
 router.post('/childAdd', async (req, res) => {
   const userData = { ...req.body };
@@ -24,17 +36,6 @@ router.post('/childAdd', async (req, res) => {
   } catch (err) {
     console.error('[ childAdd 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: '[ childAdd 라우터 오류 ]' });
-  }
-});
-
-// 자녀 정보 수정
-router.put('/updateChild', async (req, res) => {
-  try {
-    const result = await userInfoService.childUpdate(req.body);
-    res.json(result);
-  } catch (err) {
-    console.error('[ updateChild 라우터 오류 ]', err);
-    res.status(500).json({ ok: false, message: '[ updateChild 라우터 오류 ]' });
   }
 });
 

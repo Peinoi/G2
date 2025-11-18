@@ -55,6 +55,20 @@ export async function findUserInfo(userData) {
   }
 }
 
+// 사용자, 기관, 자녀 정보 수정
+export async function updateInfo(type, role, payload) {
+  try {
+    const result = await axios.put('/api/userinfo/updateInfo', {
+      type,
+      role,
+      data: payload,
+    });
+    return result.data;
+  } catch (err) {
+    console.error('[ updateInfo 오류 ]', err);
+  }
+}
+
 // 자녀 추가
 export async function addChild(childData) {
   try {
@@ -62,16 +76,6 @@ export async function addChild(childData) {
     return result.data;
   } catch (err) {
     console.error('[ addChild 오류 ]', err);
-  }
-}
-
-// 자녀 정보 수정
-export async function updateChild(childData) {
-  try {
-    const result = await axios.put('/api/userinfo/updateChild', childData);
-    return result.data;
-  } catch (err) {
-    console.error('[ updateChild 오류 ]', err);
   }
 }
 

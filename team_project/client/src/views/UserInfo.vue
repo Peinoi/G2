@@ -80,7 +80,7 @@ import { useAuthStore } from '@/store/authLogin';
 import UserBasicInfo from '@/components/userInfo/UserBasicInfo.vue';
 import UserOrgInfo from '@/components/userInfo/UserOrgInfo.vue';
 import UserChildInfo from '@/components/userInfo/UserChildInfo.vue';
-import { findUserInfo, addChild, deleteChild, updateChild } from '@/api/user';
+import { findUserInfo, addChild, deleteChild, updateInfo } from '@/api/user';
 import dateFormat from '@/utils/dateFormat';
 
 export default {
@@ -152,15 +152,30 @@ export default {
       this.orgData = { ...this.originalOrg };
       this.orgEditMode = false;
     },
-    saveUserInfo(updated) {
-      this.userData = { ...updated };
-      this.originalUser = { ...updated };
-      this.editMode = false;
+    async saveUserInfo(updated) {
+      const result = await updateInfo('user', this.auth.role, updated);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
     },
-    saveOrgInfo(updated) {
-      this.orgData = { ...updated };
-      this.originalOrg = { ...updated };
-      this.orgEditMode = false;
+    async saveOrgInfo(updated) {
+      const result = await updateInfo('org', this.auth.role, updated);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
+    },
+
+    async updateChild(childData) {
+      const result = await updateInfo('child', this.auth.role, childData);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
     },
 
     // 자녀 추가
@@ -180,17 +195,6 @@ export default {
       } catch (err) {
         console.error('[ addChild 오류 ]', err);
       }
-    },
-
-    // 자녀 정보 수정
-    async updateChild(childData) {
-      const result = await updateChild(childData);
-      if (!result.ok) {
-        alert('수정 실패');
-        return;
-      }
-      await this.userFullInfo();
-      alert('수정 성공');
     },
 
     // 자녀 정보 삭제

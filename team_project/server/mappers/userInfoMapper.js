@@ -20,6 +20,70 @@ async function findUserInfo(userData) {
   }
 }
 
+// 사용자 수정
+async function updateUser(data) {
+  const { user_id, name, phone, address, email } = data;
+  try {
+    const result = await pool.query(userInfoSQL.USER_UPDATE, [
+      name,
+      phone,
+      address,
+      email,
+      user_id,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '사용자 수정 성공' };
+    }
+    return { ok: false, message: '사용자 수정 실패' };
+  } catch (err) {
+    console.error('[ updateUser 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 기관 수정
+async function updateOrg(data) {
+  const { orgName, deptName, roleName, phone, address } = data;
+  try {
+    const result = await pool.query(userInfoSQL.ORG_UPDATE, [
+      orgName,
+      deptName,
+      roleName,
+      phone,
+      address,
+      orgName,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '기관 수정 성공' };
+    }
+    return { ok: false, message: '기관 수정 실패' };
+  } catch (err) {
+    console.error('[ updateOrg 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 자녀 수정
+async function updateChild(data) {
+  const { child_name, ssn, gender, disability_type, child_code } = data;
+  try {
+    const result = await pool.query(userInfoSQL.CHILD_UPDATE, [
+      child_name,
+      ssn,
+      gender,
+      disability_type,
+      child_code,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '자녀 수정 성공' };
+    }
+    return { ok: false, message: '자녀 수정 실패' };
+  } catch (err) {
+    console.error('[ updateChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
 // 자녀 추가
 async function addChild(data) {
   try {
@@ -39,27 +103,6 @@ async function addChild(data) {
   }
 }
 
-// 자녀 수정
-async function updateChild(data) {
-  try {
-    const { child_name, ssn, gender, disability_type, child_code } = data;
-    const result = await pool.query(userInfoSQL.CHILD_UPDATE, [
-      child_name,
-      ssn,
-      gender,
-      disability_type,
-      child_code,
-    ]);
-    if (result.affectedRows == 1) {
-      return { ok: true, message: '자녀 수정 성공' };
-    }
-    return { ok: false, message: '자녀 수정 실패' };
-  } catch (err) {
-    console.error('[ updateChild 실패 ] : ', err);
-    throw err;
-  }
-}
-
 // 자녀 삭제
 async function deleteChild(data) {
   try {
@@ -74,4 +117,11 @@ async function deleteChild(data) {
   }
 }
 
-module.exports = { findUserInfo, addChild, updateChild, deleteChild };
+module.exports = {
+  findUserInfo,
+  addChild,
+  updateUser,
+  updateOrg,
+  updateChild,
+  deleteChild,
+};

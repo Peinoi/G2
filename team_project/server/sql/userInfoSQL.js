@@ -28,6 +28,7 @@ SELECT u.user_id
    , u.phone
    , u.address AS user_address
    , u.email
+   , o.org_code
    , o.org_name
    , u.department
    , u.role
@@ -37,6 +38,18 @@ FROM users u
 LEFT JOIN organization o
 	   ON u.org_code = o.org_code
 	WHERE u.user_id = ?`;
+
+const USER_UPDATE = ``;
+
+const ORG_UPDATE = ``;
+
+const CHILD_UPDATE = `
+UPDATE child
+SET child_name = ?
+	, ssn = ?
+   , gender = ?
+   , disability_type = ?
+WHERE child_code = ?`;
 
 const CHILD_ADD = `
 INSERT INTO child(
@@ -48,14 +61,6 @@ INSERT INTO child(
    , registered_date
 ) VALUES(?, ?, ?, ?, ?, ?)`;
 
-const CHILD_UPDATE = `
-UPDATE child
-SET child_name = ?
-	, ssn = ?
-   , gender = ?
-   , disability_type = ?
-WHERE child_code = ?`;
-
 const CHILD_DELETE = `
 DELETE FROM child
 WHERE child_code = ?;
@@ -64,7 +69,9 @@ WHERE child_code = ?;
 module.exports = {
   FIND_USER_INFO,
   FIND_ORG_INFO,
-  CHILD_ADD,
+  USER_UPDATE,
+  ORG_UPDATE,
   CHILD_UPDATE,
+  CHILD_ADD,
   CHILD_DELETE,
 };
