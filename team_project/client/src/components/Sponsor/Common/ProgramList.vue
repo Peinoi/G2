@@ -40,17 +40,17 @@
         <span>진행</span>
         <select name="" id="" v-model="status">
           <option value="" selected>-- 전체 --</option>
-          <option value="집행전">집행전</option>
-          <option value="집행 중">집행 중</option>
-          <option value="집행 완료">집행 완료</option>
-          <option value="집행 불가">집행 불가</option>
+          <option value="진행전">진행전</option>
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+          <option value="중단">중단</option>
         </select>
         <span>승인</span>
         <select name="" id="" v-model="approval_status">
           <option value="" selected>-- 전체 --</option>
-          <option value="승인전">승인전</option>
-          <option value="승인요청">승인 요청</option>
-          <option value="승인완료">승인 완료</option>
+          <option value="승인대기">승인대기</option>
+          <option value="승인완료">승인완료</option>
+          <option value="반려">반려</option>
         </select>
         <button v-on:click="search()">검색</button>
         <button v-on:click="clear()">조건 초기화</button>
@@ -83,7 +83,9 @@
             <td>{{ numberFormat(program.goal_amount) }}원</td>
             <td>{{ numberFormat(program.current_amount) }}원</td>
             <td>
-              <button>{{ program.approval_status }}</button>
+              <button v-on:click.stop="Approval(program)">
+                {{ program.approval_status }}
+              </button>
             </td>
           </tr>
         </tbody>
@@ -126,21 +128,21 @@ const getSponsorList = async (params = {}) => {
   // const list = JSON.parse(JSON.stringify(res));
   // sponsorList.value = JSON.parse(JSON.stringify(res));
   // console.log(list);
-const userJsonString = localStorage.getItem("user");
+  const userJsonString = localStorage.getItem("user");
 
-let userId = null; 
+  let userId = null;
 
-const userObject = JSON.parse(userJsonString);
+  const userObject = JSON.parse(userJsonString);
 
-userId = String(userObject.user_id); 
+  userId = String(userObject.user_id);
 
-let list = JSON.parse(JSON.stringify(res));
+  let list = JSON.parse(JSON.stringify(res));
 
-// 🚨 이 부분이 핵심입니다: filter의 반환값을 list에 다시 할당 (재할당)
-list = list.filter((item) => {
+  // filter의 반환값을 list에 다시 할당 (재할당)
+  list = list.filter((item) => {
     // 안정성을 위해 String() 변환을 유지
-    return String(item.writer) === userId; 
-}); 
+    return String(item.writer) === userId;
+  });
 
   sponsorList.value = list;
   // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
@@ -214,6 +216,31 @@ const selectProgram = async (program) => {
       attachments: attachments, // ✨ 첨부파일 목록을 추가
     };
     emit("select-program", fullDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
+  }
+};
+
+const Approval = async (program) => {
+  if (program.approval_status === "승인대기중") {
+    alert("이미 승인 요청 중입니다.");
+    return;
+  }
+
+  if (!confirm("승인 요청 하시겠습니까?")) return;
+
+  try {
+    const userJson = localStorage.getItem("user");
+    const user = JSON.parse(userJson);
+    const requesterCode = user.user_code;
+
+    await axios.post(`/api/sponsor/${program.program_code}/request-approval`, {
+      requesterCode,
+    });
+
+    alert("승인 요청을 발송했습니다.");
+    getSponsorList(); // 목록 새로고침
+  } catch (err) {
+    console.error(err);
+    alert("승인 요청 중 오류가 발생했습니다.");
   }
 };
 </script>

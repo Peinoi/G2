@@ -1,6 +1,5 @@
 <template>
   <div class="program-container">
-
     <!-- --------------------- -->
     <!-- 📌 상단 탭 영역 -->
     <!-- --------------------- -->
@@ -29,11 +28,7 @@
       <div class="total-count">전체 {{ finalList.length }}</div>
 
       <div class="search-box">
-        <input
-          type="text"
-          placeholder="검색어 입력"
-          v-model="searchKeyword"
-        />
+        <input type="text" placeholder="검색어 입력" v-model="searchKeyword" />
         <button class="search-btn">🔍</button>
       </div>
     </div>
@@ -42,7 +37,6 @@
     <!-- 📌 카드형 리스트 -->
     <!-- --------------------- -->
     <div class="card-list">
-
       <div
         class="card-item"
         v-for="item in finalList"
@@ -50,25 +44,20 @@
         @click="selectCampaign(item)"
       >
         <!-- 이미지 -->
-        <img
-          class="thumbnail"
-          :src="getThumbnail(item)"
-          alt="thumbnail"
-        />
+        <img class="thumbnail" :src="getThumbnail(item)" alt="thumbnail" />
 
         <div class="card-content">
-          <div class="badge">{{item.status}}</div>
+          <div class="badge">{{ item.status }}</div>
 
           <div class="title">{{ item.program_name }}</div>
 
-             <div class="summary">
-      {{ formatDate(item.start_date, "yyyy-MM-dd") }} ~ {{ formatDate(item.end_date, "yyyy-MM-dd") }}
-    </div>
+          <div class="summary">
+            {{ formatDate(item.start_date, "yyyy-MM-dd") }} ~
+            {{ formatDate(item.end_date, "yyyy-MM-dd") }}
+          </div>
         </div>
       </div>
-
     </div>
-
   </div>
 </template>
 <script setup>
@@ -135,7 +124,6 @@ const getCampaignList = async () => {
     for (const program of campaignList.value) {
       loadThumbnail(program.program_code);
     }
-
   } catch (e) {
     console.error("캠페인 조회 실패:", e);
   }
@@ -147,9 +135,9 @@ const getCampaignList = async () => {
 const filteredListByTab = computed(() => {
   return campaignList.value.filter((item) => {
     if (activeTab.value === "ongoing") {
-      return item.status === "집행전" || item.status === "집행 중";
+      return item.status === "진행중" || item.status === "진행중";
     } else {
-      return item.status === "집행 완료" || item.status === "집행 불가";
+      return item.status === "완료" || item.status === "중단";
     }
   });
 });
@@ -182,7 +170,6 @@ const selectCampaign = async (program) => {
       ...programDetail,
       attachments,
     });
-
   } catch (e) {
     console.error("단건 조회 실패:", e);
   }
@@ -203,7 +190,6 @@ onMounted(() => {
   getCampaignList();
 });
 </script>
-
 
 <style scoped>
 .program-container {

@@ -1,10 +1,10 @@
 <template>
   <div class="p-6">
     <div id="container">
-      <h2 class="text-xl font-bold mb-2">
+      <h2 v-show="!approval_mode" class="text-xl font-bold mb-2">
         후원 프로그램 {{ isEditMode ? "수정" : "등록" }}
       </h2>
-
+      <h2 v-show="approval_mode">후원 프로그램 승인</h2>
       <hr />
 
       <div class="form-field-group">
@@ -15,6 +15,7 @@
             id="program_name"
             name="program_name"
             v-model="formData.program_name"
+            :disabled="isLocked"
           />
         </div>
 
@@ -36,58 +37,68 @@
           <label>
             <input
               type="radio"
-              value="집행전"
+              value="진행전"
               v-model="formData.status"
               name="program_status"
               disabled
             />
-            집행전
+            진행전
           </label>
 
           <template v-if="isEditMode">
             <label>
               <input
                 type="radio"
-                value="집행 중"
+                value="진행중"
                 v-model="formData.status"
                 name="program_status"
                 disabled
               />
-              집행 중
+              진행중
             </label>
 
             <label>
               <input
                 type="radio"
-                value="집행 완료"
+                value="완료"
                 v-model="formData.status"
                 name="program_status"
                 disabled
               />
-              집행 완료
+              완료
             </label>
 
             <label>
               <input
                 type="radio"
-                value="집행 불가"
+                value="중단"
                 v-model="formData.status"
                 name="program_status"
                 disabled
               />
-              집행 불가
+              중단
             </label>
           </template>
         </div>
 
         <label for="startDate">시작일</label>
         <div class="field-container">
-          <input type="date" id="startDate" v-model="formData.start_date" />
+          <input
+            type="date"
+            id="startDate"
+            v-model="formData.start_date"
+            :disabled="isLocked"
+          />
         </div>
 
         <label for="endDate">종료일</label>
         <div class="field-container">
-          <input type="date" id="endDate" v-model="formData.end_date" />
+          <input
+            type="date"
+            id="endDate"
+            v-model="formData.end_date"
+            :disabled="isLocked"
+          />
         </div>
 
         <label for="amount_setting">금액 단위 설정</label>
@@ -98,6 +109,7 @@
             class="add-button"
             @click="addUnitInput"
             v-show="amountSettingType === '지정'"
+            :disabled="isLocked"
           >
             단위 추가 +
           </button>
@@ -113,12 +125,14 @@
                 :value="numberFormat(unit.value)"
                 @input="formatUnitInput(unit, $event)"
                 placeholder="금액 단위를 입력하세요 (예: 10,000)"
+                :disabled="isLocked"
               />
 
               <button
                 type="button"
                 class="remove-button"
                 @click="removeUnitInput(unit.id)"
+                :disabled="isLocked"
               >
                 삭제
               </button>
@@ -134,6 +148,7 @@
             name="amount"
             v-model="formattedGoalAmount"
             inputmode="numeric"
+            :disabled="isLocked"
           />
 
           <div class="amount">원</div>
@@ -156,34 +171,33 @@
             <label>
               <input
                 type="radio"
-                value="승인요청"
+                value="승인대기중"
                 v-model="formData.approval_status"
                 name="approval_status"
                 disabled
               />
-              승인 요청
+              승인대기중
+            </label>
+            <label>
+              <input
+                type="radio"
+                value="승인"
+                v-model="formData.approval_status"
+                name="approval_status"
+                disabled
+              />
+              승인
             </label>
 
             <label>
               <input
                 type="radio"
-                value="심사중"
+                value="반려"
                 v-model="formData.approval_status"
                 name="approval_status"
                 disabled
               />
-              심사중
-            </label>
-
-            <label>
-              <input
-                type="radio"
-                value="승인 완료"
-                v-model="formData.approval_status"
-                name="approval_status"
-                disabled
-              />
-              승인 완료
+              반려
             </label>
           </template>
         </div>
@@ -196,6 +210,7 @@
             multiple
             @change="handleFileChange"
             class="file-input"
+            :disabled="isLocked"
           />
 
           <ul class="file-list">
@@ -218,15 +233,40 @@
         </div>
       </div>
 
-      <div class="button-group-footer">
-        <button class="primary-button" @click="programAdd()">
+      <div v-show="!approval_mode" class="button-group-footer">
+        <button
+          class="primary-button"
+          @click="programAdd()"
+          :disabled="isLocked"
+        >
           {{ isEditMode ? "수정" : "등록" }}
         </button>
 
         <button class="secondary-button" @click="goList()">닫기</button>
       </div>
-    </div>
 
+      <div v-show="approval_mode" class="button-group-footer">
+        <button class="primary-button" @click="approveProgram()">승인</button>
+        <button class="secondary-button" @click="openRejectModal()">
+          반려
+        </button>
+        <router-link to="/sponsorshipPlanApprovals">
+          <button class="secondary-button">닫기</button></router-link
+        >
+      </div>
+    </div>
+    <div v-show="rejectModal" class="modal">
+      <div class="modal-box">
+        <h3>반려 사유 입력</h3>
+        <textarea
+          v-model="rejectReason"
+          placeholder="반려 사유를 입력하세요"
+        ></textarea>
+
+        <button @click="sendReject">반려</button>
+        <button @click="rejectModal = false">취소</button>
+      </div>
+    </div>
     <div v-if="previewImage" class="preview-modal" @click="closePreview">
       <img :src="previewImage" class="preview-img" @click.stop />
     </div>
@@ -236,14 +276,52 @@
 <script setup>
 import axios from "axios";
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
+const isLocked = computed(() => {
+  return isEditMode.value && formData.value.approval_status === "승인대기중";
+});
+//승인 반려
+let approval_mode = ref(false);
+let rejectModal = ref(false);
+let rejectReason = ref("");
+import { onMounted } from "vue";
 
+onMounted(async () => {
+  if (props.programCode) {
+    const res = await axios.get(`/api/sponsor/${props.programCode}`);
+
+    const detail = res.data.serviceSponsor.sponsorRows[0] || {};
+    const files = res.data.serviceSponsor.attachments || [];
+
+    Object.assign(formData.value, detail);
+
+    formData.value.attachments = files.map((f) => ({
+      ...f,
+      isExisting: true,
+    }));
+
+    isEditMode.value = true;
+  }
+
+  approval_mode.value = props.approvalMode;
+});
+
+// ===================== Props ============================================ //
 const props = defineProps({
   initialProgram: {
     type: Object,
     default: null,
   },
+  approvalMode: {
+    type: Boolean,
+    default: false,
+  },
+  programCode: Number,
 });
 const emit = defineEmits(["goToList"]);
+
+// ===================== 수정모드 관련 ============================================ //
 
 const isEditMode = ref(false);
 const amountSettingType = ref("지정");
@@ -253,10 +331,10 @@ let nextUnitId = 1;
 const formData = ref({
   program_name: "",
   sponsor_type: "단기",
-  status: "집행전",
+  status: "진행전",
   start_date: null,
   end_date: null,
-  goal_amount: null,
+  goal_amount: 0,
   approval_status: "승인전",
   attachments: [],
 });
@@ -277,7 +355,7 @@ const resetFormData = () => {
   formData.value = {
     program_name: "",
     sponsor_type: "단기",
-    status: "집행전",
+    status: "진행전",
     start_date: null,
     end_date: null,
     goal_amount: null,
@@ -307,7 +385,7 @@ watch(
       isEditMode.value = true;
       formData.value.program_name = newVal.program_name || "";
       formData.value.sponsor_type = newVal.sponsor_type || "단기";
-      formData.value.status = newVal.status || "집행전";
+      formData.value.status = newVal.status || "진행전";
       formData.value.approval_status = newVal.approval_status || "승인전";
       formData.value.start_date = newVal.start_date
         ? newVal.start_date.slice(0, 10)
@@ -331,9 +409,16 @@ watch(
       resetFormData();
     }
   },
+
   { immediate: true }
 );
-
+watch(
+  () => props.approvalMode,
+  (v) => {
+    approval_mode.value = v;
+  },
+  { immediate: true }
+);
 const formattedGoalAmount = computed({
   get() {
     return numberFormat(formData.value.goal_amount);
@@ -370,6 +455,9 @@ const handleFileChange = (event) => {
     ...Array.from(event.target.files),
   ];
 };
+// ===================== 수정모드 관련 ============================================ //
+
+// ===================== 첨부파일 관련 ============================================ //
 
 // 파일 미리보기 함수 (추가)
 const previewFile = (file) => {
@@ -405,6 +493,9 @@ const previewFile = (file) => {
 const closePreview = () => {
   previewImage.value = "";
 };
+// ===================== 첨부파일 관련 ============================================ //
+
+// ===================== 프로그램 등록 ============================================ //
 
 const programAdd = async () => {
   const actionText = isEditMode.value ? "수정" : "등록";
@@ -466,6 +557,56 @@ const programAdd = async () => {
     } else {
       alert(`${actionText} 실패: 서버에 연결할 수 없습니다.`);
     }
+  }
+};
+// ===================== 프로그램 등록 ============================================ //
+
+// ===================== 승인 관련 ============================================ //
+
+const approveProgram = async () => {
+  if (formData.value.approval_status === "승인") {
+    return;
+  }
+  const programCode = props.programCode;
+  if (!confirm("승인 확정하시겠습니까?")) return;
+
+  try {
+    await axios.put(`/api/sponsor/${programCode}/request-approval`);
+    alert("승인 완료되었습니다.");
+    router.push("/sponsorshipPlanApprovals");
+  } catch (e) {
+    alert("승인 처리 중 오류 발생");
+  }
+};
+
+// ===================== 반려 관련 ============================================ //
+
+const openRejectModal = () => {
+  if (formData.value.approval_status === "승인") {
+    return;
+  }
+  rejectModal.value = true;
+  console.log(rejectModal.value);
+};
+
+const sendReject = async () => {
+  if (!rejectReason.value.trim()) {
+    alert("반려 사유를 입력하세요.");
+    return;
+  }
+
+  const programCode = props.programCode;
+
+  try {
+    await axios.put(`/api/sponsor/${programCode}/reject`, {
+      reason: rejectReason.value,
+    });
+
+    alert("반려되었습니다.");
+    rejectModal.value = false;
+    router.push("/sponsorshipPlanApprovals");
+  } catch (e) {
+    alert("반려 처리 중 오류 발생");
   }
 };
 </script>
@@ -739,5 +880,25 @@ input[type="file"] {
 }
 .amount {
   float: right;
+}
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-box {
+  background: #fff;
+  padding: 20px;
+  width: 350px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>

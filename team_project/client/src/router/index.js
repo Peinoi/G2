@@ -54,6 +54,17 @@ const router = createRouter({
       component: SponsorProgramList,
     },
     {
+      path: "/sponsor/:programCode/plan-detail",
+      name: "sponsorship-plan-detail",
+      component: () => import("@/components/Sponsor/Common/ProgramAdd.vue"),
+      props: (route) => ({
+        programCode: Number(route.params.programCode),
+        approvalMode: true,
+        role: Number(route.query.role || 0),
+      }),
+    },
+
+    {
       path: "/organization",
       name: "Organization",
       component: Organization,
