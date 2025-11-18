@@ -48,11 +48,19 @@ export async function login(userData) {
 export async function findUserInfo(userData) {
   try {
     const result = await axios.post('/api/userinfo/findInfo', userData);
-    console.log('test');
-    console.log(result);
-    return;
+    return result.data;
   } catch (err) {
     console.log('[ user.js 회원정보 가져오기 실패 ]', err);
     throw err;
+  }
+}
+
+// 자녀 추가
+export async function addChild(childData) {
+  try {
+    const result = await axios.post('/api/userinfo/childAdd', childData);
+    return result;
+  } catch (err) {
+    console.error('[ addChild 오류 ]', err);
   }
 }

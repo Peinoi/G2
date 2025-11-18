@@ -14,4 +14,18 @@ router.post('/findInfo', async (req, res) => {
   }
 });
 
+// 자녀 추가
+router.post('/childAdd', async (req, res) => {
+  const userData = { ...req.body };
+  console.log(userData);
+  try {
+    const result = await userInfoService.childAdd(userData);
+    console.log(result);
+    res.json(result);
+  } catch (err) {
+    console.error('[ childAdd 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: '[ childAdd 라우터 오류 ]' });
+  }
+});
+
 module.exports = router;

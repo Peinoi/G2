@@ -10,6 +10,11 @@
 
     <!-- 목록 모드 -->
     <div v-if="mode === 'list'">
+      <!-- 자녀 없음 -->
+      <div v-if="childList.length === 0" class="no-child-box">
+        <p class="no-child-text">등록된 자녀가 없습니다.</p>
+      </div>
+      <!-- 자녀 있음 -->
       <div class="child-scroll-area">
         <div
           v-for="(child, index) in childList"
@@ -18,7 +23,7 @@
         >
           <div class="child-title">
             <span class="child-index">{{ index + 1 }}번</span>
-            <span class="child-name">{{ child.name }}</span>
+            <span class="child-name">{{ child.child_name }}</span>
           </div>
 
           <div class="child-field">
@@ -28,12 +33,12 @@
 
           <div class="child-field">
             <span class="label">성별</span>
-            <span class="value">{{ child.gender }}</span>
+            <span class="value">{{ genderLabel(child.gender) }}</span>
           </div>
 
           <div class="child-field">
             <span class="label">장애유형</span>
-            <span class="value">{{ child.disability }}</span>
+            <span class="value">{{ child.disability_type }}</span>
           </div>
 
           <div class="btn-row">
@@ -60,7 +65,7 @@
 
       <div class="input-row">
         <MaterialInput
-          v-model="localChild.name"
+          v-model="localChild.child_name"
           label="자녀 이름"
           class="w-100"
         />
@@ -69,18 +74,23 @@
       <div class="input-row">
         <MaterialInput
           v-model="localChild.ssn"
-          label="주민등록번호"
+          label="주민등록번호(숫자만 입력)"
+          @input="formatSSN"
           class="w-100"
         />
       </div>
 
       <div class="input-row">
-        <MaterialInput v-model="localChild.gender" label="성별" class="w-100" />
+        <select v-model="localChild.gender" class="child-select w-100">
+          <option value="">성별을 선택해주세요</option>
+          <option value="AC1">남자</option>
+          <option value="AC2">여자</option>
+        </select>
       </div>
 
       <div class="input-row">
         <MaterialInput
-          v-model="localChild.disability"
+          v-model="localChild.disability_type"
           label="장애유형"
           class="w-100"
         />
@@ -118,10 +128,10 @@ export default {
       mode: 'list', // list | form
       editIndex: null, // index for editing
       localChild: {
-        name: '',
+        child_name: '',
         ssn: '',
         gender: '',
-        disability: '',
+        disability_type: '',
       },
     };
   },
@@ -131,10 +141,10 @@ export default {
       this.mode = 'form';
       this.editIndex = null;
       this.localChild = {
-        name: '',
+        child_name: '',
         ssn: '',
         gender: '',
-        disability: '',
+        disability_type: '',
       };
     },
 
@@ -160,6 +170,20 @@ export default {
       }
       this.cancelForm();
     },
+    genderLabel(code) {
+      if (code === 'AC1') return '남자';
+      if (code === 'AC2') return '여자';
+      return '';
+    },
+    formatSSN() {
+      let digits = this.localChild.ssn.replace(/[^0-9]/g, '');
+      digits = digits.slice(0, 13);
+      if (digits.length > 6) {
+        this.localChild.ssn = digits.slice(0, 6) + '-' + digits.slice(6);
+      } else {
+        this.localChild.ssn = digits;
+      }
+    },
   },
 };
 </script>
@@ -184,11 +208,23 @@ export default {
 }
 
 .child-card {
+  position: relative;
   background: #f8f9fa;
   padding: 16px;
   border-radius: 12px;
   margin-bottom: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.child-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 6px;
+  background: #5e72e4;
 }
 
 .child-title {
@@ -204,14 +240,14 @@ export default {
 }
 
 .label {
-  font-size: 11px;
+  font-size: 14px;
   color: #8392ab;
   font-weight: 700;
   margin-right: 6px;
 }
 
 .value {
-  font-size: 13px;
+  font-size: 14px;
   color: #344767;
   font-weight: 500;
 }
@@ -243,9 +279,36 @@ export default {
   margin-bottom: 14px;
 }
 
+.child-select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  font-size: 14px;
+  color: #344767;
+}
+.child-select:focus {
+  border-color: #5e72e4;
+  outline: none;
+}
+
 .form-btn-row {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.no-child-box {
+  background: #f8f9fa;
+  border: 1px solid #ced4da;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.no-child-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6c757d;
+  margin: auto;
 }
 </style>

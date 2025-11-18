@@ -6,4 +6,10 @@ async function findInfo(userData) {
   return result;
 }
 
-module.exports = { findInfo };
+// 자녀 추가
+async function childAdd(userData) {
+  const result = await userInfoMapper.addChild(userData);
+  return result;
+}
+
+module.exports = { findInfo, childAdd };
