@@ -48,10 +48,45 @@ export async function login(userData) {
 export async function findUserInfo(userData) {
   try {
     const result = await axios.post('/api/userinfo/findInfo', userData);
-    console.log(result);
-    return;
+    return result.data;
   } catch (err) {
     console.log('[ user.js 회원정보 가져오기 실패 ]', err);
     throw err;
+  }
+}
+
+// 사용자, 기관, 자녀 정보 수정
+export async function updateInfo(type, role, payload) {
+  try {
+    const result = await axios.put('/api/userinfo/updateInfo', {
+      type,
+      role,
+      data: payload,
+    });
+    return result.data;
+  } catch (err) {
+    console.error('[ updateInfo 오류 ]', err);
+  }
+}
+
+// 자녀 추가
+export async function addChild(childData) {
+  try {
+    const result = await axios.post('/api/userinfo/childAdd', childData);
+    return result.data;
+  } catch (err) {
+    console.error('[ addChild 오류 ]', err);
+  }
+}
+
+// 자녀 정보 삭제
+export async function deleteChild(childCode) {
+  try {
+    const result = await axios.delete('/api/userinfo/deleteChild', {
+      data: { childCode },
+    });
+    return result.data;
+  } catch (err) {
+    console.error('[ addChild 오류 ]', err);
   }
 }

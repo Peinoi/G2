@@ -1,124 +1,238 @@
 <template>
   <section class="p-6 max-w-6xl mx-auto">
-    <header class="mb-4 flex items-center justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold">역할별 제출본 목록</h2>
-        <p class="text-gray-500 text-sm">
-          역할에 따라 조회 범위가 달라집니다. (1=일반, 2=담당, 3=관리자, 4=시스템)
-        </p>
+    <!-- 🔥 상단 래퍼: 헤더를 한 줄로 예쁘게 -->
+    <div class="page-inner">
+      <!-- 헤더 -->
+      <header class="mb-2 header-row">
+        <div class="header-title">
+          <h2
+            class="page-title text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap align-middle"
+          >
+            조사지 제출 목록
+          </h2>
+        </div>
+
+        <!-- 🔹 로그인 정보 / 역할 표시 (읽기 전용) -->
+        <div class="header-meta">
+          <span class="role-pill"> 권한: {{ roleLabel }} ({{ role }}) </span>
+        </div>
+      </header>
+
+      <!-- 액션 버튼 영역 -->
+      <div class="mb-3 flex justify-between items-center action-row">
+        <div class="flex items-center gap-2">
+          <!-- 🔹 일반 사용자(ROLE=1)만 노출: 조사지 작성하기 -->
+          <MaterialButton
+            v-if="role === 1"
+            color="dark"
+            size="sm"
+            @click="$router.push('/survey/write')"
+          >
+            조사지 작성하기
+          </MaterialButton>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <!-- 임시 ROLE / USER 선택 -->
-        <label class="text-sm">ROLE</label>
-        <select v-model.number="role" class="border px-2 py-1 rounded">
-          <option :value="1">1 (일반)</option>
-          <option :value="2">2 (담당)</option>
-          <option :value="3">3 (관리자)</option>
-          <option :value="4">4 (시스템)</option>
-        </select>
+      <!-- 상태 표시 -->
+      <div v-if="loading" class="text-gray-500">불러오는 중...</div>
+      <div v-else-if="error" class="text-red-600">{{ error }}</div>
 
-        <label class="text-sm">USER</label>
-        <input
-          v-model.number="userId"
-          type="number"
-          class="border px-2 py-1 rounded w-24"
-        />
-
-        <!-- 버튼들 교체 -->
-        <MaterialButton color="dark" size="sm" @click="fetchList">
-          불러오기
-        </MaterialButton>
-
-        <!-- 일반(ROLE=1)만 노출 -->
-        <MaterialButton
-          v-if="role === 1"
-          color="dark"
-          size="sm"
-          @click="$router.push('/survey/write')"
-        >
-          조사지 작성하기
-        </MaterialButton>
+      <!-- 담당자(2)인데 목록이 비었을 때 -->
+      <div v-else-if="role === 2 && list.length === 0" class="empty-card">
+        아직 배정받지 않았습니다.
       </div>
-    </header>
 
-    <div v-if="loading" class="text-gray-500">불러오는 중...</div>
-    <div v-else-if="error" class="text-red-600">{{ error }}</div>
+      <!-- 🔥 테이블 카드 -->
+      <div v-else class="table-card">
+        <table class="nice-table">
+          <thead>
+            <tr>
+              <th class="th-cell text-center w-14">No</th>
+              <th v-if="role === 4" class="th-cell">세부버전</th>
+              <th class="th-cell">지원자 이름</th>
+              <th class="th-cell">담당자 이름</th>
+              <th v-if="role === 4" class="th-cell">기관명</th>
+              <th class="th-cell text-center">제출일</th>
+              <th class="th-cell text-center">상태</th>
+            </tr>
+          </thead>
 
-    <!-- 담당자이고, 목록이 비었을 때 안내 -->
-    <div
-      v-else-if="role === 2 && list.length === 0"
-      class="text-gray-600 border rounded p-6"
-    >
-      아직 배정받지 않았습니다.
-    </div>
+          <tbody>
+            <tr
+              v-for="(row, idx) in paginatedList"
+              :key="row.submit_code"
+              class="table-row-item"
+              @click="goToDetail(row.submit_code)"
+            >
+              <!-- No -->
+              <td class="td-cell text-center">
+                {{ (currentPage - 1) * pageSize + idx + 1 }}
+              </td>
 
-    <table
-      v-else
-      class="w-full border-collapse text-sm border border-gray-300 shadow-sm"
-    >
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="border p-2">submit_code</th>
-          <th class="border p-2">템플릿코드</th>
-          <th class="border p-2">메이저</th>
-          <th class="border p-2">세부버전</th>
-          <th class="border p-2">작성자</th>
-          <th class="border p-2">담당자</th>
-          <th class="border p-2">상태</th>
-          <th class="border p-2">제출일</th>
-          <th class="border p-2">수정일</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="row in list"
-          :key="row.submit_code"
-          class="hover:bg-gray-50 cursor-pointer"
-          @click="goToDetail(row.submit_code)"
-        >
-          <td class="border p-2">{{ row.submit_code }}</td>
-          <td class="border p-2">{{ row.template_code }}</td>
-          <td class="border p-2">{{ row.version_no }}</td>
-          <td class="border p-2">{{ row.version_detail_no }}</td>
-          <td class="border p-2">{{ row.written_by }}</td>
-          <td class="border p-2">{{ row.assi_by ?? "-" }}</td>
-          <td class="border p-2">{{ statusLabel(row.status) }}</td>
-          <td class="border p-2">{{ fmt(row.submit_at) }}</td>
-          <td class="border p-2">{{ fmt(row.updated_at) }}</td>
-        </tr>
-      </tbody>
-    </table>
+              <!-- 시스템(4)일 때만 세부버전 -->
+              <td v-if="role === 4" class="td-cell text-left mono">
+                {{ row.version_detail_no }}
+              </td>
 
-    <!-- 비었을 때 -->
-    <div
-      v-if="!loading && !error && list.length === 0 && role !== 2"
-      class="text-center text-gray-400 py-8"
-    >
-      조회된 제출본이 없습니다.
+              <!-- 지원자 이름 -->
+              <td class="td-cell text-left">
+                {{ row.writer_name || row.written_by }}
+              </td>
+
+              <!-- 담당자 이름 -->
+              <td class="td-cell text-left">
+                {{ row.assignee_name || row.assi_by || "-" }}
+              </td>
+
+              <!-- 시스템(4)일 때만 기관명 -->
+              <td v-if="role === 4" class="td-cell text-left">
+                {{ row.org_name || row.institution_name || "-" }}
+              </td>
+
+              <!-- 제출일 -->
+              <td class="td-cell text-center">
+                {{ fmt(row.submit_at) }}
+              </td>
+
+              <!-- 상태 -->
+              <td class="td-cell text-center td-status">
+                <span class="status-pill" :class="statusClass(row.status)">
+                  {{ statusLabel(row.status) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 🔹 페이지네이션 -->
+      <div v-if="!loading && !error && totalPages > 1" class="mt-6 text-center">
+        <MaterialPagination color="dark" size="md" class="pagination">
+          <MaterialPaginationItem
+            prev
+            :disabled="currentPage === 1"
+            @click="changePage(currentPage - 1)"
+          />
+          <MaterialPaginationItem
+            v-for="page in totalPages"
+            :key="page"
+            :label="String(page)"
+            :active="page === currentPage"
+            @click="changePage(page)"
+          />
+          <MaterialPaginationItem
+            next
+            :disabled="currentPage === totalPages"
+            @click="changePage(currentPage + 1)"
+          />
+        </MaterialPagination>
+      </div>
+
+      <!-- 비었을 때 (담당자 제외) -->
+      <div
+        v-if="!loading && !error && list.length === 0 && role !== 2"
+        class="empty-state"
+      >
+        조회된 제출본이 없습니다.
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import MaterialButton from "@/components/MaterialButton.vue";
+import MaterialPagination from "@/components/MaterialPagination.vue";
+import MaterialPaginationItem from "@/components/MaterialPaginationItem.vue";
 
 const router = useRouter();
 
+/**
+ * 🔹 role: 백엔드 쿼리용 숫자 역할
+ *  - 1: 일반 사용자 (AA1)
+ *  - 2: 담당자 (AA2)
+ *  - 3: 관리자 (AA3)
+ *  - 4: 시스템 (AA4)
+ */
 const role = ref(1);
-const userId = ref(1);
+
+/**
+ * 🔹 userId: 로그인한 유저의 user_code
+ */
+const userId = ref(null);
+
+/**
+ * 🔹 rawAuthCode: localStorage에 저장된 권한 코드(AA1~AA4)
+ */
+const rawAuthCode = ref("AA1");
 
 const list = ref([]);
 const loading = ref(false);
 const error = ref("");
 
+// 🔹 페이징 상태
+const currentPage = ref(1);
+const pageSize = 10;
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(list.value.length / pageSize) || 1)
+);
+
+const paginatedList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return list.value.slice(start, start + pageSize);
+});
+
+function changePage(page) {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+}
+
+/** AA 코드 → 숫자 역할 매핑 */
+function mapAuthToRole(code) {
+  switch (code) {
+    case "AA1":
+      return 1;
+    case "AA2":
+      return 2;
+    case "AA3":
+      return 3;
+    case "AA4":
+      return 4;
+    default:
+      return 1;
+  }
+}
+
+/** 숫자 역할 → 라벨 텍스트 */
+const roleLabel = computed(() => {
+  switch (role.value) {
+    case 1:
+      return "일반 이용자";
+    case 2:
+      return "담당자";
+    case 3:
+      return "관리자";
+    case 4:
+      return "시스템";
+    default:
+      return "알 수 없음";
+  }
+});
+
+/** 목록 조회 */
 async function fetchList() {
   loading.value = true;
   error.value = "";
+
   try {
+    // 일반 사용자(1)는 반드시 userId 필요
+    if (role.value === 1 && !userId.value) {
+      throw new Error("로그인 정보를 찾을 수 없습니다. (user_code 없음)");
+    }
+
     const { data } = await axios.get("/api/survey/submissions", {
       params: { role: role.value, userId: userId.value },
     });
@@ -130,20 +244,24 @@ async function fetchList() {
       : [];
 
     list.value = rows;
+    currentPage.value = 1; // 새로 조회할 때 첫 페이지로
   } catch (e) {
     error.value =
       e?.response?.data?.message || e.message || "목록을 불러오지 못했습니다.";
+    list.value = [];
   } finally {
     loading.value = false;
   }
 }
 
+/** 날짜 포맷 */
 function fmt(v) {
   if (!v) return "-";
   const d = new Date(v);
   return isNaN(d) ? String(v) : d.toISOString().slice(0, 10);
 }
 
+/** 상태 라벨 */
 function statusLabel(code) {
   switch (code) {
     case "CA1":
@@ -155,28 +273,260 @@ function statusLabel(code) {
   }
 }
 
-onMounted(fetchList);
-watch([role, userId], fetchList);
+function statusClass(code) {
+  switch (code) {
+    case "CA1": // 미검토
+      return "status-pending";
+    case "CA3": // 검토완료
+      return "status-done";
+    default:
+      return "status-default";
+  }
+}
 
+/** 상세 페이지 이동 */
 function goToDetail(submitCode) {
   router.push({
     path: `/survey/submission/${submitCode}`,
     query: { role: role.value, userId: userId.value },
   });
 }
+
+/** 🔹 마운트 시 localStorage에서 로그인 정보 읽기 */
+onMounted(() => {
+  try {
+    const stored = localStorage.getItem("user");
+
+    if (stored) {
+      const u = JSON.parse(stored);
+
+      const userCode = u.user_code ?? u.userCode ?? u.id;
+      const auth = u.auth_code ?? u.authCode ?? u.role_code ?? u.role ?? "AA1";
+
+      userId.value = userCode ? Number(userCode) : null;
+      rawAuthCode.value = auth;
+      role.value = mapAuthToRole(String(auth).toUpperCase());
+    } else {
+      userId.value = null;
+      rawAuthCode.value = "AA1";
+      role.value = 1;
+    }
+  } catch (e) {
+    console.error("localStorage 파싱 오류:", e);
+    userId.value = null;
+    rawAuthCode.value = "AA1";
+    role.value = 1;
+  }
+
+  fetchList();
+});
 </script>
 
 <style scoped>
-table {
-  border-collapse: collapse;
+section {
+  color: #111827;
+}
+
+/* 안쪽 래퍼: 전체 폭 제한 + 살짝 간격 */
+.page-inner {
+  max-width: 72rem; /* 1152px 정도 */
+  margin: 0 auto;
+}
+
+/* 헤더 한 줄 유지 */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 1rem;
+}
+
+/* 제목 쪽: 필요하면 줄 잘리게 */
+.header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.page-title {
+  letter-spacing: -0.02em;
+}
+
+/* 오른쪽 역할 정보 */
+.header-meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* 역할 pill */
+.role-pill {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background-color: #f3f4f6;
+  font-size: 0.8rem;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.role-sub {
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+/* 액션 라인 */
+.action-row {
+  margin-top: 0.25rem;
+}
+
+/* 담당자 empty 카드 */
+.empty-card {
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+  background-color: #f9fafb;
+  padding: 1.75rem 1.25rem;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+/* 공통 테이블 카드 */
+.table-card {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+/* 테이블 기본 */
+.nice-table {
   width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
-th,
-td {
-  border: 1px solid #ddd;
+
+/* 헤더 셀 */
+.th-cell {
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* 바디 셀 */
+.td-cell {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+  font-size: 0.9rem;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-cell.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+  color: #4b5563;
+}
+
+/* 행 스타일 */
+.table-row-item {
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+  cursor: pointer;
+}
+
+/* 줄무늬 느낌 (묽게) */
+.table-row-item:nth-child(odd) {
+  background-color: #ffffff;
+}
+.table-row-item:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* hover 효과 */
+.table-row-item:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+/* 상태 뱃지 */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.2rem;
+  padding: 0.12rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+/* 미검토 */
+.status-pending {
+  background-color: #fef9c3;
+  border-color: #facc15;
+  color: #854d0e;
+}
+
+/* 검토완료 */
+.status-done {
+  background-color: #111827;
+  border-color: #111827;
+  color: #f9fafb;
+}
+
+/* 기타 */
+.status-default {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #4b5563;
+}
+
+/* 공통 폰트 정리 (헤더/바디 같이) */
+table th,
+table td {
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* 비었을 때 (담당자 제외) */
+.empty-state {
   text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+  font-size: 0.9rem;
 }
-th {
-  background: #f5f5f5;
+
+/* 페이지네이션 */
+.pagination {
+  display: inline-flex;
+}
+
+.td-status {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap; /* 줄바꿈 허용하고 싶으면 이 줄 지워도 돼 */
 }
 </style>

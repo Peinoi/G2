@@ -227,8 +227,15 @@ async function insertAnswers(body) {
     await conn.beginTransaction();
 
     const template_ver_code = body.template_ver_code;
-    const written_by = body.written_by ?? 1;
+    const written_by = body.written_by;
     const now = new Date();
+
+    if (!template_ver_code) {
+      throw new Error("template_ver_code가 없습니다.");
+    }
+    if (!written_by) {
+      throw new Error("written_by(작성자)가 없습니다.");
+    }
 
     const submission = await conn.query(sql.insertSubmission, [
       template_ver_code,
@@ -342,13 +349,28 @@ async function listSubmissionsByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
     let rows;
+
     if (role === 1) {
+      // 일반: 내가 작성한 것
       rows = await conn.query(sql.listSubmissionsByWriter, [userId]);
     } else if (role === 2) {
+      // 담당자: 나에게 배정된 것
       rows = await conn.query(sql.listSubmissionsByAssignee, [userId]);
+    } else if (role === 3) {
+      // 관리자: 내 기관(org_code)에 속한 작성자들의 제출본만
+      const orgRows = await conn.query(sql.getUserOrgByUserCode, [userId]);
+      const org = orgRows && orgRows[0];
+      if (!org || !org.org_code) {
+        // 기관 정보가 없으면 빈 배열 리턴
+        rows = [];
+      } else {
+        rows = await conn.query(sql.listSubmissionsByOrg, [org.org_code]);
+      }
     } else {
+      // 시스템(4): 전체
       rows = await conn.query(sql.listAllSubmissions);
     }
+
     return safeJSON(rows);
   } finally {
     conn.release();

@@ -6,20 +6,122 @@ async function findUserInfo(userData) {
   try {
     let result;
     if (userData.role == 'AA1') {
-      [result] = await pool.query(userInfoSQL.FIND_USER_INFO, [
-        userData.userId,
-      ]);
+      result = await pool.query(userInfoSQL.FIND_USER_INFO, [userData.userId]);
     } else {
-      [result] = await pool.query(userInfoSQL.FIND_ORG_INFO, [userData.userId]);
+      result = await pool.query(userInfoSQL.FIND_ORG_INFO, [userData.userId]);
     }
-    if (result.length < 1) {
-      return { ok: false, message: '값 없음' };
+    if (!result) {
+      return { false: true, message: '값 없음' };
     }
-    return result[0];
+    return result;
   } catch (err) {
     console.error('[ findUserInfo 실패 ] : ', err);
     throw err;
   }
 }
 
-module.exports = { findUserInfo };
+// 사용자 수정
+async function updateUser(data) {
+  const { user_id, name, phone, address, email } = data;
+  try {
+    const result = await pool.query(userInfoSQL.USER_UPDATE, [
+      name,
+      phone,
+      address,
+      email,
+      user_id,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '사용자 수정 성공' };
+    }
+    return { ok: false, message: '사용자 수정 실패' };
+  } catch (err) {
+    console.error('[ updateUser 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 기관 수정
+async function updateOrg(data) {
+  const { orgName, deptName, roleName, phone, address } = data;
+  try {
+    const result = await pool.query(userInfoSQL.ORG_UPDATE, [
+      orgName,
+      deptName,
+      roleName,
+      phone,
+      address,
+      orgName,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '기관 수정 성공' };
+    }
+    return { ok: false, message: '기관 수정 실패' };
+  } catch (err) {
+    console.error('[ updateOrg 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 자녀 수정
+async function updateChild(data) {
+  const { child_name, ssn, gender, disability_type, child_code } = data;
+  try {
+    const result = await pool.query(userInfoSQL.CHILD_UPDATE, [
+      child_name,
+      ssn,
+      gender,
+      disability_type,
+      child_code,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '자녀 수정 성공' };
+    }
+    return { ok: false, message: '자녀 수정 실패' };
+  } catch (err) {
+    console.error('[ updateChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 자녀 추가
+async function addChild(data) {
+  try {
+    const childData = [
+      data.user_code,
+      data.child_name,
+      data.ssn,
+      data.gender,
+      data.disability_type,
+      data.registered_date,
+    ];
+    await pool.query(userInfoSQL.CHILD_ADD, childData);
+    return { ok: true, message: '자녀 추가 성공' };
+  } catch (err) {
+    console.error('[ addChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 자녀 삭제
+async function deleteChild(data) {
+  try {
+    const result = await pool.query(userInfoSQL.CHILD_DELETE, [data]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '자녀 삭제 성공' };
+    }
+    return { ok: false, message: '자녀 삭제 실패' };
+  } catch (err) {
+    console.error('[ deleteChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
+module.exports = {
+  findUserInfo,
+  addChild,
+  updateUser,
+  updateOrg,
+  updateChild,
+  deleteChild,
+};

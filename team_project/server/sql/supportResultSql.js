@@ -74,6 +74,37 @@ module.exports = {
     ORDER BY sr.result_code DESC
   `,
 
+  // 🔹 목록: 기관 관리자용 (같은 기관 소속 전체)
+  listSupportResultByOrg: `
+  SELECT
+    sr.result_code,
+    sr.plan_code,
+    sp.submit_code,
+    sr.status,
+    ss.submit_at,
+    sp.written_at    AS plan_written_at,
+    sr.written_at    AS result_written_at,
+    writer.name      AS writer_name,
+    assi.name        AS assi_name
+  FROM support_result sr
+  JOIN support_plan sp
+    ON sp.plan_code = sr.plan_code
+  JOIN survey_submission ss
+    ON ss.submit_code = sp.submit_code
+  JOIN users writer
+    ON writer.user_code = ss.written_by
+  LEFT JOIN users assi
+    ON assi.user_code = sr.assi_by
+  WHERE writer.org_code = ?         
+  ORDER BY sr.result_code DESC
+`,
+
+  getOrgCodeByUser: `
+  SELECT org_code
+  FROM users
+  WHERE user_code = ?
+`,
+
   // 🔹 submit_code → plan_code, assi_by
   getPlanBySubmitCode: `
     SELECT

@@ -121,6 +121,81 @@ const deleteAttachmentByCode = `
     WHERE linked_record_pk = ?
       AND linked_table_name = 'support_program'
   `;
+
+// 🔹 지원결과 승인요청 INSERT
+const insertRequestApprovalForResult = `
+    INSERT INTO request_approval (
+      requester_code,
+      processor_code,
+      approval_type,
+      request_date,
+      approval_date,
+      state,
+      rejection_reason,
+      linked_table_name,
+      linked_record_pk
+    ) VALUES (
+      ?,          -- requester_code (담당자 user_code)
+      ?,          -- processor_code (관리자 user_code, 임시로 1)
+      ?,          -- approval_type (예: 'AE8')
+      CURDATE(),  -- request_date
+      NULL,       -- approval_date
+      ?,          -- state (EC1: 요청)
+      NULL,       -- rejection_reason
+      ?,          -- linked_table_name ('support_program')
+      ?           -- linked_record_pk (program_code)
+    )
+  `;
+
+// 🔹 지원결과 승인요청 → 승인(BA2)
+const updateApprovalApproveForResult = `
+    UPDATE request_approval
+    SET
+      state = 'BA2',          -- 승인
+      approval_date = CURDATE(),
+      rejection_reason = NULL
+    WHERE linked_table_name = 'support_program'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE8'
+      AND state = 'BA1'
+  `;
+
+// 🔹 지원결과 승인요청 → 반려(EC3)
+const updateApprovalRejectForResult = `
+    UPDATE request_approval
+    SET
+      state = 'BA3',          -- 반려
+      approval_date = CURDATE(),
+      rejection_reason = ?
+    WHERE linked_table_name = 'support_program'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE8'
+      AND state = 'BA1'
+  `;
+
+// 반려사유
+const getRejectReasonByResult = `
+  SELECT
+    rejection_reason,
+    approval_date   --  반려된 날짜
+  FROM request_approval
+  WHERE linked_table_name = 'support_program'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE8'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC,
+    approval_code DESC
+  LIMIT 1
+`;
+
+const updateSupportResultStatus = `
+    UPDATE support_program
+    SET status = ?
+    WHERE program_code = ?
+  `;
+
 module.exports = {
   sponsor_all,
   sponsor_program,
@@ -130,4 +205,9 @@ module.exports = {
   insertAttachment,
   selectAttachList,
   deleteAttachmentByCode,
+  insertRequestApprovalForResult,
+  updateApprovalApproveForResult,
+  updateApprovalRejectForResult,
+  getRejectReasonByResult,
+  updateSupportResultStatus,
 };

@@ -60,7 +60,7 @@ async function programUpdateSQL(programDataArray) {
   console.log(programDataArray);
   try {
     sponsorConn = await pool.getConnection();
-    // ✨ 쿼리와 함께 데이터 배열을 두 번째 인수로 전달
+    //  쿼리와 함께 데이터 배열을 두 번째 인수로 전달
     const sponsorRows = await sponsorConn.query(
       sponsorSql.sponsor_update,
       programDataArray // <--- 이 배열이 쿼리의 Placeholder(?)에 순서대로 바인딩됨
@@ -176,10 +176,164 @@ async function programSearchCondition(searchParams) {
   }
 }
 
+// 🔹 후원계획 승인 요청 (EC2 + request_approval BA2 + support_result 생성)
+async function requestApprovalProgram(programCode, requesterCode) {
+  const conn = await pool.getConnection();
+  console.log("매퍼 코드와 아이디" + programCode + "|" + requesterCode);
+  try {
+    await conn.beginTransaction();
+
+    // 1) 프로그램 상태 변경
+    await conn.query(
+      "UPDATE support_program SET approval_status = '승인대기중' WHERE program_code = ?",
+      [programCode]
+    );
+
+    // 2) 승인 요청 INSERT
+    await conn.query(sponsorSql.insertRequestApprovalForResult, [
+      requesterCode,
+      1, // 관리자 (임시)
+      "AE8",
+      "BA1",
+      "support_program",
+      programCode,
+    ]);
+
+    await conn.commit();
+    return { programCode };
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+//승인 완료
+async function approvalProgram(programCode) {
+  const conn = await pool.getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    // 1) 프로그램 상태 변경
+    await conn.query(
+      "UPDATE support_program SET status = '진행중', approval_status = '승인' WHERE program_code = ?",
+      [programCode]
+    );
+
+    // 2) 승인 요청 업데이트
+    await conn.query(sponsorSql.updateApprovalApproveForResult, [programCode]);
+
+    await conn.commit();
+    return { programCode };
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 후원계획 반려 (EC3 + request_approval BA3 + 사유)
+async function rejectSupportPlan(planCode, reason) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const planId = Number(planCode);
+    //planId는 프로그램 번호 reason은 반려 사유
+    if (!planId) {
+      throw new Error("유효한 planCode가 아닙니다.");
+    }
+
+    // 1) 프로그램 상태 변경
+    await conn.query(
+      "UPDATE support_program SET status = '진행전', approval_status = '반려' WHERE program_code = ?",
+      [planId]
+    );
+
+    // 2) request_approval 상태 BA3(반려) + 사유 업데이트
+    const result = await conn.query(sponsorSql.updateApprovalRejectForResult, [
+      reason || "",
+      planId,
+    ]);
+
+    await conn.commit();
+    return {
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    };
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 후원계획(plan)에 대한 반려 사유,일자 조회
+async function getRejectionReason(planCode) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.getRejectReasonByPlan, [planCode]);
+
+    if (!rows || rows.length === 0) {
+      // 반려 이력이 없으면 null
+      return null;
+    }
+
+    // { rejection_reason, rejection_date } 형태
+    return safeJSON(rows[0]);
+  } finally {
+    conn.release();
+  }
+}
+//재승인 신청
+async function resubmitPlan(planCode, requesterCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) 현재 support_plan 확인 (상태/submit_code 등 필요하면 여기서 확인)
+    const [plan] = await conn.query(sql.getSupportPlanByCode, [planCode]);
+    if (!plan) {
+      throw new Error("해당 plan_code의 지원계획을 찾을 수 없습니다.");
+    }
+
+    // 2) support_plan 상태를 CC6(재승인요청)으로 변경
+    await conn.query(sql.updateSupportPlanStatus, ["EC4", planCode]);
+
+    // 3) request_approval에 새 승인요청 INSERT
+    await conn.query(sql.insertRequestApprovalForPlan, [
+      requesterCode, // requester_code (담당자)
+      1, // processor_code (관리자, 임시)
+      "AE8", // approval_type
+      "BA1", // state: 요청
+      "support_program",
+      planCode, // linked_record_pk = plan_code
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      planCode,
+      status: "EC3",
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
 module.exports = {
   sponsorSQL,
   programAddSQL,
   programSearch,
   programSearchCondition,
   programUpdateSQL,
+  requestApprovalProgram,
+  approvalProgram,
+  rejectSupportPlan,
+  getRejectionReason,
+  resubmitPlan,
 };

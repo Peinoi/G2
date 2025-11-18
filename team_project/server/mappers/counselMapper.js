@@ -27,24 +27,29 @@ function normalizeDateForDb(val) {
   return val; // '2025-11-14' 같은 정상 값은 그대로
 }
 
-/**
- * 역할별 상담 목록
- * - role = 2(담당자): assi_by = userId 인 것만
- * - role = 3,4(관리자/시스템): 전체
- */
 async function listCounselByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
     let rows;
 
-    if (role === 2) {
-      // 담당자용: 내가 담당자로 배정된 상담만
+    if (role === 1) {
+      // 🔹 1: 일반 사용자는 상담 목록 보지 못함
+      rows = [];
+    } else if (role === 2) {
+      // 🔹 2: 담당자 - 내가 담당자인 상담만
       rows = await conn.query(sql.listCounselByAssignee, [userId]);
-    } else if (role === 3 || role === 4) {
-      // 관리자/시스템: 전체 상담
-      rows = await conn.query(sql.listCounselAll);
+    } else if (role === 3) {
+      // 🔹 3: 관리자 - 내 기관(org_code)에 속한 작성자들의 상담만
+      const orgRows = await conn.query(sql.getUserOrgByUserCode, [userId]);
+      const org = orgRows && orgRows[0];
+
+      if (!org || !org.org_code) {
+        rows = [];
+      } else {
+        rows = await conn.query(sql.listCounselByOrg, [org.org_code]);
+      }
     } else {
-      // 기타 역할이면 일단 전체로 (필요시 정책 변경)
+      // 🔹 4: 시스템(기타 포함) - 전체 상담
       rows = await conn.query(sql.listCounselAll);
     }
 
@@ -97,6 +102,9 @@ async function saveCounsel(body, files = []) {
           counsel_code,
         ]);
         needApprovalRequest = true; // 👉 이번에 처음 승인요청 생성
+      } else if (currentStatus === "CB2") {
+        await conn.query(sql.updateCounselNote, ["CB3", now, counsel_code]);
+        needApprovalRequest = true;
       } else if (currentStatus === "CB4") {
         // 🔥 반려 상태에서 재작성하는 경우:
         //    - updateCounselNoteKeepStatus: status를 CB6 등으로 변경

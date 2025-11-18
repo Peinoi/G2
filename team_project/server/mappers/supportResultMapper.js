@@ -12,19 +12,35 @@ function decodeOriginalName(file) {
   return file?.originalname || "";
 }
 
-// 🔹 역할별 목록 (이미 만들었으면 그대로 두고, 아니면 참고용)
+//목록
 async function listSupportResultsByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
     let rows;
+    const safeUserId = Number(userId) || 0;
 
     if (role === 1) {
-      const writerUserCode = 1;
-      rows = await conn.query(sql.listSupportResultByWriter, [writerUserCode]);
+      // 🔹 일반 사용자: 내가 작성한 결과만
+      rows = await conn.query(sql.listSupportResultByWriter, [safeUserId]);
     } else if (role === 2) {
-      const assiUserCode = 2;
-      rows = await conn.query(sql.listSupportResultByAssignee, [assiUserCode]);
+      // 🔹 담당자: 내가 담당인 결과만
+      rows = await conn.query(sql.listSupportResultByAssignee, [safeUserId]);
+    } else if (role === 3) {
+      // 🔹 기관 관리자: 내 기관 전체
+
+      // 1) 내 기관 코드 조회
+      const orgRows = await conn.query(sql.getOrgCodeByUser, [safeUserId]);
+      const orgCode = orgRows[0]?.org_code;
+
+      if (!orgCode) {
+        // 기관 정보 없으면 빈 배열 반환 (혹은 에러 던져도 됨)
+        rows = [];
+      } else {
+        // 2) 기관 기준 목록 조회
+        rows = await conn.query(sql.listSupportResultByOrg, [orgCode]);
+      }
     } else {
+      // 🔹 role 4(시스템) 등 → 전체
       rows = await conn.query(sql.listSupportResultAll);
     }
 
@@ -38,6 +54,7 @@ async function listSupportResultsByRole(role, userId) {
       resultWrittenAt: r.result_written_at,
       writerName: r.writer_name,
       assiName: r.assi_name,
+      orgName: r.org_name ?? null, // 기관명 쓰고 싶으면 추가
     }));
 
     return safeJSON(mapped);

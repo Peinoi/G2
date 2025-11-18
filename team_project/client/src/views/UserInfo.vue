@@ -6,19 +6,23 @@
 
     <!-- 탭 -->
     <div class="tabs-container">
-      <material-button
-        :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
-        @click="activeTab = 'user'"
-      >
-        사용자 정보
-      </material-button>
+      <div>
+        <material-button
+          :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
+          @click="activeTab = 'user'"
+        >
+          사용자 정보
+        </material-button>
+      </div>
 
-      <material-button
-        :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
-        @click="activeTab = 'org'"
-      >
-        소속기관 정보
-      </material-button>
+      <div>
+        <material-button
+          :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
+          @click="activeTab = 'org'"
+        >
+          소속기관 정보
+        </material-button>
+      </div>
 
       <div v-if="auth.role === 'AA1'">
         <material-button
@@ -76,7 +80,8 @@ import { useAuthStore } from '@/store/authLogin';
 import UserBasicInfo from '@/components/userInfo/UserBasicInfo.vue';
 import UserOrgInfo from '@/components/userInfo/UserOrgInfo.vue';
 import UserChildInfo from '@/components/userInfo/UserChildInfo.vue';
-import axios from 'axios';
+import { findUserInfo, addChild, deleteChild, updateInfo } from '@/api/user';
+import dateFormat from '@/utils/dateFormat';
 
 export default {
   name: 'UserInfo',
@@ -119,44 +124,23 @@ export default {
     this.auth = auth;
 
     this.userData.user_id = auth.userId;
-    this.userData.name = auth.name || '';
-    this.userData.phone = auth.phone || '';
-    this.userData.address = auth.address || '';
-    this.userData.email = auth.email || '';
+    this.userData.name = '';
+    this.userData.phone = '';
+    this.userData.address = '';
+    this.userData.email = '';
     this.originalUser = { ...this.userData };
 
-    this.orgData.orgName = auth.orgName || '';
-    this.orgData.managerName = auth.managerName || '';
-    this.orgData.deptName = auth.deptName || '';
-    this.orgData.roleName = auth.role || '';
-    this.orgData.phone = auth.orgPhone || '';
-    this.orgData.address = auth.orgAddress || '';
+    this.orgData.orgName = '';
+    this.orgData.managerName = '';
+    this.orgData.deptName = '';
+    this.orgData.roleName = auth.role;
+    this.orgData.phone = '';
+    this.orgData.address = '';
     this.originalOrg = { ...this.orgData };
 
-    if (this.auth.role == 'AA1') {
-      this.userFullInfo();
-    }
+    this.userFullInfo();
 
-    this.childList = [
-      {
-        name: '김첫째',
-        ssn: '111111-2222222',
-        gender: '남',
-        disability: '지적장애',
-      },
-      {
-        name: '김둘째',
-        ssn: '111111-2222222',
-        gender: '여',
-        disability: '지체장애',
-      },
-      {
-        name: '김셋째',
-        ssn: '111111-2222222',
-        gender: '남',
-        disability: '자폐성장애',
-      },
-    ];
+    this.childList = [];
   },
 
   methods: {
@@ -168,55 +152,103 @@ export default {
       this.orgData = { ...this.originalOrg };
       this.orgEditMode = false;
     },
-    saveUserInfo(updated) {
-      this.userData = { ...updated };
-      this.originalUser = { ...updated };
-      this.editMode = false;
+    async saveUserInfo(updated) {
+      const result = await updateInfo('user', this.auth.role, updated);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
     },
-    saveOrgInfo(updated) {
-      this.orgData = { ...updated };
-      this.originalOrg = { ...updated };
-      this.orgEditMode = false;
+    async saveOrgInfo(updated) {
+      const result = await updateInfo('org', this.auth.role, updated);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
     },
-    addChild(child) {
-      this.childList.push(child);
+
+    async updateChild(childData) {
+      const result = await updateInfo('child', this.auth.role, childData);
+      if (!result.ok) {
+        alert(result.message);
+        return;
+      }
+      await this.userFullInfo();
     },
-    updateChild({ index, child }) {
-      this.childList.splice(index, 1, child);
+
+    // 자녀 추가
+    async addChild(child) {
+      try {
+        const today = dateFormat(new Date(), 'yyyy-MM-dd');
+        const childData = {
+          user_code: this.auth.userCode,
+          registered_date: today,
+          ...child,
+        };
+
+        const result = await addChild(childData);
+        if (result.ok) {
+          await this.userFullInfo();
+        }
+      } catch (err) {
+        console.error('[ addChild 오류 ]', err);
+      }
     },
-    deleteChild(index) {
-      this.childList.splice(index, 1);
+
+    // 자녀 정보 삭제
+    async deleteChild(childCode) {
+      const result = await deleteChild(childCode);
+      if (!result.ok) {
+        alert('삭제 실패');
+        return;
+      }
+      await this.userFullInfo();
+      alert('삭제 성공');
     },
 
     async userFullInfo() {
       try {
-        const res = await axios.post('/api/userinfo/findInfo', {
+        const res = await findUserInfo({
           userId: this.auth.userId,
           role: this.auth.role,
         });
-        if (!res.ok) {
+
+        if (res.false) {
           console.log('값 없음');
           return;
         }
 
         this.userData = {
-          user_id: res.user_id,
-          name: res.user_name,
-          phone: res.user_phone,
-          address: res.user_address,
-          email: res.email,
+          user_id: res[0].user_id,
+          name: res[0].name,
+          phone: res[0].phone,
+          address: res[0].user_address,
+          email: res[0].email,
         };
         this.originalUser = { ...this.userData };
 
         this.orgData = {
-          orgName: res.org_name || '',
-          managerName: res.manager_name || '',
-          deptName: res.dept_name || '',
-          roleName: res.role,
-          phone: res.org_phone || '',
-          address: res.org_address || '',
+          orgName: res[0].org_name || '소속기관 없음',
+          managerName: res[0].manager_name || '담당자 미정',
+          deptName: res[0].department,
+          roleName: this.auth.role,
+          phone: res[0].org_phone,
+          address: res[0].org_address,
         };
         this.originalOrg = { ...this.orgData };
+
+        const childData = res;
+        this.childList = childData
+          .filter((item) => item.child_name != null)
+          .map((item) => ({
+            child_code: item.child_code,
+            child_name: item.child_name,
+            ssn: item.ssn,
+            gender: item.gender,
+            disability_type: item.disability_type,
+          }));
       } catch (err) {
         console.error('[ loadUserFullInfo 오류 ]', err);
       }

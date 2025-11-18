@@ -1,176 +1,311 @@
 <template>
-  <div class="p-6">
-    <div>
-      <div>
-        <span class="text-xl font-bold mb-2">진행 중인 캠페인</span>
-        <span class="text-xl font-bold mb-2">종료 된 캠페인</span>
+  <div class="program-container">
+    <!-- --------------------- -->
+    <!-- 📌 상단 탭 영역 -->
+    <!-- --------------------- -->
+    <div class="tab-area">
+      <span
+        :class="['tab-item', activeTab === 'ongoing' ? 'active' : '']"
+        @click="activeTab = 'ongoing'"
+      >
+        진행 중인 캠페인
+      </span>
 
-        <hr class="clear-fix" />
+      <span
+        :class="['tab-item', activeTab === 'ended' ? 'active' : '']"
+        @click="activeTab = 'ended'"
+      >
+        종료 된 캠페인
+      </span>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- --------------------- -->
+    <!-- 📌 검색창 + 전체 개수 -->
+    <!-- --------------------- -->
+    <div class="search-area">
+      <div class="total-count">전체 {{ finalList.length }}</div>
+
+      <div class="search-box">
+        <input type="text" placeholder="검색어 입력" v-model="searchKeyword" />
+        <button class="search-btn">🔍</button>
       </div>
-      <div id="search">
-        <span>프로그램 명</span>
-        <select name="program_select" id="program_select" v-model="programCode">
-          <option value="" selected>-- 전체 프로그램 --</option>
-          <option
-            v-for="program in programList"
-            :key="program.program_code"
-            :value="program.program_code"
-          >
-            {{ program.program_name }}
-          </option>
-        </select>
+    </div>
 
-        <span>진행</span>
-        <select name="" id="" v-model="status">
-          <option value="" selected>-- 전체 --</option>
-          <option value="집행전">집행전</option>
-          <option value="집행 중">집행 중</option>
-          <option value="집행 완료">집행 완료</option>
-          <option value="집행 불가">집행 불가</option>
-        </select>
+    <!-- --------------------- -->
+    <!-- 📌 카드형 리스트 -->
+    <!-- --------------------- -->
+    <div class="card-list">
+      <div
+        class="card-item"
+        v-for="item in finalList"
+        :key="item.program_code"
+        @click="selectCampaign(item)"
+      >
+        <!-- 이미지 -->
+        <img class="thumbnail" :src="getThumbnail(item)" alt="thumbnail" />
 
-        <button v-on:click="search()">검색</button>
-        <button v-on:click="clear()">조건 초기화</button>
+        <div class="card-content">
+          <div class="badge">{{ item.status }}</div>
+
+          <div class="title">{{ item.program_name }}</div>
+
+          <div class="summary">
+            {{ formatDate(item.start_date, "yyyy-MM-dd") }} ~
+            {{ formatDate(item.end_date, "yyyy-MM-dd") }}
+          </div>
+        </div>
       </div>
-      <hr />
-      <table border="1" cellpadding="8" cellspacing="0" width="100%">
-        <thead>
-          <tr>
-            <th>프로그램</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="program in sponsorList"
-            @click="selectProgram(program)"
-            :key="program.program_code"
-          >
-            <td>{{ program.program_name }}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </template>
-
-<!-- ============================================================= -->
-
 <script setup>
 import axios from "axios";
-import { ref, onBeforeMount } from "vue";
-let programCode = ref(""); // 프로그램 Select의 값
-let status = ref(""); // 승인 Select의 값
-let sponsorList = ref([]); // 전체 조회 조건 조회
-let programList = ref([]); // 검색창 프로그램 명 리스트 불러오기
-const getSponsorList = async (params = {}) => {
-  let result = await axios
-    .get(`/api/sponsor`, { params: params })
-    .catch((err) => console.log(err));
+import { ref, computed, onMounted } from "vue";
+import dateFormat from "@/utils/dateFormat";
 
-  // API 호출 실패 처리 추가 (이전 대화에서 논의된 부분)
-  if (!result || !result.data) {
-    console.log("조회 결과 데이터가 유효하지 않습니다.");
-    sponsorList.value = [];
-    return;
+// -------------------------------
+// 상태값
+// -------------------------------
+const activeTab = ref("ongoing"); // ongoing / ended
+const searchKeyword = ref("");
+
+// 전체 프로그램 목록
+const campaignList = ref([]);
+
+// 대표 이미지 저장 (program_code → file_path)
+const thumbnailMap = ref({});
+
+// 이미지 없을 때 대체 이미지
+const NO_IMAGE = "/img/noimage.png";
+
+// -------------------------------
+// 대표 이미지 로딩
+// -------------------------------
+const loadThumbnail = async (programCode) => {
+  try {
+    const res = await axios.get(`/api/sponsor/${programCode}`);
+
+    const attachments = res.data.serviceSponsor.attachments;
+
+    if (attachments && attachments.length > 0) {
+      // 첫 번째 이미지를 대표 이미지로 사용
+      thumbnailMap.value[programCode] = attachments[0].file_path;
+    } else {
+      thumbnailMap.value[programCode] = NO_IMAGE;
+    }
+  } catch (e) {
+    console.error("대표 이미지 로딩 실패:", e);
+    thumbnailMap.value[programCode] = NO_IMAGE;
   }
-  const res = result.data.serviceSponsor;
+};
 
-  // 1. 테이블 목록 갱신
-  sponsorList.value = JSON.parse(JSON.stringify(res));
+// 화면에 출력할 이미지 가져오기
+const getThumbnail = (program) => {
+  return thumbnailMap.value[program.program_code] || NO_IMAGE;
+};
 
-  console.log(sponsorList.value);
-  // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
-  //    (검색 결과는 programList에 영향을 주지 않아야 함)
-  if (Object.keys(params).length === 0) {
-    programList.value = JSON.parse(JSON.stringify(res));
+// -------------------------------
+// 전체 리스트 조회
+// -------------------------------
+const getCampaignList = async () => {
+  try {
+    const result = await axios.get("/api/sponsor/");
+
+    if (!result || !result.data) {
+      campaignList.value = [];
+      return;
+    }
+
+    campaignList.value = result.data.serviceSponsor;
+
+    // 프로그램별 대표 이미지 로딩
+    for (const program of campaignList.value) {
+      loadThumbnail(program.program_code);
+    }
+  } catch (e) {
+    console.error("캠페인 조회 실패:", e);
   }
-  console.log(JSON.parse(JSON.stringify(sponsorList.value)));
 };
 
-onBeforeMount(() => {
-  getSponsorList();
+// -------------------------------
+// 탭 필터
+// -------------------------------
+const filteredListByTab = computed(() => {
+  return campaignList.value.filter((item) => {
+    if (activeTab.value === "ongoing") {
+      return item.status === "진행중" || item.status === "진행중";
+    } else {
+      return item.status === "완료" || item.status === "중단";
+    }
+  });
 });
-defineExpose({
-  getSponsorList,
+
+// -------------------------------
+// 검색 기능
+// -------------------------------
+const finalList = computed(() => {
+  const kw = searchKeyword.value.trim();
+  if (!kw) return filteredListByTab.value;
+
+  return filteredListByTab.value.filter((item) =>
+    item.program_name.includes(kw)
+  );
 });
-const search = () => {
-  const searchParams = {
-    programCode: programCode.value,
-    status: status.value,
-  };
 
-  // getSponsorList 함수를 검색 파라미터와 함께 호출
-  console.log(searchParams);
-  getSponsorList(searchParams);
+// -------------------------------
+// 단건 조회 → 상위 컴포넌트 전달
+// -------------------------------
+const emit = defineEmits(["select-program"]);
+
+const selectCampaign = async (program) => {
+  try {
+    const res = await axios.get(`/api/sponsor/${program.program_code}`);
+
+    const programDetail = res.data.serviceSponsor.sponsorRows[0];
+    const attachments = res.data.serviceSponsor.attachments;
+
+    emit("select-program", {
+      ...programDetail,
+      attachments,
+    });
+  } catch (e) {
+    console.error("단건 조회 실패:", e);
+  }
 };
 
-const clear = () => {
-  programCode.value = "";
-  status.value = "";
-  getSponsorList(); // 전체 리스트 다시 조회
+// -------------------------------
+// 날짜 포맷
+// -------------------------------
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  return dateFormat(dateStr, "yyyy.MM.dd");
 };
+
+// -------------------------------
+// mount 시 전체 목록 로드
+// -------------------------------
+onMounted(() => {
+  getCampaignList();
+});
 </script>
 
-<!-- ============================================================= -->
-
 <style scoped>
-/* div#search에 Flexbox 적용 */
-#search {
-  display: flex; /* 자식 요소들을 유연하게 배치 */
-  align-items: center; /* 수직 중앙 정렬 */
-  gap: 15px; /* 요소들 사이의 기본 간격 설정 */
-  flex-wrap: wrap; /* 창 크기가 줄어들면 줄바꿈 허용 (안전성) */
+.program-container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-/* 금액 입력 input의 너비 유지 */
-.inputBox {
-  width: 100px;
-}
-.clear-fix {
-  clear: both; /* float된 요소 아래에서 시작하도록 강제 */
-  /* 필요하다면 hr의 기본 margin을 제거/조정하여 간격 제어 */
-  margin-top: 0;
-  margin-bottom: 20px;
+/* ------------------- */
+/* 탭 영역 */
+/* ------------------- */
+.tab-area {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 10px;
 }
 
-#proAdd {
-  float: left; /* 이 스타일은 유지 */
-  margin-left: 0;
-  margin-bottom: 10px; /* hr이 clear 되었으므로 이 간격은 버튼과 다음 요소 사이에 생깁니다. */
-  padding: 8px 15px;
-  background-color: #28a745;
-  color: white;
+.tab-item {
+  font-size: 20px;
+  font-weight: bold;
+  color: #777;
+  cursor: pointer;
+}
+
+.tab-item.active {
+  color: #000;
+  border-bottom: 3px solid #000;
+}
+
+.divider {
+  margin: 10px 0 20px 0;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  height: 1px;
+  background: #ddd;
 }
 
-/* Select와 Input 요소의 기본 너비를 조절하여 보기 좋게 만듭니다. */
-#search input[type="date"],
-#search select {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+/* ------------------- */
+/* 검색 + 카운트 */
+/* ------------------- */
+.search-area {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* 금액 input 뒤의 '승인' 텍스트를 Input과 붙여주기 위해 약간 조정 */
-#search input[type="number"] {
-  margin-right: -10px;
+.total-count {
+  font-weight: bold;
 }
 
-/* 검색 버튼 스타일 조정 */
-#search button {
-  padding: 6px 15px;
-  background-color: #007bff; /* 파란색 배경 (예시) */
-  color: white;
+.search-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #bbb;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.search-box input {
   border: none;
-  border-radius: 4px;
+  outline: none;
+}
+
+.search-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* ------------------- */
+/* 카드 리스트 */
+/* ------------------- */
+.card-list {
+  margin-top: 20px;
+}
+
+.card-item {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  padding: 15px 0;
   cursor: pointer;
 }
-tbody tr:hover {
-  cursor: pointer;
-  background-color: gray;
-  opacity: 0.5;
+
+.card-item:hover {
+  background: #fafafa;
+}
+
+.thumbnail {
+  width: 200px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.card-content {
+  margin-left: 20px;
+  flex: 1;
+}
+
+.badge {
+  display: inline-block;
+  background: #d9534f;
   color: white;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.summary {
+  color: #555;
+  margin-top: 5px;
 }
 </style>

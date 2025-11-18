@@ -156,4 +156,26 @@ router.post("/", async (req, res) => {
   }
 });
 
+// 단순 목록 (코드+이름)
+router.get("/simple", async (req, res) => {
+  try {
+    const rows = await orgService.organizationList();
+    const simple = rows.map((o) => ({
+      org_code: o.org_code,
+      org_name: o.org_name,
+    }));
+
+    return res.status(200).json({
+      status: "success",
+      data: simple,
+    });
+  } catch (err) {
+    console.error("[GET /organization/simple] 실패:", err.stack || err);
+    return res.status(500).json({
+      status: "error",
+      message: "서버 오류",
+    });
+  }
+});
+
 module.exports = router;

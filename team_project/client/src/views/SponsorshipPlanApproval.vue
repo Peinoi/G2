@@ -8,7 +8,7 @@
       <input
         v-model="keyword"
         class="priority-input"
-        placeholder="프로그램명/후원유형 검색"
+        :placeholder="searchPlaceholder"
         @keyup.enter="searchList"
       />
 
@@ -37,11 +37,14 @@
           <tr>
             <th>승인코드</th>
             <th>프로그램</th>
+            <!-- 기관: 시스템 관리자만 -->
+            <th v-if="isAA4">기관</th>
             <th>작성일</th>
             <th>후원유형</th>
             <th>목표기간</th>
             <th>목표금액</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -55,6 +58,9 @@
 
             <!-- [프로그램코드]프로그램명 -->
             <td>[{{ item.program_code }}] {{ item.program_name }}</td>
+
+            <!-- 기관 (AA4만) -->
+            <td v-if="isAA4">{{ item.org_name }}</td>
 
             <!-- 작성일(프로그램 생성일) -->
             <td>{{ formatDate(item.create_date) }}</td>
@@ -74,10 +80,15 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+
+            <!-- 처리일 -->
+            <td>{{ formatDate(item.approval_date) }}</td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="7">데이터가 없습니다.</td>
+            <td class="priority-empty" :colspan="isAA4 ? 9 : 8">
+              데이터가 없습니다.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -112,8 +123,11 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/store/authLogin"; // 경로는 프로젝트 구조에 맞게
 
 const router = useRouter();
+const auth = useAuthStore();
+
 const list = ref([]);
 
 // 페이지 관련 상태
@@ -131,6 +145,15 @@ const totalPages = computed(() =>
 const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest");
+
+// 역할 플래그
+const isAA3 = computed(() => auth.role === "AA3"); // 기관 관리자
+const isAA4 = computed(() => auth.role === "AA4"); // 시스템 관리자
+
+// 검색 placeholder: AA4만 기관 포함
+const searchPlaceholder = computed(() =>
+  isAA4.value ? "프로그램명/후원유형/기관 검색" : "프로그램명/후원유형 검색"
+);
 
 // 공통코드 라벨 매핑
 const CODE_LABEL_MAP = {
@@ -193,6 +216,11 @@ function searchList() {
 
 // 목록 조회
 async function loadList() {
+  // 권한 체크
+  if (!auth.isLogin || (!isAA3.value && !isAA4.value)) {
+    return;
+  }
+
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/sponsorship-plan", {
@@ -202,6 +230,9 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
+        // 기관 필터용
+        loginId: auth.userId,
+        role: auth.role,
       },
     });
 
@@ -242,7 +273,25 @@ function goDetail(item) {
   });
 }
 
-onMounted(loadList);
+onMounted(() => {
+  auth.reload();
+
+  if (!auth.isLogin) {
+    alert("로그인이 필요합니다.");
+    router.push({ name: "SignIn" }); // 실제 로그인 라우트 이름에 맞게 수정
+    return;
+  }
+
+  if (auth.role !== "AA3" && auth.role !== "AA4") {
+    alert(
+      "접근 권한이 없습니다. (기관 관리자/시스템 관리자만 이용 가능합니다)"
+    );
+    router.push({ name: "Home" }); // 메인 라우트 이름에 맞게 수정
+    return;
+  }
+
+  loadList();
+});
 </script>
 
 <style scoped>
