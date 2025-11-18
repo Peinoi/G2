@@ -16,6 +16,10 @@ const signRouter = require("./routes/signUser");
 const userRouter = require("./routes/userRoute");
 const attachmentRouter = require("./routes/attachmentRoute");
 const assign = require("./routes/assignRoute");
+const historyRoute = require("./routes/historyRoute");
+const managerRoute = require("./routes/managerRoute");
+const authorityTransferRoute = require("./routes/authorityTransferRoute");
+const applicationRoute = require("./routes/applicationRoute");
 
 dotenv.config();
 
@@ -40,6 +44,10 @@ app.use("/user", signRouter);
 app.use("/userinfo", userRouter);
 app.use("/attachment", attachmentRouter);
 app.use("/assign", assign);
+app.use("/histories", historyRoute);
+app.use("/managers", managerRoute);
+app.use("/authority-transfer", authorityTransferRoute);
+app.use("/applications", applicationRoute);
 
 // const port = process.env.PORT;
 const port = process.env.PORT;

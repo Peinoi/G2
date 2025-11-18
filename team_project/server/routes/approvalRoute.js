@@ -303,12 +303,18 @@ router.get("/event-plan", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    // 🔹 추가: 로그인 아이디 / 역할
+    const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
+
     const result = await approvalService.getEventPlanApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
+      role,
     });
 
     return res.status(200).json({
@@ -334,12 +340,18 @@ router.get("/event-result", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    // 🔹 추가: 로그인 아이디 / 역할
+    const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
+
     const result = await approvalService.getEventResultApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
+      role,
     });
 
     return res.status(200).json({
@@ -365,12 +377,18 @@ router.get("/sponsorship-plan", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    // 🔹 추가: 로그인 아이디 / 역할
+    const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
+
     const result = await approvalService.getSponsorshipPlanApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
+      role,
     });
 
     return res.status(200).json({
@@ -399,12 +417,17 @@ router.get("/sponsorship-result", async (req, res) => {
     const page = parseInt(req.query.page || "1", 10);
     const size = parseInt(req.query.size || "20", 10);
 
+    const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
+
     const result = await approvalService.getSponsorshipResultApprovalList({
       page,
       size,
       state,
       keyword,
       orderBy,
+      loginId,
+      role,
     });
 
     return res.status(200).json({

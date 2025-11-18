@@ -513,6 +513,8 @@ const eventPlanApprovalList = `
     , mgrUser.name          AS manager_name -- 담당자(메인 매니저, DA1)
     , org.org_name          AS org_name     -- 기관명
 
+    , e.event_register_date AS written_at   -- ✅ 작성일(이벤트 등록 신청 일자)
+
     , e.max_participants    AS max_participants  -- 모집 인원
     , e.recruit_start_date  AS recruit_start_date
     , e.recruit_end_date    AS recruit_end_date  -- 모집 기간
@@ -556,6 +558,17 @@ const eventPlanApprovalList = `
       org.org_name   LIKE CONCAT('%', ?, '%')
   )
 
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기 (AA3), AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+  )
+
   ORDER BY 
     CASE WHEN ? = 'latest' THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest' THEN ra.request_date END ASC,
@@ -589,6 +602,16 @@ const eventPlanApprovalTotalCount = `
       mgrUser.name   LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
     )
+    -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트 (AA3), AA4는 전체
+    AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+    )
 `;
 
 // 🔹 이벤트 결과 승인 요청 목록 (페이징용)
@@ -606,7 +629,10 @@ const eventResultApprovalList = `
     , e.event_start_date    AS event_start_date
     , e.event_end_date      AS event_end_date    -- 시행 기간
 
+    , er.report_register_date AS written_at  -- ✅ 작성일(결과보고서 등록일)
+
     , ra.state              AS state        -- 요청 상태(BA 코드)
+    , ra.approval_date      AS approval_date -- 처리일(승인/반려 일자)
     , er.event_result_code  AS result_code  -- 이벤트 결과 코드 (상세 이동용)
   FROM request_approval ra
 
@@ -645,6 +671,17 @@ const eventResultApprovalList = `
       org.org_name   LIKE CONCAT('%', ?, '%')
   )
 
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기 (AA3), AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+  )
+
   ORDER BY 
     CASE WHEN ? = 'latest' THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest' THEN ra.request_date END ASC,
@@ -680,6 +717,16 @@ const eventResultApprovalTotalCount = `
       mgrUser.name   LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
     )
+    -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트 (AA3), AA4는 전체
+    AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
+    )
 `;
 
 // 🔹 후원 계획 승인 요청 목록 (AE8, 페이징용)
@@ -693,7 +740,9 @@ const sponsorshipPlanApprovalList = `
     , sp.end_date                       -- 목표 종료일
     , sp.goal_amount                    -- 목표금액
     , sp.create_date                    -- 작성일(프로그램 생성일)
-    , ra.state                          -- 요청 상태(BA1/BA2/BA3)
+    , org.org_name      AS org_name     -- 기관명
+    , ra.state          AS state        -- 요청 상태(BA1/BA2/BA3)
+    , ra.approval_date  AS approval_date -- 처리일(승인/반려 일자)
   FROM request_approval ra
   JOIN support_program sp
     ON ra.linked_table_name = 'support_program'
@@ -704,16 +753,36 @@ const sponsorshipPlanApprovalList = `
     ON cc.group_code = 'EB'
    AND cc.code_id    = sp.sponsor_type
 
+  /* 작성자 (회원) */
+  LEFT JOIN users u
+    ON u.user_id = sp.writer
+
+  /* 기관 */
+  LEFT JOIN organization org
+    ON org.org_code = u.org_code
+
   WHERE ra.approval_type = 'AE8'   -- 후원 계획 승인 요청
 
   -- 상태 필터 (전체면 무시)
   AND (? = '' OR ra.state = ?)
 
-  -- 검색어 필터: 프로그램명 / 후원유형명
+  -- 검색어 필터: 프로그램명 / 후원유형명 / 기관명
   AND (
       ? = '' OR
       sp.program_name LIKE CONCAT('%', ?, '%') OR
-      cc.code_name    LIKE CONCAT('%', ?, '%')
+      cc.code_name    LIKE CONCAT('%', ?, '%') OR
+      org.org_name    LIKE CONCAT('%', ?, '%')
+  )
+
+  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기 (AA3), AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
   )
 
   ORDER BY
@@ -737,12 +806,27 @@ const sponsorshipPlanApprovalTotalCount = `
   LEFT JOIN common_code cc
     ON cc.group_code = 'EB'
    AND cc.code_id    = sp.sponsor_type
+  LEFT JOIN users u
+    ON u.user_id = sp.writer
+  LEFT JOIN organization org
+    ON org.org_code = u.org_code
   WHERE ra.approval_type = 'AE8'
     AND (? = '' OR ra.state = ?)
     AND (
       ? = '' OR
       sp.program_name LIKE CONCAT('%', ?, '%') OR
-      cc.code_name    LIKE CONCAT('%', ?, '%')
+      cc.code_name    LIKE CONCAT('%', ?, '%') OR
+      org.org_name    LIKE CONCAT('%', ?, '%')
+    )
+    -- 🔹 기관 관리자(AA3)는 자기 기관만, AA4는 전체
+    AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
     )
 `;
 
@@ -757,7 +841,9 @@ const sponsorshipResultApprovalList = `
     , sp.end_date                       -- 목표 종료일
     , sp.goal_amount                    -- 목표금액
     , sr.create_date                    -- 작성일(후원 결과 보고서 생성일)
-    , ra.state                          -- 요청 상태(BA1/BA2/BA3)
+    , org.org_name      AS org_name     -- 기관명
+    , ra.state          AS state        -- 요청 상태(BA1/BA2/BA3)
+    , ra.approval_date  AS approval_date -- 처리일(승인/반려 일자)
   FROM request_approval ra
 
   /* 후원 결과 보고서 */
@@ -774,16 +860,36 @@ const sponsorshipResultApprovalList = `
     ON cc.group_code = 'EB'
    AND cc.code_id    = sp.sponsor_type
 
+  /* 작성자 (회원) */
+  LEFT JOIN users u
+    ON u.user_id = sp.writer
+
+  /* 기관 */
+  LEFT JOIN organization org
+    ON org.org_code = u.org_code
+
   WHERE ra.approval_type = 'AE9'   -- 후원 결과 승인 요청
 
   -- 상태 필터 (전체면 무시)
   AND (? = '' OR ra.state = ?)
 
-  -- 검색어 필터: 프로그램명 / 후원유형명
+  -- 검색어 필터: 프로그램명 / 후원유형명 / 기관명
   AND (
       ? = '' OR
       sp.program_name LIKE CONCAT('%', ?, '%') OR
-      cc.code_name    LIKE CONCAT('%', ?, '%')
+      cc.code_name    LIKE CONCAT('%', ?, '%') OR
+      org.org_name    LIKE CONCAT('%', ?, '%')
+  )
+
+  -- 기관 필터: AA3는 자기 기관만, AA4는 전체
+  AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
   )
 
   ORDER BY
@@ -809,12 +915,26 @@ const sponsorshipResultApprovalTotalCount = `
   LEFT JOIN common_code cc
     ON cc.group_code = 'EB'
    AND cc.code_id    = sp.sponsor_type
+  LEFT JOIN users u
+    ON u.user_id = sp.writer
+  LEFT JOIN organization org
+    ON org.org_code = u.org_code
   WHERE ra.approval_type = 'AE9'
     AND (? = '' OR ra.state = ?)
     AND (
       ? = '' OR
       sp.program_name LIKE CONCAT('%', ?, '%') OR
-      cc.code_name    LIKE CONCAT('%', ?, '%')
+      cc.code_name    LIKE CONCAT('%', ?, '%') OR
+      org.org_name    LIKE CONCAT('%', ?, '%')
+    )
+    AND (
+      ? = '' OR
+      org.org_code = (
+          SELECT u2.org_code
+          FROM users u2
+          WHERE u2.user_id = ?
+          LIMIT 1
+      )
     )
 `;
 

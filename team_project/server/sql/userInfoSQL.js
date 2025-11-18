@@ -1,18 +1,77 @@
 const FIND_USER_INFO = `
+SELECT 
+   u.user_id,
+   u.name,
+   u.phone,
+   u.address AS user_address,
+   u.email,
+   o.org_name,
+   u.manager_code,
+   o.org_phone,
+   o.address AS org_address,
+   c.child_code,
+   c.child_name,
+   c.ssn,
+   c.gender,
+   c.disability_type
+FROM users u
+LEFT JOIN organization o
+       ON u.org_code = o.org_code
+LEFT JOIN child c
+       ON u.user_code = c.user_code
+WHERE u.user_id = ?
+ORDER BY c.child_code ASC`;
+
+const FIND_ORG_INFO = `
 SELECT u.user_id
-  	 , u.name
-     , u.phone
-     , u.address AS user_address
-     , u.email
-     , o.org_name
-     , u.manager_code
-     , o.org_phone
-     , o.address AS org_address
+   , u.name
+   , u.phone
+   , u.address AS user_address
+   , u.email
+   , o.org_code
+   , o.org_name
+   , u.department
+   , u.role
+   , o.org_phone
+   , o.address AS org_address
 FROM users u
 LEFT JOIN organization o
 	   ON u.org_code = o.org_code
 	WHERE u.user_id = ?`;
 
-const FIND_ORG_INFO = ``;
+const USER_UPDATE = ``;
 
-module.exports = { FIND_USER_INFO, FIND_ORG_INFO };
+const ORG_UPDATE = ``;
+
+const CHILD_UPDATE = `
+UPDATE child
+SET child_name = ?
+	, ssn = ?
+   , gender = ?
+   , disability_type = ?
+WHERE child_code = ?`;
+
+const CHILD_ADD = `
+INSERT INTO child(
+   user_code
+   , child_name
+   , ssn
+   , gender
+   , disability_type
+   , registered_date
+) VALUES(?, ?, ?, ?, ?, ?)`;
+
+const CHILD_DELETE = `
+DELETE FROM child
+WHERE child_code = ?;
+`;
+
+module.exports = {
+  FIND_USER_INFO,
+  FIND_ORG_INFO,
+  USER_UPDATE,
+  ORG_UPDATE,
+  CHILD_UPDATE,
+  CHILD_ADD,
+  CHILD_DELETE,
+};
