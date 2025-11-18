@@ -527,7 +527,15 @@ async function supportResultApprovalList({
 }
 
 // 🔹 이벤트 계획 승인 요청 목록 조회 (페이징 + 검색/정렬)
-async function eventPlanApprovalList({ page, size, keyword, state, orderBy }) {
+async function eventPlanApprovalList({
+  page,
+  size,
+  keyword,
+  state,
+  orderBy,
+  loginId,
+  role,
+}) {
   const conn = await pool.getConnection();
   try {
     const st = state || "";
@@ -538,6 +546,10 @@ async function eventPlanApprovalList({ page, size, keyword, state, orderBy }) {
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
+    // 🔹 시스템 관리자(AA4)는 기관 필터 없이 전체, 기관 관리자(AA3)는 자기 기관만
+    const isSystemAdmin = role === "AA4";
+    const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
+
     const params = [
       st,
       st, // 상태 필터
@@ -546,6 +558,10 @@ async function eventPlanApprovalList({ page, size, keyword, state, orderBy }) {
       kw,
       kw,
       kw, // 검색어 필터 (이벤트명 / 담당자 / 기관명)
+
+      // 🔹 기관 필터 ('' 이면 필터 해제 => AA4)
+      orgFilterLoginId,
+      orgFilterLoginId,
 
       ob, // latest
       ob, // oldest
@@ -558,7 +574,16 @@ async function eventPlanApprovalList({ page, size, keyword, state, orderBy }) {
     const retRows = await conn.query(approvalSQL.eventPlanApprovalList, params);
     const rows = rowsFrom(retRows);
 
-    const countParams = [st, st, kw, kw, kw, kw];
+    const countParams = [
+      st,
+      st,
+      kw,
+      kw,
+      kw,
+      kw,
+      orgFilterLoginId,
+      orgFilterLoginId,
+    ];
 
     const retCount = await conn.query(
       approvalSQL.eventPlanApprovalTotalCount,
@@ -576,6 +601,12 @@ async function eventPlanApprovalList({ page, size, keyword, state, orderBy }) {
       kw,
       "| orderBy:",
       ob,
+      "| role:",
+      role,
+      "| loginId:",
+      loginId,
+      "| orgFilterLoginId:",
+      orgFilterLoginId,
       "| page:",
       pageNum,
       "| size:",
@@ -602,6 +633,8 @@ async function eventResultApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   const conn = await pool.getConnection();
   try {
@@ -613,6 +646,10 @@ async function eventResultApprovalList({
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
+    // 🔹 시스템 관리자(AA4)는 기관 필터 없이 전체, 기관 관리자(AA3)는 자기 기관만
+    const isSystemAdmin = role === "AA4";
+    const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
+
     const params = [
       st,
       st, // 상태 필터
@@ -621,6 +658,10 @@ async function eventResultApprovalList({
       kw,
       kw,
       kw, // 검색어 필터 (이벤트명 / 담당자 / 기관명)
+
+      // 🔹 기관 필터 ('' 이면 필터 해제 => AA4)
+      orgFilterLoginId,
+      orgFilterLoginId,
 
       ob, // latest
       ob, // oldest
@@ -636,7 +677,16 @@ async function eventResultApprovalList({
     );
     const rows = rowsFrom(retRows);
 
-    const countParams = [st, st, kw, kw, kw, kw];
+    const countParams = [
+      st,
+      st,
+      kw,
+      kw,
+      kw,
+      kw,
+      orgFilterLoginId,
+      orgFilterLoginId,
+    ];
 
     const retCount = await conn.query(
       approvalSQL.eventResultApprovalTotalCount,
@@ -654,6 +704,12 @@ async function eventResultApprovalList({
       kw,
       "| orderBy:",
       ob,
+      "| role:",
+      role,
+      "| loginId:",
+      loginId,
+      "| orgFilterLoginId:",
+      orgFilterLoginId,
       "| page:",
       pageNum,
       "| size:",
@@ -680,6 +736,8 @@ async function sponsorshipPlanApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   const conn = await pool.getConnection();
   try {
@@ -691,14 +749,23 @@ async function sponsorshipPlanApprovalList({
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
-    // 💡 approvalSQL.sponsorshipPlanApprovalList 에 맞춘 파라미터 순서
+    // 🔹 시스템 관리자(AA4): 전체, 기관 관리자(AA3): 자기 기관만
+    const isSystemAdmin = role === "AA4";
+    const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
+
+    // 💡 approvalSQL.sponsorshipPlanApprovalList 에 맞춘 파라미터
     const params = [
       st,
       st, // 상태 필터
 
       kw,
       kw,
-      kw, // 프로그램명 / 후원유형명 검색
+      kw,
+      kw, // 프로그램명 / 후원유형명 / 기관명
+
+      // 기관 필터
+      orgFilterLoginId,
+      orgFilterLoginId,
 
       ob, // latest
       ob, // oldest
@@ -715,7 +782,16 @@ async function sponsorshipPlanApprovalList({
     );
     const rows = rowsFrom(retRows);
 
-    const countParams = [st, st, kw, kw, kw];
+    const countParams = [
+      st,
+      st,
+      kw,
+      kw,
+      kw,
+      kw,
+      orgFilterLoginId,
+      orgFilterLoginId,
+    ];
 
     const retCount = await conn.query(
       approvalSQL.sponsorshipPlanApprovalTotalCount,
@@ -733,6 +809,12 @@ async function sponsorshipPlanApprovalList({
       kw,
       "| orderBy:",
       ob,
+      "| role:",
+      role,
+      "| loginId:",
+      loginId,
+      "| orgFilterLoginId:",
+      orgFilterLoginId,
       "| page:",
       pageNum,
       "| size:",
@@ -759,6 +841,8 @@ async function sponsorshipResultApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   const conn = await pool.getConnection();
   try {
@@ -770,6 +854,10 @@ async function sponsorshipResultApprovalList({
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
+    // 시스템 관리자(AA4): 전체, 기관 관리자(AA3): 자기 기관만
+    const isSystemAdmin = role === "AA4";
+    const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
+
     // approvalSQL.sponsorshipResultApprovalList 의 ? 순서에 맞춘 파라미터
     const params = [
       st,
@@ -777,7 +865,12 @@ async function sponsorshipResultApprovalList({
 
       kw,
       kw,
-      kw, // 검색어 필터 (프로그램명 / 후원유형명)
+      kw,
+      kw, // 프로그램명 / 후원유형명 / 기관명
+
+      // 기관 필터
+      orgFilterLoginId,
+      orgFilterLoginId,
 
       ob, // latest
       ob, // oldest
@@ -794,7 +887,16 @@ async function sponsorshipResultApprovalList({
     );
     const rows = rowsFrom(retRows);
 
-    const countParams = [st, st, kw, kw, kw];
+    const countParams = [
+      st,
+      st,
+      kw,
+      kw,
+      kw,
+      kw,
+      orgFilterLoginId,
+      orgFilterLoginId,
+    ];
 
     const retCount = await conn.query(
       approvalSQL.sponsorshipResultApprovalTotalCount,
@@ -812,6 +914,12 @@ async function sponsorshipResultApprovalList({
       kw,
       "| orderBy:",
       ob,
+      "| role:",
+      role,
+      "| loginId:",
+      loginId,
+      "| orgFilterLoginId:",
+      orgFilterLoginId,
       "| page:",
       pageNum,
       "| size:",

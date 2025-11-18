@@ -229,6 +229,8 @@ async function getEventPlanApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   return await approvalMapper.eventPlanApprovalList({
     page,
@@ -236,6 +238,8 @@ async function getEventPlanApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
+    role,
   });
 }
 
@@ -246,6 +250,8 @@ async function getEventResultApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   return await approvalMapper.eventResultApprovalList({
     page,
@@ -253,6 +259,8 @@ async function getEventResultApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
+    role,
   });
 }
 
@@ -263,6 +271,8 @@ async function getSponsorshipPlanApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   return await approvalMapper.sponsorshipPlanApprovalList({
     page,
@@ -270,6 +280,8 @@ async function getSponsorshipPlanApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
+    role,
   });
 }
 
@@ -280,6 +292,8 @@ async function getSponsorshipResultApprovalList({
   keyword,
   state,
   orderBy,
+  loginId,
+  role,
 }) {
   return await approvalMapper.sponsorshipResultApprovalList({
     page,
@@ -287,6 +301,8 @@ async function getSponsorshipResultApprovalList({
     keyword,
     state,
     orderBy,
+    loginId,
+    role,
   });
 }
 
