@@ -480,7 +480,8 @@ router.beforeEach((to, from, next) => {
   if (infoPage.includes(to.name)) {
     menu.setPageTitle('마이 페이지');
     menu.setMenu(infoMenu);
-    
+  }
+  
   // 히스토리 그룹 라우트일 경우 자동 메뉴 설정
   if (historyPages.includes(to.name)) {
     menu.setPageTitle("히스토리");
