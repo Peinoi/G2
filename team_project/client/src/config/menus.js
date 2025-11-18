@@ -163,9 +163,9 @@ export const appReqMenu = [
   },
   {
     label: "권한 이전",
-    path: "/sponsorshipResultApprovals",
-    collapseRef: "SponsorshipResultApprovals",
-    role: ["AA3", "AA4"],
+    path: "/authorityTransfer",
+    collapseRef: "AuthorityTransfer",
+    role: ["AA3"],
   },
 ];
 
@@ -196,5 +196,14 @@ export const spportMenu = [
     path: "/result-list",
     collapseRef: "Result",
     role: ["AA1", "AA2", "AA3", "AA4"],
+  },
+];
+
+export const historyMenu = [
+  {
+    label: "히스토리",
+    path: "/historyList",
+    collapseRef: "HistoryList",
+    role: ["AA3", "AA4"],
   },
 ];
