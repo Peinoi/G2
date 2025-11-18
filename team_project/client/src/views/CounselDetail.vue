@@ -65,38 +65,61 @@
       <!-- 본문 -->
       <template v-else>
         <!-- 기본정보 (상태와 관계없이 항상 표시) -->
-        <div class="meta-card space-y-3">
-          <div class="meta-row">
-            <span class="meta-label">이름</span>
-            <span class="meta-value">
-              <strong>{{ submitInfo.name || "-" }}</strong>
-            </span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">생년월일</span>
-            <span class="meta-value">
-              {{ submitInfo.ssnFront || "-" }}
-            </span>
-          </div>
+        <div class="meta-card">
+          <div class="meta-grid">
+            <!-- 1. 지원자 -->
+            <div class="meta-item">
+              <span class="meta-label">지원자</span>
+              <span class="meta-value">
+                {{ submitInfo.childName || "본인" }}
+              </span>
+            </div>
 
-          <div class="meta-row meta-row-inline">
-            <span class="meta-label">조사지</span>
-            <span class="meta-value meta-value-inline">
-              <MaterialButton
-                color="dark"
-                size="sm"
-                @click="openSubmissionDetail"
-              >
-                조사지 제출일: {{ formattedSubmitAt }}
-              </MaterialButton>
-            </span>
-          </div>
+            <!-- 2. 보호자 -->
+            <div class="meta-item">
+              <span class="meta-label">보호자</span>
+              <span class="meta-value">
+                {{ submitInfo.guardianName || "-" }}
+              </span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">우선순위</span>
-            <span class="meta-value font-semibold">
-              {{ priorityLabel }}
-            </span>
+            <!-- 3. 담당자 -->
+            <div class="meta-item">
+              <span class="meta-label">담당자</span>
+              <span class="meta-value">
+                {{ submitInfo.assigneeName || "-" }}
+              </span>
+            </div>
+
+            <!-- 4. 장애유형 -->
+            <div class="meta-item">
+              <span class="meta-label">장애유형</span>
+              <span class="meta-value">
+                {{ submitInfo.disabilityType || "-" }}
+              </span>
+            </div>
+
+            <!-- 5. 우선순위 -->
+            <div class="meta-item">
+              <span class="meta-label">우선순위</span>
+              <span class="meta-value">
+                {{ priorityLabel }}
+              </span>
+            </div>
+
+            <!-- 6. 조사지 제출일 (버튼) -->
+            <div class="meta-item">
+              <span class="meta-label">조사지 제출일</span>
+              <span class="meta-value">
+                <MaterialButton
+                  color="dark"
+                  size="sm"
+                  @click="openSubmissionDetail"
+                >
+                  {{ formattedSubmitAt }}
+                </MaterialButton>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -772,5 +795,28 @@ section {
   gap: 1rem; /* 버튼 사이 간격 */
   margin-top: 0.4rem; /* 위와 약간 띄우기 (원하면 조절) */
   width: 100%; /* 부모 카드 기준 전체 폭 차지 */
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
 }
 </style>

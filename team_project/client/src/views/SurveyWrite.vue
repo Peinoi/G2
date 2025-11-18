@@ -16,9 +16,63 @@
       </div>
     </header>
 
-    <div v-if="!survey" class="text-gray-500">불러오는 중...</div>
+    <!-- 작성자 정보 -->
+    <div class="writer-card">
+      <h3 class="writer-title">지원자 정보</h3>
+      <p class="writer-desc">지원을 신청하는 지원자를 선택해주세요.</p>
 
-    <div v-else class="space-y-6">
+      <div class="space-y-3">
+        <!-- 본인 작성 -->
+        <label class="writer-row">
+          <span class="writer-left">
+            <input
+              type="radio"
+              value="SELF"
+              v-model="writerType"
+              class="writer-radio"
+            />
+            <span> 지원자 본인 입니다.</span>
+          </span>
+
+          <!-- 오른쪽 열: 첫 줄은 비워두기 (정렬용) -->
+          <span class="writer-right"></span>
+        </label>
+
+        <!-- 대리인 작성 -->
+        <label class="writer-row">
+          <span class="writer-left">
+            <input
+              type="radio"
+              value="DELEGATE"
+              v-model="writerType"
+              class="writer-radio"
+            />
+            <span> 대리인 입니다.</span>
+          </span>
+
+          <span class="writer-right">
+            <select
+              v-model="selectedPersonCode"
+              class="delegate-select"
+              :disabled="writerType !== 'DELEGATE'"
+            >
+              <option value="">지원자를 선택하세요</option>
+              <option
+                v-for="person in delegateOptions"
+                :key="person.code"
+                :value="person.code"
+              >
+                {{ person.name }}
+              </option>
+            </select>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div v-if="!survey" class="text-gray-500 mt-4">불러오는 중...</div>
+
+    <div v-else class="space-y-6 mt-4">
       <!-- 섹션 카드 -->
       <div
         v-for="section in survey.sections"
@@ -95,44 +149,53 @@
                 ></textarea>
               </div>
 
-              <!-- RADIO -->
+              <!-- RADIO (기본 input 사용) -->
               <div v-else-if="item.question_type === 'RADIO'" class="space-y-1">
                 <div class="helper-text">보기 중 하나를 선택하세요</div>
 
-                <MaterialRadio
+                <label
                   v-for="opt in item.option_values"
                   :key="opt.value"
-                  :id="`item-${item.item_code}-opt-${opt.value}`"
-                  :name="`item_${item.item_code}`"
-                  :checked="answers[item.item_code] === opt.value"
-                  class="choice-control"
-                  @change="answers[item.item_code] = opt.value"
+                  class="choice-basic"
                 >
-                  {{ opt.label }}
-                </MaterialRadio>
+                  <input
+                    type="radio"
+                    :name="`item_${item.item_code}`"
+                    :value="opt.value"
+                    v-model="answers[item.item_code]"
+                    class="basic-radio"
+                  />
+                  <span>{{ opt.label }}</span>
+                </label>
               </div>
 
-              <!-- CHECKBOX -->
+              <!-- CHECKBOX (기본 input 사용) -->
               <div
                 v-else-if="item.question_type === 'CHECKBOX'"
                 class="space-y-1"
               >
                 <div class="helper-text">해당되는 항목을 모두 선택하세요</div>
 
-                <MaterialCheckbox
+                <label
                   v-for="opt in item.option_values"
                   :key="opt.value"
-                  :id="`item-${item.item_code}-opt-${opt.value}`"
-                  :name="`item_${item.item_code}`"
-                  :modelValue="isChecked(item.item_code, opt.value)"
-                  class="choice-control"
-                  @update:modelValue="
-                    (checked) =>
-                      toggleCheckbox(item.item_code, opt.value, checked)
-                  "
+                  class="choice-basic"
                 >
-                  {{ opt.label }}
-                </MaterialCheckbox>
+                  <input
+                    type="checkbox"
+                    :value="opt.value"
+                    :checked="isChecked(item.item_code, opt.value)"
+                    class="basic-checkbox"
+                    @change="
+                      toggleCheckbox(
+                        item.item_code,
+                        opt.value,
+                        $event.target.checked
+                      )
+                    "
+                  />
+                  <span>{{ opt.label }}</span>
+                </label>
               </div>
 
               <!-- 기타 타입 방어 -->
@@ -166,12 +229,16 @@ import { useRouter } from "vue-router";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialInput from "@/components/MaterialInput.vue";
-import MaterialRadio from "@/components/MaterialRadio.vue";
-import MaterialCheckbox from "@/components/MaterialCheckbox.vue";
 
 const router = useRouter();
 const survey = ref(null);
 const answers = ref({});
+
+/** 작성자 선택 상태 */
+const writerType = ref("SELF"); // SELF | DELEGATE
+const selectedPersonCode = ref("");
+// TODO: 실제 API 연결 시 axios로 교체
+const delegateOptions = ref([]);
 
 // 체크박스용 헬퍼: 현재 값에 포함되어 있는지
 function isChecked(itemCode, value) {
@@ -196,15 +263,14 @@ function toggleCheckbox(itemCode, value, checked) {
   answers.value[itemCode] = current;
 }
 
-// ✅ 최신 조사지 불러오기 + 답변 초기화
 onMounted(async () => {
   try {
+    // 1) 최신 조사지
     const { data } = await axios.get("/api/survey/latest");
     const payload = data?.result ?? data;
     survey.value = payload;
 
     const initial = {};
-
     for (const section of payload?.sections ?? []) {
       for (const sub of section.subsections ?? []) {
         for (const item of sub.items ?? []) {
@@ -214,6 +280,21 @@ onMounted(async () => {
       }
     }
     answers.value = initial;
+
+    // 2) 로그인 사용자 정보에서 user_code 꺼내기
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      const u = JSON.parse(stored);
+      const userCode = u.user_code ?? null;
+
+      if (userCode) {
+        // 3) 자녀(지원자) 목록 조회
+        const { data: childRes } = await axios.get("/api/survey/children", {
+          params: { userId: userCode },
+        });
+        delegateOptions.value = childRes.result ?? [];
+      }
+    }
   } catch (e) {
     alert("조사지 불러오기 실패: " + (e.response?.data?.message || e.message));
   }
@@ -222,13 +303,18 @@ onMounted(async () => {
 // 제출하기
 async function submitSurvey() {
   try {
+    // 대리인인데 대상자를 안 골랐을 때 간단 검증
+    if (writerType.value === "DELEGATE" && !selectedPersonCode.value) {
+      alert("대상자를 선택해주세요.");
+      return;
+    }
+
     // 🔹 로그인 정보 가져오기
     const stored = localStorage.getItem("user");
     let userCode = null;
 
     if (stored) {
       const u = JSON.parse(stored);
-      // 네가 실제 쓰는 필드명에 맞게 조합
       userCode = u.user_code ?? u.userCode ?? u.id ?? null;
     }
 
@@ -240,7 +326,11 @@ async function submitSurvey() {
     const payload = {
       template_ver_code: survey.value.template_ver_code,
       answers: answers.value,
-      written_by: Number(userCode), // ⭐ 여기!
+      written_by: Number(userCode),
+      // 아래 두 필드는 백엔드에서 필요할 때 쓰면 됨
+      writer_type: writerType.value, // SELF / DELEGATE
+      target_person_code:
+        writerType.value === "DELEGATE" ? selectedPersonCode.value : null,
     };
 
     const res = await axios.post("/api/survey/submit", payload);
@@ -269,6 +359,58 @@ section {
 /* 헤더 한 줄 유지 */
 .header-row {
   flex-wrap: nowrap;
+}
+
+/* ---------- 작성자 카드 ---------- */
+.writer-card {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1.25rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
+  margin-top: 0.5rem;
+}
+
+.writer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.writer-desc {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.writer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.writer-row-delegate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* 라디오-텍스트-셀렉트 간격 */
+  flex-wrap: nowrap; /* 줄바꿈 X */
+}
+
+.writer-radio {
+  width: 14px;
+  height: 14px;
+}
+
+.delegate-select {
+  min-width: 180px;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #ffffff;
 }
 
 /* 섹션 카드 */
@@ -364,12 +506,28 @@ section {
   margin-left: 0;
   padding-left: 0;
 }
+
 .form-actions {
   margin-top: 10px;
   padding-top: 0.5rem;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  justify-content: flex;
+  justify-content: flex-end;
   gap: 0.5rem;
+}
+/* 기본 라디오/체크박스 + 라벨 정렬 */
+.choice-basic {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+/* 라디오/체크박스 크기 */
+.basic-radio,
+.basic-checkbox {
+  width: 15px;
+  height: 15px;
 }
 </style>

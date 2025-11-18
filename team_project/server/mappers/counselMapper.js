@@ -240,8 +240,10 @@ async function getCounselDetail(submitCode) {
 
     return safeJSON({
       submit_info: {
-        name: h.writer_name,
-        ssnFront: h.ssn_front,
+        childName: h.child_name,
+        guardianName: h.guardian_name,
+        assigneeName: h.assignee_name,
+        disabilityType: h.disability_type,
         submitAt: h.submit_at,
       },
       main: mainDetail
@@ -263,14 +265,12 @@ async function getCounselDetail(submitCode) {
       })),
       priority,
       status: h.status,
-
-      // 🔹 프론트에서 바로 쓰기 좋게 가공
       attachments: (attachRows || []).map((a) => ({
         attachCode: a.attach_code,
         originalFilename: decodeFilenameFromDb(a.original_filename),
         serverFilename: a.server_filename,
-        filePath: a.file_path, // 예: '/uploads/counsel'
-        url: `${a.file_path}/${a.server_filename}`, // 예: '/uploads/counsel/파일명_20251114.hwp'
+        filePath: a.file_path,
+        url: `${a.file_path}/${a.server_filename}`,
       })),
     });
   } finally {

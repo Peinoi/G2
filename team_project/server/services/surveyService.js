@@ -41,8 +41,13 @@ module.exports = {
   updateSubmission(submitCode, body) {
     return surveyMapper.updateSubmissionAnswers(Number(submitCode), body);
   },
-
+  // 세부버전
   getSurveyDetailByVer(templateVerCode) {
     return surveyMapper.getSurveyDetailByVer(Number(templateVerCode));
+  },
+
+  // 현재 로그인 사용자의 자녀 목록
+  listChildrenByUser(userId) {
+    return surveyMapper.listChildrenByUser(Number(userId));
   },
 };

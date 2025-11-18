@@ -2,101 +2,139 @@
 module.exports = {
   // 🔹 목록: 전체
   listSupportResultAll: `
-    SELECT
-      sr.result_code,
-      sr.plan_code,
-      sp.submit_code,
-      sr.status,
-      ss.submit_at,
-      sp.written_at  AS plan_written_at,
-      sr.written_at  AS result_written_at,
-      writer.name    AS writer_name,
-      assi.name      AS assi_name
-    FROM support_result sr
-    JOIN support_plan sp
-      ON sp.plan_code = sr.plan_code
-    JOIN survey_submission ss
-      ON ss.submit_code = sp.submit_code
-    JOIN users writer
-      ON writer.user_code = ss.written_by
-    LEFT JOIN users assi
-      ON assi.user_code = sr.assi_by
-    ORDER BY sr.result_code DESC
-  `,
+SELECT
+  sr.result_code,
+  sr.plan_code,
+  sp.submit_code,
+  sr.status,
+  ss.submit_at,
+  sp.written_at    AS plan_written_at,
+  sr.written_at    AS result_written_at,
 
-  // 🔹 목록: 담당자용
+  writer.name      AS writer_name,    -- 보호자
+  c.child_name     AS child_name,     -- 자녀
+  assi.name        AS assi_name,
+  org.org_name     AS org_name
+
+FROM support_result sr
+JOIN support_plan sp
+  ON sp.plan_code = sr.plan_code
+JOIN survey_submission ss
+  ON ss.submit_code = sp.submit_code
+LEFT JOIN child c
+  ON c.child_code = ss.child_code
+JOIN users writer
+  ON writer.user_code = ss.written_by
+LEFT JOIN users assi
+  ON assi.user_code = sr.assi_by
+LEFT JOIN organization org
+  ON org.org_code = writer.org_code
+
+ORDER BY sr.result_code DESC
+`,
+
   listSupportResultByAssignee: `
-    SELECT
-      sr.result_code,
-      sr.plan_code,
-      sp.submit_code,
-      sr.status,
-      ss.submit_at,
-      sp.written_at  AS plan_written_at,
-      sr.written_at  AS result_written_at,
-      writer.name    AS writer_name,
-      assi.name      AS assi_name
-    FROM support_result sr
-    JOIN support_plan sp
-      ON sp.plan_code = sr.plan_code
-    JOIN survey_submission ss
-      ON ss.submit_code = sp.submit_code
-    JOIN users writer
-      ON writer.user_code = ss.written_by
-    LEFT JOIN users assi
-      ON assi.user_code = sr.assi_by
-    WHERE sr.assi_by = ?
-    ORDER BY sr.result_code DESC
-  `,
+SELECT
+  sr.result_code,
+  sr.plan_code,
+  sp.submit_code,
+  sr.status,
+  ss.submit_at,
+  sp.written_at    AS plan_written_at,
+  sr.written_at    AS result_written_at,
+
+  writer.name      AS writer_name,
+  c.child_name     AS child_name,
+  assi.name        AS assi_name,
+  org.org_name     AS org_name
+
+FROM support_result sr
+JOIN support_plan sp
+  ON sp.plan_code = sr.plan_code
+JOIN survey_submission ss
+  ON ss.submit_code = sp.submit_code
+LEFT JOIN child c
+  ON c.child_code = ss.child_code
+JOIN users writer
+  ON writer.user_code = ss.written_by
+LEFT JOIN users assi
+  ON assi.user_code = sr.assi_by
+LEFT JOIN organization org
+  ON org.org_code = writer.org_code
+
+WHERE sr.assi_by = ?
+
+ORDER BY sr.result_code DESC
+`,
 
   // 🔹 목록: 일반 사용자용
   listSupportResultByWriter: `
-    SELECT
-      sr.result_code,
-      sr.plan_code,
-      sp.submit_code,
-      sr.status,
-      ss.submit_at,
-      sp.written_at  AS plan_written_at,
-      sr.written_at  AS result_written_at,
-      writer.name      AS writer_name,
-      assi.name        AS assi_name
-    FROM support_result sr
-    JOIN support_plan sp
-      ON sp.plan_code = sr.plan_code
-    JOIN survey_submission ss
-      ON ss.submit_code = sp.submit_code
-    JOIN users writer
-      ON writer.user_code = ss.written_by
-    LEFT JOIN users assi
-      ON assi.user_code = sr.assi_by
-    WHERE ss.written_by = ?
-    ORDER BY sr.result_code DESC
-  `,
+SELECT
+  sr.result_code,
+  sr.plan_code,
+  sp.submit_code,
+  sr.status,
+  ss.submit_at,
+  sp.written_at    AS plan_written_at,
+  sr.written_at    AS result_written_at,
+
+  writer.name      AS writer_name,
+  c.child_name     AS child_name,
+  assi.name        AS assi_name,
+  org.org_name     AS org_name
+
+FROM support_result sr
+JOIN support_plan sp
+  ON sp.plan_code = sr.plan_code
+JOIN survey_submission ss
+  ON ss.submit_code = sp.submit_code
+LEFT JOIN child c
+  ON c.child_code = ss.child_code
+JOIN users writer
+  ON writer.user_code = ss.written_by
+LEFT JOIN users assi
+  ON assi.user_code = sr.assi_by
+LEFT JOIN organization org
+  ON org.org_code = writer.org_code
+
+WHERE ss.written_by = ?
+
+ORDER BY sr.result_code DESC
+`,
 
   // 🔹 목록: 기관 관리자용 (같은 기관 소속 전체)
   listSupportResultByOrg: `
-  SELECT
-    sr.result_code,
-    sr.plan_code,
-    sp.submit_code,
-    sr.status,
-    ss.submit_at,
-    sp.written_at    AS plan_written_at,
-    sr.written_at    AS result_written_at,
-    writer.name      AS writer_name,
-    assi.name        AS assi_name
-  FROM support_result sr
-  JOIN support_plan sp
-    ON sp.plan_code = sr.plan_code
-  JOIN survey_submission ss
-    ON ss.submit_code = sp.submit_code
-  JOIN users writer
-    ON writer.user_code = ss.written_by
-  LEFT JOIN users assi
-    ON assi.user_code = sr.assi_by
-  WHERE writer.org_code = ?         
-  ORDER BY sr.result_code DESC
+SELECT
+  sr.result_code,
+  sr.plan_code,
+  sp.submit_code,
+  sr.status,
+  ss.submit_at,
+  sp.written_at    AS plan_written_at,
+  sr.written_at    AS result_written_at,
+
+  writer.name      AS writer_name,
+  c.child_name     AS child_name,
+  assi.name        AS assi_name,
+  org.org_name     AS org_name
+
+FROM support_result sr
+JOIN support_plan sp
+  ON sp.plan_code = sr.plan_code
+JOIN survey_submission ss
+  ON ss.submit_code = sp.submit_code
+LEFT JOIN child c
+  ON c.child_code = ss.child_code
+JOIN users writer
+  ON writer.user_code = ss.written_by
+LEFT JOIN users assi
+  ON assi.user_code = sr.assi_by
+LEFT JOIN organization org
+  ON org.org_code = writer.org_code
+
+WHERE writer.org_code = ?
+
+ORDER BY sr.result_code DESC
 `,
 
   getOrgCodeByUser: `

@@ -4,12 +4,6 @@
     <header class="mb-4 flex items-center justify-between header-row">
       <div>
         <h2 class="text-2xl font-semibold">제출본 수정</h2>
-        <p class="text-gray-500 text-sm mt-1">
-          제출번호 {{ submitCode }} • 템플릿 {{ submission?.template_code }} ({{
-            submission?.version_no
-          }}
-          / {{ submission?.version_detail_no }})
-        </p>
       </div>
       <MaterialButton color="dark" size="sm" @click="goBack">
         ← 상세로

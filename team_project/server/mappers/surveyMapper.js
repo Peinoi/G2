@@ -236,6 +236,7 @@ async function insertAnswers(body) {
     if (!written_by) {
       throw new Error("written_by(작성자)가 없습니다.");
     }
+    const child_code = body.target_person_code || null;
 
     const submission = await conn.query(sql.insertSubmission, [
       template_ver_code,
@@ -244,6 +245,7 @@ async function insertAnswers(body) {
       written_by,
       "CA1",
       null, // app_at
+      child_code,
     ]);
     const submit_code = submission.insertId;
 
@@ -549,6 +551,17 @@ async function getSurveyDetailByVer(templateVerCode) {
   }
 }
 
+// 현재 로그인 사용자의 자녀 목록
+async function listChildrenByUser(userId) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.listChildrenByUser, [userId]);
+    return safeJSON(rows);
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   listTemplates,
   insertSurvey,
@@ -559,4 +572,5 @@ module.exports = {
   getSubmissionDetail,
   updateSubmissionAnswers,
   getSurveyDetailByVer,
+  listChildrenByUser,
 };

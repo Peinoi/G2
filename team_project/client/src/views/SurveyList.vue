@@ -50,6 +50,7 @@
               <th class="th-cell text-center w-14">No</th>
               <th v-if="role === 4" class="th-cell">세부버전</th>
               <th class="th-cell">지원자 이름</th>
+              <th class="th-cell">보호자 이름</th>
               <th class="th-cell">담당자 이름</th>
               <th v-if="role === 4" class="th-cell">기관명</th>
               <th class="th-cell text-center">제출일</th>
@@ -75,6 +76,11 @@
               </td>
 
               <!-- 지원자 이름 -->
+              <td class="td-cell text-left">
+                {{ row.child_name || "본인" }}
+              </td>
+
+              <!-- 보호자 이름 -->
               <td class="td-cell text-left">
                 {{ row.writer_name || row.written_by }}
               </td>

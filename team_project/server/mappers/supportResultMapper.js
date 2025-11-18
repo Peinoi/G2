@@ -52,6 +52,7 @@ async function listSupportResultsByRole(role, userId) {
       submitAt: r.submit_at,
       writtenAt: r.plan_written_at,
       resultWrittenAt: r.result_written_at,
+      childName: r.child_name,
       writerName: r.writer_name,
       assiName: r.assi_name,
       orgName: r.org_name ?? null, // 기관명 쓰고 싶으면 추가

@@ -40,12 +40,11 @@
               <tr>
                 <th class="th-cell text-center w-14">No</th>
                 <th class="th-cell">지원자 이름</th>
+                <th class="th-cell">보호자 이름</th>
                 <th class="th-cell">담당자 이름</th>
 
                 <!-- 🔹 역할 4(시스템)일 때만 기관명 컬럼 표시 -->
                 <th v-if="selectedRole === 4" class="th-cell">기관명</th>
-
-                <th class="th-cell">조사지 제출일</th>
                 <th class="th-cell">계획 작성일</th>
                 <th class="th-cell">결과 작성일</th>
                 <th class="th-cell text-center">상태</th>
@@ -65,10 +64,15 @@
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
 
+                <!-- 지원자 이름 -->
+                <td class="td-cell">
+                  {{ row.childName || "본인" }}
+                </td>
+
+                <!-- 보호자 이름 -->
                 <td class="td-cell">
                   {{ row.writerName || "-" }}
                 </td>
-
                 <td class="td-cell">
                   {{ row.assiName || "-" }}
                 </td>
@@ -79,15 +83,15 @@
                 </td>
 
                 <td class="td-cell">
-                  {{ formatDate(row.submitAt) }}
-                </td>
-
-                <td class="td-cell">
                   {{ formatDate(row.writtenAt) }}
                 </td>
 
                 <td class="td-cell">
-                  {{ formatDate(row.resultWrittenAt) }}
+                  {{
+                    ["CD1", "CD3"].includes(normStatus(row.status))
+                      ? "-"
+                      : formatDate(row.resultWrittenAt)
+                  }}
                 </td>
 
                 <!-- 상태 배지 -->

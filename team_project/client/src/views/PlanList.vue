@@ -1,4 +1,3 @@
-<!-- src/views/PlanList.vue -->
 <template>
   <section class="p-6">
     <div class="page-shell">
@@ -37,7 +36,11 @@
             <thead>
               <tr>
                 <th class="th-cell text-center w-14">No</th>
-                <th class="th-cell">작성자</th>
+
+                <!-- 🔹 지원자 / 보호자 분리 -->
+                <th class="th-cell">지원자 이름</th>
+                <th class="th-cell">보호자 이름</th>
+
                 <th class="th-cell">담당자</th>
 
                 <!-- 🔥 시스템(4)일 때만 기관명 컬럼 추가 -->
@@ -62,10 +65,17 @@
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
 
+                <!-- 🔹 지원자 이름: childName 있으면 자녀, 없으면 '본인' -->
+                <td class="td-cell">
+                  {{ row.childName ? row.childName : "본인" }}
+                </td>
+
+                <!-- 🔹 보호자 이름 -->
                 <td class="td-cell">
                   {{ row.writerName || "-" }}
                 </td>
 
+                <!-- 담당자 -->
                 <td class="td-cell">
                   {{ row.assiName || "-" }}
                 </td>
@@ -79,8 +89,13 @@
                   {{ formatDate(row.submitAt) }}
                 </td>
 
+                <!-- 🔹 CC1 / CC2 이면 계획 작성일 숨기기 -->
                 <td class="td-cell">
-                  {{ formatDate(row.writtenAt) }}
+                  {{
+                    isBeforeWriteStatus(row.status)
+                      ? "-"
+                      : formatDate(row.writtenAt)
+                  }}
                 </td>
 
                 <!-- 상태 배지 -->
@@ -269,6 +284,12 @@ const formatDate = (v) => {
 
 function normStatus(raw) {
   return (raw ?? "").toString().trim().toUpperCase();
+}
+
+// 🔹 CC1 / CC2 상태면 "작성 전" → 작성일 표시 안 함
+function isBeforeWriteStatus(code) {
+  const s = normStatus(code);
+  return s === "CC1" || s === "CC2";
 }
 
 function statusLabel(code) {

@@ -12,6 +12,7 @@ function decodeOriginalName(file) {
   return file?.originalname || "";
 }
 
+//목록
 async function listSupportPlansByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
@@ -50,7 +51,8 @@ async function listSupportPlansByRole(role, userId) {
       submitAt: r.submit_at,
       writerName: r.writer_name,
       assiName: r.assi_name,
-      orgName: r.org_name || null, // 🔥 기관명 추가
+      orgName: r.org_name || null,
+      childName: r.child_name || null,
     }));
 
     return safeJSON(mapped);
@@ -59,7 +61,7 @@ async function listSupportPlansByRole(role, userId) {
   }
 }
 
-// 🔹 작성 화면에서 기본정보 불러오기
+//기본정보
 async function getPlanBasic(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -70,11 +72,27 @@ async function getPlanBasic(submitCode) {
       throw new Error("해당 submit_code의 정보를 찾을 수 없습니다.");
     }
 
+    const childName = row.child_name || null;
+    const writerName = row.writer_name || null;
+
     return safeJSON({
       submitCode: row.submit_code,
-      name: row.writer_name,
-      ssnFront: row.ssn,
-      counselSubmitAt: row.counsel_submit_at,
+
+      // 지원자
+      childName: childName,
+      name: writerName,
+
+      // 보호자 = 작성자
+      guardianName: writerName,
+
+      // ⭐ 담당자 추가
+      assigneeName: row.assignee_name || null,
+
+      // 장애유형
+      disabilityType: row.disability_type || null,
+
+      // 상담지 제출일
+      counselSubmitAt: row.counsel_submit_at || null,
     });
   } finally {
     conn.release();

@@ -39,10 +39,17 @@
             <thead>
               <tr>
                 <th class="th-cell text-center w-14">No</th>
-                <th class="th-cell">작성자</th>
+
+                <!-- 🔥 NEW: 지원자 이름 -->
+                <th class="th-cell">지원자 이름</th>
+
+                <!-- 🔥 보호자 이름 (기존 writer_name) -->
+                <th class="th-cell">보호자 이름</th>
+
+                <!-- 담당자 -->
                 <th class="th-cell">담당자</th>
 
-                <!-- 🔥 역할 4(시스템)일 때만 기관명 추가 -->
+                <!-- 시스템만 기관명 -->
                 <th v-if="selectedRole === 4" class="th-cell">기관명</th>
 
                 <th class="th-cell">조사지 제출일</th>
@@ -63,10 +70,23 @@
                 <td class="td-cell text-center">
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
-                <td class="td-cell">{{ row.writer_name }}</td>
-                <td class="td-cell">{{ row.assi_name }}</td>
 
-                <!-- 🔥 역할 4(시스템)일 때만 기관명 노출 -->
+                <!-- 🔥 지원자 이름: child_name 있으면 자녀 이름 / 없으면 본인 -->
+                <td class="td-cell">
+                  {{ row.child_name ? row.child_name : "본인" }}
+                </td>
+
+                <!-- 보호자이름 -->
+                <td class="td-cell">
+                  {{ row.writer_name }}
+                </td>
+
+                <!-- 담당자 -->
+                <td class="td-cell">
+                  {{ row.assi_name }}
+                </td>
+
+                <!-- 시스템만 기관이름 -->
                 <td v-if="selectedRole === 4" class="td-cell">
                   {{ row.org_name || "-" }}
                 </td>
@@ -81,9 +101,8 @@
                   }}
                 </td>
 
-                <!-- 🔹 상태 배지 -->
+                <!-- 상태 -->
                 <td class="td-cell td-status">
-                  <!-- CB4(반려)만 클릭 가능 (모달) -->
                   <button
                     v-if="normStatus(row.status) === 'CB4'"
                     type="button"
@@ -93,7 +112,6 @@
                     {{ statusLabel(row.status) }}
                   </button>
 
-                  <!-- 나머지 상태 일반 배지 -->
                   <span
                     v-else
                     class="status-pill"
@@ -278,9 +296,11 @@ function normStatus(raw) {
   return (raw ?? "").toString().trim().toUpperCase();
 }
 
-// 🔹 임시저장 상태인지 여부 (CB1)
+// 임시 상태: CB1, CB2 둘 다 "상담 전"으로 처리
 function isTempStatus(code) {
-  return normStatus(code) === "CB1";
+  const s = normStatus(code);
+  return s === "CB1" || s === "CB2";
+  // 또는: return ['CB1', 'CB2'].includes(s);
 }
 
 function formatDate(val) {

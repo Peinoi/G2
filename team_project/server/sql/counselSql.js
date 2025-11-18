@@ -1,15 +1,12 @@
 // server/sql/counselSql.js
 module.exports = {
-  /**
-   * 담당자(role=2)용 상담 목록
-   * - survey_submission, users(작성자/담당자), counsel_note 조인
-   * - assi_by = ? 조건
-   */
+  //담당자
   listCounselByAssignee: `
   SELECT
     ss.submit_code,
     writer.name AS writer_name,
     assi.name   AS assi_name,
+    c.child_name AS child_name,           -- ✅ 지원자(자녀) 이름
     ss.submit_at,
     cd.counsel_date,
     cn.written_at AS note_created_at,
@@ -19,12 +16,14 @@ module.exports = {
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
     ON assi.user_code = ss.assi_by
+  LEFT JOIN child c                           -- ✅ child 테이블 조인
+    ON c.child_code = ss.child_code
 
   /* 🔥 상담(note)이 없는 제출은 목록에서 제외 */
   JOIN counsel_note cn
     ON cn.submit_code = ss.submit_code
 
-  /* 🔥 상담(detail)이 없는 경우 무시하고 싶으면 INNER JOIN,  
+  /* 🔥 상담(detail)이 없는 경우 무시하고 싶으면 INNER JOIN,
      임시저장 상태에서도 detail이 없을 수 있으므로 LEFT JOIN 유지 */
   LEFT JOIN (
     SELECT
@@ -37,7 +36,6 @@ module.exports = {
 
   WHERE ss.assi_by = ?
   ORDER BY ss.submit_at DESC, ss.submit_code DESC
-
 `,
 
   getUserOrgByUserCode: `
@@ -46,12 +44,13 @@ module.exports = {
     WHERE user_code = ?
     LIMIT 1
   `,
-
+  //관리자
   listCounselByOrg: `
     SELECT
       ss.submit_code,
       writer.name AS writer_name,
       assi.name   AS assi_name,
+      c.child_name AS child_name,        -- ✅ 지원자(자녀) 이름
       ss.submit_at,
       cd.counsel_date,
       cn.written_at AS note_created_at,
@@ -64,6 +63,8 @@ module.exports = {
       ON assi.user_code = ss.assi_by
     LEFT JOIN organization org
       ON org.org_code = writer.org_code
+    LEFT JOIN child c                    -- ✅ child 조인
+      ON c.child_code = ss.child_code
     JOIN counsel_note cn
       ON cn.submit_code = ss.submit_code
     LEFT JOIN (
@@ -76,15 +77,16 @@ module.exports = {
       ON cd.counsel_code = cn.counsel_code
     WHERE writer.org_code = ?
     ORDER BY ss.submit_at DESC, ss.submit_code DESC
-
   `,
+
   // 시스템
   listCounselAll: `
   SELECT
     ss.submit_code,
     writer.name        AS writer_name,
     assi.name          AS assi_name,
-    org.org_name       AS org_name,        -- 🔥 기관명 추가
+    c.child_name       AS child_name,      -- ✅ 지원자(자녀) 이름
+    org.org_name       AS org_name,
     ss.submit_at,
     cd.counsel_date,
     cn.written_at      AS note_created_at,
@@ -94,15 +96,12 @@ module.exports = {
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
     ON assi.user_code = ss.assi_by
-
-  /* 👇 여기! ss.org_code 대신 writer.org_code 로 조인 */
   LEFT JOIN organization org
     ON org.org_code = writer.org_code
-
-  /* 🔥 상담이 존재하는 제출만 목록에 표시 */
+  LEFT JOIN child c                        -- ✅ child 조인
+    ON c.child_code = ss.child_code
   JOIN counsel_note cn
     ON cn.submit_code = ss.submit_code
-
   LEFT JOIN (
     SELECT
       counsel_code,
@@ -111,7 +110,6 @@ module.exports = {
     GROUP BY counsel_code
   ) cd
     ON cd.counsel_code = cn.counsel_code
-
   ORDER BY ss.submit_at DESC, ss.submit_code DESC
 `,
 
@@ -174,14 +172,34 @@ module.exports = {
       cn.submit_code,
       cn.status,
       cn.written_at,
+
+      -- 제출 정보
       ss.submit_at,
-      writer.name AS writer_name,
-      LEFT(writer.ssn, 6) AS ssn_front
+
+      -- 보호자(작성자)
+      writer.name AS guardian_name,
+      LEFT(writer.ssn, 6) AS guardian_ssn,
+
+      -- 담당자
+      assi.name AS assignee_name,
+
+      -- 지원자(child)
+      c.child_name AS child_name,
+      c.disability_type AS disability_type
+
     FROM counsel_note cn
     JOIN survey_submission ss
       ON ss.submit_code = cn.submit_code
-    JOIN users writer
+
+    LEFT JOIN users writer
       ON writer.user_code = ss.written_by
+
+    LEFT JOIN users assi
+      ON assi.user_code = ss.assi_by
+
+    LEFT JOIN child c
+      ON c.child_code = ss.child_code
+
     WHERE cn.submit_code = ?
     LIMIT 1
   `,

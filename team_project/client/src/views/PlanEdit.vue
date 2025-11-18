@@ -15,42 +15,66 @@
       <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
 
       <!-- 기본정보 카드 -->
-      <div class="meta-card space-y-3">
-        <div class="grid grid-cols-2 text-sm gap-2">
-          <div>
-            이름: <strong>{{ submitInfo.name || "-" }}</strong>
-          </div>
-          <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
-        </div>
-
-        <div class="meta-bottom">
-          <!-- 상담지 제출일 -->
-          <MaterialButton color="dark" size="sm" @click="openCounselDetail">
-            상담지 제출일: {{ formattedCounselSubmitAt }}
-          </MaterialButton>
-
-          <!-- 계획 작성일 -->
-          <label class="flex items-center gap-2 text-sm">
-            계획 작성일:
-            <span class="px-2 py-1 border rounded bg-white">
-              {{ mainForm.planDate }}
+      <div class="meta-card">
+        <div class="meta-grid">
+          <!-- 1. 지원자 -->
+          <div class="meta-item">
+            <span class="meta-label">지원자</span>
+            <span class="meta-value">
+              {{ submitInfo.childName || "본인" }}
             </span>
-          </label>
+          </div>
 
-          <!-- 예상 진행기간: YYYY-MM ~ YYYY-MM -->
-          <div class="flex items-center gap-2 text-sm">
-            <span>예상 진행기간:</span>
-            <input
-              type="month"
-              v-model="mainForm.expectedStart"
-              class="input h-8"
-            />
-            <span>~</span>
-            <input
-              type="month"
-              v-model="mainForm.expectedEnd"
-              class="input h-8"
-            />
+          <!-- 2. 보호자 -->
+          <div class="meta-item">
+            <span class="meta-label">보호자</span>
+            <span class="meta-value">
+              {{ submitInfo.name || "-" }}
+            </span>
+          </div>
+
+          <!-- 3. 담당자 -->
+          <div class="meta-item">
+            <span class="meta-label">담당자</span>
+            <span class="meta-value">
+              {{ submitInfo.assigneeName || "-" }}
+            </span>
+          </div>
+
+          <!-- 4. 장애유형 -->
+          <div class="meta-item">
+            <span class="meta-label">장애유형</span>
+            <span class="meta-value">
+              {{ submitInfo.disabilityType || "-" }}
+            </span>
+          </div>
+
+          <!-- 5. 상담지 제출일 -->
+          <div class="meta-item">
+            <span class="meta-label">상담지 제출일</span>
+            <span class="meta-value">
+              <MaterialButton color="dark" size="sm" @click="openCounselDetail">
+                {{ formattedCounselSubmitAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <!-- 6. 예상 진행기간 -->
+          <div class="meta-item">
+            <span class="meta-label">진행기간</span>
+            <span class="meta-value period-value">
+              <input
+                type="month"
+                v-model="mainForm.expectedStart"
+                class="input-month"
+              />
+              ~
+              <input
+                type="month"
+                v-model="mainForm.expectedEnd"
+                class="input-month"
+              />
+            </span>
           </div>
         </div>
       </div>
@@ -266,9 +290,12 @@ const submitCode = Number(route.query.submitCode || 0);
 
 // 기본 정보
 const submitInfo = ref({
-  name: "",
-  ssnFront: "",
-  counselSubmitAt: "",
+  name: "", // 보호자(작성자)
+  childName: "", // 지원자
+  guardianName: "", // 보호자 = name
+  assigneeName: "", // 담당자
+  disabilityType: "", // 장애 유형
+  counselSubmitAt: "", // 상담지 제출일
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -311,6 +338,7 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
+// 기본정보 + 계획 상세 로딩
 async function loadData() {
   loading.value = true;
   error.value = "";
@@ -323,33 +351,35 @@ async function loadData() {
       throw new Error("planCode가 없습니다. (params로 전달 필요)");
     }
 
-    // 기본 정보 + 계획 상세 정보 병렬 조회
     const [basicRes, detailRes] = await Promise.all([
       axios.get(`/api/plans/${submitCode}`),
       axios.get(`/api/plans/detail/${planCode}`),
     ]);
 
-    // 1) 지원자 기본 정보
-    const basic = basicRes.data;
-    if (!basic?.success || !basic.result) {
-      throw new Error(basic?.message || "지원자 기본 정보를 찾을 수 없습니다.");
+    // 1) 기본 정보
+    if (!basicRes.data?.success || !basicRes.data.result) {
+      throw new Error(
+        basicRes.data?.message || "지원자 기본 정보를 찾을 수 없습니다."
+      );
     }
-    const basicResData = basic.result;
+    const basic = basicRes.data.result;
 
     submitInfo.value = {
-      name: basicResData.name || "",
-      ssnFront: (basicResData.ssnFront || "")
-        .replace(/[^0-9]/g, "")
-        .slice(0, 6),
-      counselSubmitAt: basicResData.counselSubmitAt || "",
+      name: basic.name || "", // 보호자(작성자)
+      childName: basic.childName || "",
+      guardianName: basic.guardianName || basic.name || "",
+      assigneeName: basic.assigneeName || "",
+      disabilityType: basic.disabilityType || "",
+      counselSubmitAt: basic.counselSubmitAt || "",
     };
 
     // 2) 계획 상세 정보
-    const detail = detailRes.data;
-    if (!detail?.success || !detail.result) {
-      throw new Error(detail?.message || "지원계획 정보를 찾을 수 없습니다.");
+    if (!detailRes.data?.success || !detailRes.data.result) {
+      throw new Error(
+        detailRes.data?.message || "지원계획 정보를 찾을 수 없습니다."
+      );
     }
-    const d = detail.result;
+    const d = detailRes.data.result;
 
     mainForm.value = {
       planDate: d.main?.planDate
@@ -387,9 +417,6 @@ async function loadData() {
 }
 
 onMounted(() => {
-  if (!mainForm.value.planDate) {
-    mainForm.value.planDate = getTodayStr();
-  }
   loadData();
 });
 
@@ -552,7 +579,7 @@ section {
   letter-spacing: -0.02em;
 }
 
-/* 기본정보 카드 */
+/* ===== 기본정보 카드 ===== */
 .meta-card {
   border-radius: 0.75rem;
   border: 1px solid #e5e7eb;
@@ -561,15 +588,49 @@ section {
   font-size: 0.85rem;
 }
 
-.meta-bottom {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.1rem;
-  margin-top: 0.25rem;
+/* meta grid (작성/수정 공용) */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
 }
 
-/* 메인 카드 (지원계획 내용) */
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* 기간 month input */
+.period-value {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.input-month {
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  background: white;
+}
+
+/* ===== 메인 카드 ===== */
 .card-block {
   border-radius: 0.9rem;
   border: 1px solid #e5e7eb;
@@ -578,12 +639,12 @@ section {
   padding: 1.25rem 1.1rem;
 }
 
-/* 그룹 간 간격 */
+/* form group 간 간격 */
 .form-group + .form-group {
   margin-top: 0.85rem;
 }
 
-/* 공통 인풋 스타일 (date, month 등) */
+/* 공통 input */
 .input {
   border-radius: 0.375rem;
   border: 1px solid #d1d5db;
@@ -598,7 +659,7 @@ section {
   border-color: #111827;
 }
 
-/* 파일 인풋 */
+/* ===== 파일 인풋 ===== */
 .file-input {
   display: block;
   width: 100%;
@@ -613,26 +674,24 @@ section {
   gap: 0.5rem;
 }
 
-/* 파일 텍스트 */
 .file-link {
   flex: 0 1 auto;
   min-width: 0;
   font-size: 0.8rem;
   color: #374151;
-  text-decoration: none; /* 기본 밑줄 제거 */
+  text-decoration: none;
   word-break: break-all;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 호버 시 티 나게 */
 .file-link:hover {
   text-decoration: underline;
   color: #111827;
 }
 
-/* 작은 칩 버튼 */
+/* 파일 삭제 chip 버튼 */
 .chip-button {
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
@@ -648,7 +707,23 @@ section {
   background-color: #e5e7eb;
 }
 
-/* 하단 액션 바 */
+/* ===== 추가 계획 카드 ===== */
+.record-card {
+  margin-top: 10px;
+  border-radius: 0.8rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1.1rem 1rem;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ===== 하단 버튼바 ===== */
 .action-bar {
   margin-top: 10px;
   padding-top: 0.5rem;
@@ -666,23 +741,7 @@ section {
   gap: 0.5rem;
 }
 
-/* 추가 계획 카드 */
-.record-card {
-  margin-top: 10px;
-  border-radius: 0.8rem;
-  border: 1px solid #e5e7eb;
-  background-color: #ffffff;
-  padding: 1.1rem 1rem;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
-}
-
-.record-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* 공통 폰트 */
+/* ===== 공통 폰트 ===== */
 section,
 label,
 input,
