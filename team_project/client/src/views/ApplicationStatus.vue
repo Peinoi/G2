@@ -38,7 +38,11 @@
             </tr>
 
             <!-- 데이터 표시 -->
-            <tr v-for="(row, idx) in statusList" :key="row.submit_code">
+            <tr
+              v-else
+              v-for="(row, idx) in statusList"
+              :key="row.submit_code || idx"
+            >
               <td>{{ idx + 1 }}</td>
 
               <td>{{ row.child_name }}</td>
@@ -169,7 +173,18 @@ const fetchMyApplications = async () => {
       params: { loginId: auth.userId },
     });
 
-    statusList.value = res.data?.data ?? [];
+    console.log("[ApplicationStatus] raw response:", res.data);
+
+    const raw = res.data?.data ?? [];
+    let list = [];
+
+    if (Array.isArray(raw)) {
+      list = raw;
+    } else if (raw && typeof raw === "object") {
+      list = [raw];
+    }
+
+    statusList.value = list.filter((row) => row && row.submit_code);
   } catch (err) {
     console.error("[ApplicationStatus] 조회 실패:", err);
   } finally {
