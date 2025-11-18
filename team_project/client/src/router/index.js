@@ -22,6 +22,7 @@ import { eventMenu } from "@/config/menus";
 import { surveyMenu } from "@/config/menus";
 import { spportMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
+import { historyMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
 
 const router = createRouter({
@@ -113,6 +114,21 @@ const router = createRouter({
       path: "/sponsorshipResultApprovals",
       name: "SponsorshipResultApprovals",
       component: () => import("../views/SponsorshipResultApproval.vue"),
+    },
+    {
+      path: "/historyList",
+      name: "HistoryList",
+      component: () => import("../views/HistoryList.vue"),
+    },
+    {
+      path: "/authorityTransfer",
+      name: "AuthorityTransfer",
+      component: () => import("../views/AuthorityTransfer.vue"),
+    },
+    {
+      path: "/applicationStatus",
+      name: "ApplicationStatus",
+      component: () => import("../views/ApplicationStatus.vue"),
     },
     {
       path: "/dashboard",
@@ -416,7 +432,11 @@ router.beforeEach((to, from, next) => {
     "EventResultApprovals",
     "SponsorshipPlanApprovals",
     "SponsorshipResultApprovals",
+    "AuthorityTransfer",
   ];
+
+  // 히스토리 그룹
+  const historyPages = ["HistoryList"];
 
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
@@ -447,10 +467,17 @@ router.beforeEach((to, from, next) => {
     menu.setPageTitle("지원 페이지");
     menu.setMenu(spportMenu);
   }
+
   // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
   if (appReqPages.includes(to.name)) {
     menu.setPageTitle("승인 요청 관리");
     menu.setMenu(appReqMenu);
+  }
+
+  // 히스토리 그룹 라우트일 경우 자동 메뉴 설정
+  if (historyPages.includes(to.name)) {
+    menu.setPageTitle("히스토리");
+    menu.setMenu(historyMenu);
   }
 
   next();
