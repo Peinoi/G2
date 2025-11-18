@@ -1,7 +1,7 @@
 <template>
   <section class="p-6 max-w-5xl mx-auto">
     <!-- 헤더 -->
-    <header class="mb-4 flex items-center justify-between header-row">
+    <header class="mb-3 flex items-center justify-between header-row">
       <h2 class="text-2xl font-semibold">조사지 작성</h2>
 
       <div class="space-x-2">
@@ -41,7 +41,7 @@
           class="subsection-card"
         >
           <div class="sub-header">
-            <div class="font-medium text-sm text-gray-800">
+            <div class="font-medium text-sm text-gray-800 question-title">
               {{ sub.subsection_title }}
             </div>
             <p v-if="sub.subsection_desc" class="text-xs text-gray-500 mt-0.5">
@@ -58,7 +58,7 @@
             >
               <!-- 질문 헤더 -->
               <div class="flex items-center justify-between mb-2">
-                <div class="font-medium text-sm text-gray-900">
+                <div class="question-title">
                   {{ item.question_text }}
                   <span
                     v-if="item.is_required === 'Y'"
@@ -95,11 +95,9 @@
                 ></textarea>
               </div>
 
-              <!-- RADIO : MaterialRadio 사용 -->
+              <!-- RADIO -->
               <div v-else-if="item.question_type === 'RADIO'" class="space-y-1">
-                <div class="text-[11px] text-gray-500 mb-1">
-                  보기 중 하나를 선택하세요
-                </div>
+                <div class="helper-text">보기 중 하나를 선택하세요</div>
 
                 <MaterialRadio
                   v-for="opt in item.option_values"
@@ -107,20 +105,19 @@
                   :id="`item-${item.item_code}-opt-${opt.value}`"
                   :name="`item_${item.item_code}`"
                   :checked="answers[item.item_code] === opt.value"
+                  class="choice-control"
                   @change="answers[item.item_code] = opt.value"
                 >
                   {{ opt.label }}
                 </MaterialRadio>
               </div>
 
-              <!-- CHECKBOX : MaterialCheckbox + 배열 매핑 -->
+              <!-- CHECKBOX -->
               <div
                 v-else-if="item.question_type === 'CHECKBOX'"
                 class="space-y-1"
               >
-                <div class="text-[11px] text-gray-500 mb-1">
-                  해당되는 항목을 모두 선택하세요
-                </div>
+                <div class="helper-text">해당되는 항목을 모두 선택하세요</div>
 
                 <MaterialCheckbox
                   v-for="opt in item.option_values"
@@ -128,6 +125,7 @@
                   :id="`item-${item.item_code}-opt-${opt.value}`"
                   :name="`item_${item.item_code}`"
                   :modelValue="isChecked(item.item_code, opt.value)"
+                  class="choice-control"
                   @update:modelValue="
                     (checked) =>
                       toggleCheckbox(item.item_code, opt.value, checked)
@@ -147,16 +145,7 @@
       </div>
 
       <!-- 하단 버튼 -->
-      <div class="mt-4 flex justify-end gap-2">
-        <MaterialButton
-          color="dark"
-          size="sm"
-          variant="outlined"
-          @click="goBack"
-        >
-          ← 목록
-        </MaterialButton>
-
+      <div class="form-actions">
         <MaterialButton
           color="dark"
           size="sm"
@@ -354,5 +343,33 @@ section {
 .textarea-basic:focus {
   border-color: #111827;
   box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.18);
+}
+
+/* 질문 제목: 더 크고 또렷하게 */
+.question-title {
+  font-size: 0.95rem; /* 기본 15px 정도 */
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 보조 설명 텍스트: 더 작고 옅게 */
+.helper-text {
+  font-size: 0.7rem; /* 11px 정도 */
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+/* 라디오/체크박스 왼쪽 들여쓰기 통일 */
+.choice-control {
+  margin-left: 0;
+  padding-left: 0;
+}
+.form-actions {
+  margin-top: 10px;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex;
+  gap: 0.5rem;
 }
 </style>

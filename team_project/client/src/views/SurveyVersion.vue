@@ -2,25 +2,16 @@
   <section class="p-6">
     <!-- 🔥 전체 내용을 가운데로 모으는 래퍼 -->
     <div class="max-w-5xl mx-auto">
-      <div class="header-row mb-4">
-        <div class="header-title">
-          <span
-            class="text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap align-middle"
-          >
-            버전별 조사지 목록
-          </span>
-        </div>
+      <div class="form-actions">
+        <h2
+          class="text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap align-middle"
+        >
+          버전별 목록
+        </h2>
 
-        <div class="header-action">
-          <MaterialButton
-            color="dark"
-            size="sm"
-            @click="goToNew"
-            class="inline-flex"
-          >
-            조사지 제작하기
-          </MaterialButton>
-        </div>
+        <MaterialButton color="dark" size="sm" @click="goToNew">
+          조사지 제작하기
+        </MaterialButton>
       </div>
 
       <div v-if="loading">불러오는 중...</div>
@@ -155,24 +146,11 @@ function goToDetail(templateVerCode) {
   display: inline-flex !important;
 }
 
-.header-row {
+.form-actions {
+  padding-bottom: 0.9rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  flex-wrap: nowrap; /* 🔒 두 줄로 절대 나눠지지 않게 */
-  width: 100%;
-}
-
-/* 왼쪽 제목 영역은 필요하면 줄 잘리게 */
-.header-title {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* 오른쪽 버튼은 줄바꿈 없이 고정 */
-.header-action {
-  flex: 0 0 auto;
-  white-space: nowrap;
+  gap: 0.5rem;
 }
 
 /* 카드 컨테이너 */

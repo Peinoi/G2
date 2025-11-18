@@ -18,15 +18,27 @@ async function listSupportPlansByRole(role, userId) {
     let rows;
 
     if (role === 1) {
-      // 🔹 일반 사용자: user_code = 1 이라고 가정
-      const writerUserCode = 1;
-      rows = await conn.query(sql.listSupportPlanByWriter, [writerUserCode]);
+      // 🔹 일반 사용자: 내가 작성한 것만
+      rows = await conn.query(sql.listSupportPlanByWriter, [userId]);
     } else if (role === 2) {
-      // 🔹 담당자: user_code = 2 이라고 가정
-      const assiUserCode = 2;
-      rows = await conn.query(sql.listSupportPlanByAssignee, [assiUserCode]);
+      // 🔹 담당자: 내가 담당자인 것만
+      rows = await conn.query(sql.listSupportPlanByAssignee, [userId]);
+    } else if (role === 3) {
+      // 🔹 관리자: 내 기관 소속 애들만
+      const [admin] = await conn.query(
+        "SELECT org_code FROM users WHERE user_code = ?",
+        [userId]
+      );
+
+      const orgCode = admin?.org_code || null;
+
+      if (!orgCode) {
+        rows = [];
+      } else {
+        rows = await conn.query(sql.listSupportPlanByOrg, [orgCode]);
+      }
     } else {
-      // 🔹 관리자(3), 시스템(4): 전체
+      // 🔹 시스템(4): 전체
       rows = await conn.query(sql.listSupportPlanAll);
     }
 
@@ -38,6 +50,7 @@ async function listSupportPlansByRole(role, userId) {
       submitAt: r.submit_at,
       writerName: r.writer_name,
       assiName: r.assi_name,
+      orgName: r.org_name || null, // 🔥 기관명 추가
     }));
 
     return safeJSON(mapped);

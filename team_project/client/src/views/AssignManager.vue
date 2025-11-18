@@ -47,7 +47,7 @@ async function assignManager() {
 
   try {
     const { data } = await axios.post(`/api/assign/${submitCode}`, {
-      assignee: 2, // 담당자 user_code = 2
+      assignee: 13, // 담당자 user_code = 2
     });
 
     if (!data.success) throw new Error(data.message);

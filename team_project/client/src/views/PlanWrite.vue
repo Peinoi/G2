@@ -1,239 +1,261 @@
 <template>
-  <section class="p-6 max-w-5xl mx-auto space-y-6">
-    <!-- 상단 타이틀 -->
-    <header class="flex items-center justify-between">
-      <h2 class="text-2xl font-semibold">지원계획 작성</h2>
+  <section class="p-6">
+    <div class="page-shell space-y-6">
+      <!-- 상단 타이틀 -->
+      <header class="page-header">
+        <h2 class="page-title text-2xl md:text-3xl font-bold tracking-tight">
+          지원계획 작성
+        </h2>
 
-      <div class="space-x-2 flex items-center">
-        <MaterialButton color="dark" size="sm" @click="handleLoad">
-          불러오기
-        </MaterialButton>
-        <MaterialButton color="dark" size="sm" @click="handleTempSave">
-          임시 저장
-        </MaterialButton>
-      </div>
-    </header>
-
-    <!-- 로딩 / 에러 -->
-    <p v-if="loading" class="text-sm text-gray-500">
-      기본 정보를 불러오는 중입니다...
-    </p>
-    <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
-
-    <!-- 기본정보 -->
-    <div class="border rounded p-4 bg-gray-50 space-y-3">
-      <div class="grid grid-cols-2 text-sm gap-2">
-        <div>
-          이름: <strong>{{ submitInfo.name || "-" }}</strong>
+        <div class="header-actions">
+          <MaterialButton color="dark" size="sm" @click="handleLoad">
+            불러오기
+          </MaterialButton>
+          <MaterialButton color="dark" size="sm" @click="handleTempSave">
+            임시 저장
+          </MaterialButton>
         </div>
-        <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
-      </div>
+      </header>
 
-      <div class="flex flex-wrap items-center gap-4 text-sm">
-        <!-- 상담지 제출일 -->
-        <MaterialButton color="dark" size="sm" @click="openCounselDetail">
-          상담지 제출일: {{ formattedCounselSubmitAt }}
-        </MaterialButton>
+      <!-- 로딩 / 에러 -->
+      <p v-if="loading" class="text-sm text-gray-500">
+        기본 정보를 불러오는 중입니다...
+      </p>
+      <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-        <!-- 계획 작성일 (오늘 날짜 표시) -->
-        <div class="flex items-center gap-2">
-          <span>계획 작성일:</span>
-          <span class="px-2 py-1 border rounded bg-white">
-            {{ mainForm.planDate }}
-          </span>
+      <!-- 기본정보 카드 -->
+      <div class="meta-card space-y-3">
+        <div class="grid grid-cols-2 text-sm gap-2">
+          <div>
+            이름: <strong>{{ submitInfo.name || "-" }}</strong>
+          </div>
+          <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
         </div>
 
-        <!-- 예상 진행기간: YYYY-MM ~ YYYY-MM -->
-        <div class="flex items-center gap-2">
-          <span>예상 진행기간:</span>
-          <input
-            type="month"
-            v-model="mainForm.expectedStart"
-            class="input h-8"
-          />
-          <span>~</span>
-          <input
-            type="month"
-            v-model="mainForm.expectedEnd"
-            class="input h-8"
-          />
-        </div>
-      </div>
-    </div>
+        <div class="meta-bottom">
+          <!-- 상담지 제출일 버튼 -->
+          <MaterialButton color="dark" size="sm" @click="openCounselDetail">
+            상담지 제출일: {{ formattedCounselSubmitAt }}
+          </MaterialButton>
 
-    <!-- 메인 계획 입력 -->
-    <div class="space-y-4">
-      <!-- 계획 목표 -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">계획 목표</label>
-        <MaterialInput
-          id="plan-goal"
-          variant="outline"
-          size="default"
-          v-model="mainForm.goal"
-          placeholder="지원계획의 목표를 입력하세요"
-        />
-      </div>
-
-      <!-- 계획 내용 (일반용) -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">
-          계획 내용 (일반용)
-        </label>
-        <MaterialTextarea
-          id="plan-content-public"
-          variant="outline"
-          :rows="4"
-          placeholder="대상자/일반용 계획 내용을 입력하세요..."
-          :value="mainForm.publicContent"
-          @input="(e) => (mainForm.publicContent = e.target.value)"
-        />
-      </div>
-
-      <!-- 계획 내용 (관자용 / 관리자용) -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">
-          계획 내용 (관리자용)
-        </label>
-        <MaterialTextarea
-          id="plan-content-private"
-          variant="outline"
-          :rows="4"
-          placeholder="관계자/관리자용 내부 계획 내용을 입력하세요..."
-          :value="mainForm.privateContent"
-          @input="(e) => (mainForm.privateContent = e.target.value)"
-        />
-      </div>
-
-      <!-- 첨부 파일 -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">첨부 파일</label>
-        <input
-          ref="fileInputRef"
-          type="file"
-          multiple
-          @change="onMainFilesChange"
-          class="block w-full text-sm"
-        />
-        <p class="mt-1 text-xs text-gray-500">
-          * 여러 개 파일을 한 번에 선택하거나, 나눠서 여러 번 선택할 수
-          있습니다.
-        </p>
-
-        <!-- 임시저장 첨부파일 목록 -->
-        <ul
-          v-if="existingFiles.length"
-          class="mt-2 text-xs text-gray-700 space-y-1"
-        >
-          <li
-            v-for="(file, idx) in existingFiles"
-            :key="file.attachCode"
-            class="flex items-center justify-between gap-2"
-          >
-            <span class="truncate">{{ file.originalFilename }} </span>
-            <button
-              type="button"
-              class="shrink-0 px-2 py-0.5 border rounded text-[11px] text-gray-600 hover:bg-gray-100"
-              @click="removeExistingFile(idx, file.attachCode)"
-            >
-              삭제
-            </button>
-          </li>
-        </ul>
-
-        <!-- 선택된 파일 목록 -->
-        <ul
-          v-if="mainFiles.length"
-          class="mt-2 text-xs text-gray-700 space-y-1"
-        >
-          <li
-            v-for="(file, idx) in mainFiles"
-            :key="file.name + '_' + file.lastModified + '_' + idx"
-            class="flex items-center justify-between gap-2"
-          >
-            <span class="truncate">
-              {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+          <!-- 계획 작성일 (오늘 날짜 표시) -->
+          <label class="flex items-center gap-2 text-sm">
+            계획 작성일:
+            <span class="px-2 py-1 border rounded bg-white">
+              {{ mainForm.planDate }}
             </span>
-            <button
-              type="button"
-              class="shrink-0 px-2 py-0.5 border rounded text-[11px] text-gray-600 hover:bg-gray-100"
-              @click="removeMainFile(idx)"
+          </label>
+
+          <!-- 예상 진행기간: YYYY-MM ~ YYYY-MM -->
+          <div class="flex items-center gap-2 text-sm">
+            <span>예상 진행기간:</span>
+            <input
+              type="month"
+              v-model="mainForm.expectedStart"
+              class="input h-8"
+            />
+            <span>~</span>
+            <input
+              type="month"
+              v-model="mainForm.expectedEnd"
+              class="input h-8"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 메인 지원계획 카드 -->
+      <div class="card-block space-y-4">
+        <!-- 계획 목표 -->
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">계획 목표</label>
+          <MaterialInput
+            id="plan-goal"
+            variant="static"
+            size="default"
+            v-model="mainForm.goal"
+            placeholder="지원계획의 목표를 입력하세요"
+          />
+        </div>
+
+        <!-- 계획 내용 (일반용) -->
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">
+            계획 내용 (일반용)
+          </label>
+          <MaterialTextarea
+            id="plan-content-public"
+            variant="outline"
+            :rows="4"
+            placeholder="대상자/일반용 계획 내용을 입력하세요..."
+            :value="mainForm.publicContent"
+            @input="(e) => (mainForm.publicContent = e.target.value)"
+          />
+        </div>
+
+        <!-- 계획 내용 (관계자/관리자용) -->
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">
+            계획 내용 (관리자용)
+          </label>
+          <MaterialTextarea
+            id="plan-content-private"
+            variant="outline"
+            :rows="4"
+            placeholder="관계자/관리자용 내부 계획 내용을 입력하세요..."
+            :value="mainForm.privateContent"
+            @input="(e) => (mainForm.privateContent = e.target.value)"
+          />
+        </div>
+
+        <!-- 첨부 파일 -->
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">첨부 파일</label>
+          <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            @change="onMainFilesChange"
+            class="file-input"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            * 여러 개 파일을 한 번에 선택하거나, 나눠서 여러 번 선택할 수
+            있습니다.
+          </p>
+
+          <ul
+            v-if="existingFiles.length"
+            class="mt-2 text-xs text-gray-700 space-y-1"
+          >
+            <li
+              v-for="(file, idx) in existingFiles"
+              :key="file.attachCode"
+              class="file-row"
             >
-              삭제
-            </button>
-          </li>
-        </ul>
+              <a
+                :href="file.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="file-link"
+              >
+                {{ file.originalFilename }}
+              </a>
+              <button
+                type="button"
+                class="chip-button"
+                @click="removeExistingFile(idx, file.attachCode)"
+              >
+                삭제
+              </button>
+            </li>
+          </ul>
+
+          <!-- 새로 선택한 파일 목록 -->
+          <ul
+            v-if="mainFiles.length"
+            class="mt-2 text-xs text-gray-700 space-y-1"
+          >
+            <li
+              v-for="(file, idx) in mainFiles"
+              :key="file.name + '_' + file.lastModified + '_' + idx"
+              class="file-row"
+            >
+              <span class="file-link">
+                {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+              </span>
+              <button
+                type="button"
+                class="chip-button"
+                @click="removeMainFile(idx)"
+              >
+                삭제
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
 
-    <!-- 버튼 영역 -->
-
-    <div class="flex items-center gap-3">
-      <MaterialButton color="dark" size="sm" @click="goBack">
-        작성 취소
-      </MaterialButton>
-
-      <MaterialButton color="dark" size="sm" @click="addPlanItem">
-        + 계획 추가
-      </MaterialButton>
-
-      <MaterialButton
-        color="dark"
-        size="sm"
-        class="ml-auto shrink-0"
-        @click="submitAll"
+      <!-- 추가 계획 카드들 -->
+      <div
+        v-for="item in planItems"
+        :key="item.id"
+        class="record-card space-y-4"
       >
-        제출하기
-      </MaterialButton>
-    </div>
+        <div class="record-header">
+          <h4 class="font-medium text-sm">추가 계획</h4>
 
-    <!-- 추가 계획 기록들 -->
-    <div
-      v-for="item in planItems"
-      :key="item.id"
-      class="border rounded p-4 bg-white space-y-4"
-    >
-      <div class="flex justify-between items-start">
-        <h4 class="font-medium text-sm">추가 계획</h4>
+          <MaterialButton
+            color="dark"
+            size="sm"
+            variant="outlined"
+            @click="removePlanItem(item.id)"
+          >
+            제거
+          </MaterialButton>
+        </div>
 
-        <MaterialButton color="dark" size="sm" @click="removePlanItem(item.id)">
-          -
-        </MaterialButton>
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">계획 목표</label>
+          <MaterialInput
+            :id="`plan-item-goal-${item.id}`"
+            variant="static"
+            size="default"
+            v-model="item.goal"
+            placeholder="추가 계획의 목표를 입력하세요"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">
+            계획 내용 (일반용)
+          </label>
+          <MaterialTextarea
+            :id="`plan-item-public-${item.id}`"
+            variant="outline"
+            :rows="3"
+            placeholder="대상자/일반용 내용을 입력하세요..."
+            :value="item.publicContent"
+            @input="(e) => (item.publicContent = e.target.value)"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="block text-sm mb-1 font-medium">
+            계획 내용 (관리자용)
+          </label>
+          <MaterialTextarea
+            :id="`plan-item-private-${item.id}`"
+            variant="outline"
+            :rows="3"
+            placeholder="관계자/관리자용 내용을 입력하세요..."
+            :value="item.privateContent"
+            @input="(e) => (item.privateContent = e.target.value)"
+          />
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">계획 목표</label>
-        <MaterialInput
-          :id="`plan-item-goal-${item.id}`"
-          variant="outline"
-          size="default"
-          v-model="item.goal"
-          placeholder="추가 계획의 목표를 입력하세요"
-        />
-      </div>
+      <!-- 하단 버튼 라인 -->
+      <div class="action-bar">
+        <div class="left-actions">
+          <MaterialButton color="dark" size="sm" @click="goBack">
+            작성 취소
+          </MaterialButton>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">계획 내용 (일반용)</label>
-        <MaterialTextarea
-          :id="`plan-item-public-${item.id}`"
-          variant="outline"
-          :rows="3"
-          placeholder="대상자/일반용 내용을 입력하세요..."
-          :value="item.publicContent"
-          @input="(e) => (item.publicContent = e.target.value)"
-        />
-      </div>
+          <MaterialButton color="dark" size="sm" @click="addPlanItem">
+            + 계획 추가
+          </MaterialButton>
+        </div>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">계획 내용 (관자용)</label>
-        <MaterialTextarea
-          :id="`plan-item-private-${item.id}`"
-          variant="outline"
-          :rows="3"
-          placeholder="관계자/관리자용 내용을 입력하세요..."
-          :value="item.privateContent"
-          @input="(e) => (item.privateContent = e.target.value)"
-        />
+        <div class="right-actions">
+          <MaterialButton
+            color="dark"
+            size="sm"
+            class="ml-auto shrink-0"
+            @click="submitAll"
+          >
+            제출하기
+          </MaterialButton>
+        </div>
       </div>
     </div>
   </section>
@@ -268,8 +290,8 @@ const formattedCounselSubmitAt = computed(() => {
 // 메인 계획 폼
 const mainForm = ref({
   planDate: "", // 계획 작성일 (오늘 날짜)
-  expectedStart: "", // 예상 진행기간 시작 (YYYY-MM)
-  expectedEnd: "", // 예상 진행기간 종료 (YYYY-MM)
+  expectedStart: "", // 실제 진행기간 시작 (YYYY-MM)
+  expectedEnd: "", // 실제 진행기간 종료 (YYYY-MM)
   goal: "",
   publicContent: "",
   privateContent: "",
@@ -296,13 +318,13 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
-// // 기본정보 로딩 (이름/생년월일/상담지 제출일 등)
+// 기본정보 로딩 (이름/생년월일/상담지 제출일 등)
 async function loadData() {
   loading.value = true;
   error.value = "";
 
   try {
-    // ✅ 백엔드 라우터: GET /plans/:submitCode 기준
+    // 백엔드: GET /api/plans/:submitCode
     const { data } = await axios.get(`/api/plans/${submitCode}`);
 
     if (!data?.success || !data.result) {
@@ -311,8 +333,6 @@ async function loadData() {
 
     const res = data.result;
 
-    // ✅ 백엔드에서 이렇게 내려준다고 가정:
-    // { submitCode, name, ssnFront, counselSubmitAt }
     submitInfo.value = {
       name: res.name || "",
       ssnFront: (res.ssnFront || "").slice(0, 6),
@@ -336,7 +356,7 @@ onMounted(() => {
   loadData();
 });
 
-// 파일 변경 핸들러 (기존 + 새 파일 누적)
+// 파일 변경 핸들러
 function onMainFilesChange(e) {
   const files = Array.from(e.target.files || []);
 
@@ -365,12 +385,9 @@ function removeMainFile(index) {
 
 // 임시저장으로 있던 파일 삭제
 function removeExistingFile(index, attachCode) {
-  // 백엔드에서 지울 수 있도록 코드만 따로 보관
   if (attachCode && !removedAttachCodes.value.includes(attachCode)) {
     removedAttachCodes.value.push(attachCode);
   }
-
-  // 화면에서는 바로 지워버리기
   existingFiles.value.splice(index, 1);
 }
 
@@ -387,7 +404,6 @@ async function handleTempSave() {
     const formData = new FormData();
     formData.append("formJson", JSON.stringify(formJson));
 
-    // 🔹 지금 화면에서 선택한 파일들 같이 보냄
     mainFiles.value.forEach((file) => {
       formData.append("planFiles", file);
     });
@@ -442,15 +458,14 @@ async function handleLoad() {
         privateContent: d.privateContent || "",
       })) || [];
 
-    // ✅ 기존 첨부파일 (임시저장 때 올라간 것들)
+    // 기존 첨부파일
     existingFiles.value =
       (res.attachments || []).map((a) => ({
         attachCode: a.attachCode,
         originalFilename: a.originalFilename,
-        url: a.url, // 백엔드에서 file_path + server_filename으로 만들어둔 것
+        url: a.url,
       })) || [];
 
-    // 삭제리스트 초기화
     removedAttachCodes.value = [];
 
     alert("임시 저장된 지원계획을 불러왔습니다.");
@@ -462,7 +477,7 @@ async function handleLoad() {
   }
 }
 
-//상담 상세로 연결
+// 상담 상세로 연결
 function openCounselDetail() {
   window.open(`/counsel/detail/${submitCode}`, "_blank");
 }
@@ -490,23 +505,19 @@ function removePlanItem(id) {
 // 유효성 체크
 function validate() {
   if (!mainForm.value.expectedStart) {
-    return "실제 진행기간 시작 월을 선택해주세요.";
+    return "예상 진행기간 시작 월을 선택해주세요.";
   }
   if (!mainForm.value.expectedEnd) {
-    return "실제 진행기간 종료 월을 선택해주세요.";
+    return "예상 진행기간 종료 월을 선택해주세요.";
   }
   if (mainForm.value.expectedStart > mainForm.value.expectedEnd) {
-    return "실제 진행기간의 시작 월이 종료 월보다 늦을 수 없습니다.";
+    return "예상 진행기간의 시작 월이 종료 월보다 늦을 수 없습니다.";
   }
   if (!mainForm.value.goal.trim()) return "계획 목표를 입력해주세요.";
   if (!mainForm.value.publicContent.trim())
     return "계획 내용(일반용)을 입력해주세요.";
   if (!mainForm.value.privateContent.trim())
     return "계획 내용(관자용)을 입력해주세요.";
-
-  // 예상 기간은 선택 옵션으로 둘 거면 아래는 주석 처리
-  // if (!mainForm.value.expectedStart || !mainForm.value.expectedEnd)
-  //   return "예상 진행기간을 선택해주세요.";
 
   for (const p of planItems.value) {
     if (!p.goal.trim()) return "추가 계획의 목표를 입력해주세요.";
@@ -519,7 +530,7 @@ function validate() {
   return null;
 }
 
-// 제출하기: JSON + 파일 FormData로 전송
+// 제출하기
 async function submitAll() {
   const err = validate();
   if (err) {
@@ -560,3 +571,174 @@ async function submitAll() {
   }
 }
 </script>
+
+<style scoped>
+section {
+  color: #111827;
+}
+
+/* 페이지 폭 통일 */
+.page-shell {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* 헤더 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-title {
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 기본정보 카드 */
+.meta-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+}
+
+.meta-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.1rem;
+  margin-top: 0.25rem;
+}
+
+/* 메인 카드 (지원계획 내용) */
+.card-block {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  padding: 1.25rem 1.1rem;
+}
+
+/* 그룹 간 간격 (label + input/textarea 묶음) */
+.form-group + .form-group {
+  margin-top: 0.85rem;
+}
+
+/* 공통 인풋 스타일 (date, month, select 등) */
+.input {
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.875rem;
+  outline: none;
+  min-width: 8rem;
+  background-color: #ffffff;
+}
+
+.input:focus {
+  border-color: #111827;
+}
+
+/* 파일 인풋 */
+.file-input {
+  display: block;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+/* 파일 리스트 */
+.file-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.file-link {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #374151; /* 무채색 회색 */
+  text-decoration: none; /* 기본 밑줄 제거 */
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+/* 호버 시 티 나게 */
+.file-link:hover {
+  text-decoration: underline;
+  color: #111827; /* 조금 더 진한 회색 */
+}
+
+/* 작은 칩 버튼 */
+.chip-button {
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 0.7rem;
+  color: #4b5563;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip-button:hover {
+  background-color: #e5e7eb;
+}
+
+/* 하단 액션 바 */
+.action-bar {
+  margin-top: 10px;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.left-actions,
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 추가 계획 카드 */
+.record-card {
+  margin-top: 10px;
+  border-radius: 0.8rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1.1rem 1rem;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 공통 폰트 */
+section,
+label,
+input,
+textarea {
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+</style>

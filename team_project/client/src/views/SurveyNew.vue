@@ -2,7 +2,7 @@
   <section class="p-6 max-w-5xl mx-auto">
     <!-- 헤더 -->
     <header class="flex items-center justify-between header-row">
-      <h2 class="text-2xl font-semibold">새 조사지 작성</h2>
+      <h2 class="text-2xl font-semibold">새 버전 작성</h2>
 
       <div class="space-x-2">
         <MaterialButton
@@ -261,7 +261,7 @@
       </div>
 
       <!-- 하단 컨트롤 -->
-      <div class="flex items-center justify-between mt-4">
+      <div class="form-actions">
         <MaterialButton
           color="dark"
           size="sm"
@@ -270,16 +270,18 @@
         >
           + 항목 추가
         </MaterialButton>
+
+        <!-- 작성 완료 버튼 -->
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-5"
+          @click="openPreview"
+        >
+          작성 완료
+        </MaterialButton>
       </div>
     </div>
-
-    <!-- 작성 완료 버튼 -->
-    <div class="mt-4 flex justify-end">
-      <MaterialButton color="dark" size="sm" class="px-5" @click="openPreview">
-        작성 완료
-      </MaterialButton>
-    </div>
-
     <!-- =======================
         PREVIEW MODAL
     ======================= -->
@@ -342,7 +344,7 @@
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 mt-4">
+        <div class="form-actions">
           <MaterialButton
             color="dark"
             size="sm"
@@ -653,5 +655,14 @@ section {
   border: 1px dashed #d1d5db;
   padding: 0.6rem;
   margin-top: 0.5rem;
+}
+
+.form-actions {
+  margin-top: 10px;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 </style>

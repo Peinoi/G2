@@ -1,15 +1,14 @@
 <template>
-  <section class="p-6 max-w-5xl mx-auto space-y-6">
-    <!-- 상단 타이틀 -->
-    <header class="flex items-center justify-between">
-      <h2 class="text-2xl font-semibold">지원계획 상세</h2>
+  <section class="p-6 max-w-5xl mx-auto">
+    <!-- 상단 액션 라인 -->
+    <div class="form-action">
+      <!-- ← 목록으로 -->
+      <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+        ← 목록으로
+      </MaterialButton>
 
-      <div class="space-x-2 flex items-center">
-        <!-- ← 목록으로 -->
-        <MaterialButton color="dark" size="sm" @click="goBack">
-          ← 목록으로
-        </MaterialButton>
-
+      <!-- 오른쪽: 상태에 따른 액션 버튼 묶음 -->
+      <div class="flex items-center gap-2">
         <!-- 작성하기 (담당자만 / CC1, CC2) -->
         <MaterialButton
           v-if="role === 2 && (status === 'CC1' || status === 'CC2')"
@@ -30,7 +29,7 @@
           수정하기
         </MaterialButton>
 
-        <!-- 재수정하기 (반려 시 담당자 전용 가정) -->
+        <!-- 재수정하기 (반려 시 담당자 전용) -->
         <MaterialButton
           v-else-if="role === 2 && status === 'CC7'"
           color="dark"
@@ -40,211 +39,237 @@
           재수정하기
         </MaterialButton>
       </div>
-    </header>
-
-    <!-- 로딩 / 에러 -->
-    <p v-if="loading" class="text-sm text-gray-500">
-      지원계획 정보를 불러오는 중입니다...
-    </p>
-    <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
-
-    <!-- 기본정보 -->
-    <div
-      class="border rounded p-4 bg-gray-50 space-y-3"
-      v-if="!loading && !error"
-    >
-      <div class="grid grid-cols-2 text-sm gap-2">
-        <div>
-          이름:
-          <strong>{{ basicInfo.name || "-" }}</strong>
-        </div>
-        <div>생년월일: {{ basicInfo.ssnFront || "-" }}</div>
-      </div>
-
-      <div class="flex flex-wrap items-center gap-4 text-sm mt-2">
-        <!-- 상담지 제출일 -->
-        <MaterialButton
-          color="dark"
-          size="sm"
-          @click="openCounselDetail"
-          v-if="basicInfo.counselSubmitAt"
-        >
-          상담지 제출일: {{ formattedCounselSubmitAt }}
-        </MaterialButton>
-
-        <!-- 계획 작성일 -->
-        <div class="flex items-center gap-2">
-          <span>계획 작성일:</span>
-          <span class="px-2 py-1 border rounded bg-white">
-            {{ mainForm.planDate || "-" }}
-          </span>
-        </div>
-
-        <!-- 예상 진행기간 -->
-        <div class="flex items-center gap-2">
-          <span>예상 진행기간:</span>
-          <span class="px-2 py-1 border rounded bg-white">
-            {{ mainForm.expectedStart || "미지정" }}
-          </span>
-          <span>~</span>
-          <span class="px-2 py-1 border rounded bg-white">
-            {{ mainForm.expectedEnd || "미지정" }}
-          </span>
-        </div>
-      </div>
     </div>
 
-    <!-- 메인 계획 내용 -->
-    <div v-if="!loading && !error">
-      <!-- 🔥 CC1 / CC2 일 때 안내 문구 -->
-      <div
-        v-if="isTemp"
-        class="border rounded p-4 bg-yellow-50 text-xs text-gray-700 mb-4"
-      >
-        <template v-if="status === 'CC1'">
-          이 지원계획은 <strong>임시저장</strong> 상태입니다.<br />
-          목표, 내용 및 첨부파일은 작성 화면에서만 확인할 수 있습니다.
-        </template>
+    <!-- 바깥 상세 카드 -->
+    <div class="detail-card">
+      <!-- 헤더 -->
+      <header class="flex justify-between items-start detail-header">
+        <div>
+          <h2 class="text-2xl font-semibold">지원계획 상세</h2>
+        </div>
 
-        <template v-else>
-          이 지원계획은 <strong>작성 전</strong> 상태입니다.<br />
-          목표, 내용 및 첨부파일은 작성 화면에서만 확인할 수 있습니다.
-        </template>
+        <!-- 상태 뱃지 -->
+        <span class="status-pill" :class="statusClass(status)">
+          상태: {{ statusLabel(status) }}
+        </span>
+      </header>
+
+      <!-- 로딩 / 에러 -->
+      <div v-if="loading" class="text-sm text-gray-500 py-6">
+        지원계획 정보를 불러오는 중입니다...
+      </div>
+      <div v-else-if="error" class="text-sm text-red-500 py-6">
+        {{ error }}
       </div>
 
-      <!-- 🔥 실제 내용은 임시저장/작성전 아닐 때만 -->
-      <div v-if="!isTemp" class="space-y-4">
-        <div>
-          <h3 class="text-sm font-medium mb-1">계획 목표</h3>
-          <div class="border rounded p-3 bg-white text-sm min-h-[40px]">
-            {{ mainForm.goal || "-" }}
+      <!-- 본문 -->
+      <template v-else>
+        <!-- 기본정보 카드 -->
+        <div class="meta-card space-y-3">
+          <div class="meta-row">
+            <span class="meta-label">이름</span>
+            <span class="meta-value">
+              <strong>{{ basicInfo.name || "-" }}</strong>
+            </span>
           </div>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium mb-1">계획 내용 (일반용)</h3>
-          <div
-            class="border rounded p-3 bg-white text-sm whitespace-pre-line min-h-[60px]"
-          >
-            {{ mainForm.publicContent || "-" }}
+          <div class="meta-row">
+            <span class="meta-label">생년월일</span>
+            <span class="meta-value">
+              {{ basicInfo.ssnFront || "-" }}
+            </span>
           </div>
-        </div>
 
-        <!-- 관리자용(관자용) 내용: role !== 1 일 때만 -->
-        <div v-if="role !== 1">
-          <h3 class="text-sm font-medium mb-1">계획 내용 (관리자용)</h3>
-          <div
-            class="border rounded p-3 bg-white text-sm whitespace-pre-line min-h-[60px]"
-          >
-            {{ mainForm.privateContent || "-" }}
-          </div>
-        </div>
-
-        <!-- 첨부 파일: role !== 1 일 때만 -->
-        <div v-if="role !== 1">
-          <h3 class="text-sm font-medium mb-1">첨부 파일</h3>
-
-          <p v-if="!attachments.length" class="text-xs text-gray-500">
-            첨부된 파일이 없습니다.
-          </p>
-
-          <ul v-else class="mt-1 text-xs text-gray-700 space-y-1">
-            <li
-              v-for="file in attachments"
-              :key="file.attachCode"
-              class="flex items-center justify-between gap-2"
-            >
-              <a
-                :href="file.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="truncate underline"
+          <div class="meta-row meta-row-inline">
+            <span class="meta-label">상담지</span>
+            <span class="meta-value meta-value-inline">
+              <MaterialButton
+                v-if="basicInfo.counselSubmitAt"
+                color="dark"
+                size="sm"
+                @click="openCounselDetail"
               >
-                {{ file.originalFilename }}
-              </a>
-            </li>
-          </ul>
+                상담지 제출일: {{ formattedCounselSubmitAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">작성일</span>
+            <span class="meta-value">
+              {{ mainForm.planDate || "-" }}
+            </span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">진행기간</span>
+            <span class="meta-value">
+              <span>{{ mainForm.expectedStart || "미지정" }}</span>
+              <span class="mx-1">~</span>
+              <span>{{ mainForm.expectedEnd || "미지정" }}</span>
+            </span>
+          </div>
         </div>
 
-        <!-- 추가 계획들 -->
-        <div
-          v-if="!loading && !error && !isTemp && planItems.length"
-          class="space-y-4"
-        >
-          <h3 class="text-sm font-semibold">추가 계획</h3>
+        <!-- CC1 / CC2 : 안내만 노출 -->
+        <div v-if="isTemp" class="info-card muted-info">
+          <template v-if="status === 'CC1'">
+            이 지원계획은 <strong>임시 저장</strong> 상태입니다.<br />
+            목표, 내용 및 첨부파일은
+            <span class="font-semibold">[작성하기]</span>
+            화면에서만 확인·수정할 수 있습니다.
+          </template>
 
-          <div
-            v-for="item in planItems"
-            :key="item.id"
-            class="border rounded p-4 bg-white space-y-3"
-          >
-            <div>
-              <h4 class="text-sm font-medium mb-1">계획 목표</h4>
-              <div class="border rounded p-2 text-sm bg-gray-50 min-h-[32px]">
-                {{ item.goal || "-" }}
+          <template v-else>
+            이 지원계획은 아직 <strong>작성 전</strong> 상태입니다.<br />
+            목표, 내용 및 첨부파일은
+            <span class="font-semibold">[작성하기]</span>
+            버튼을 눌러 작성해 주세요.
+          </template>
+        </div>
+
+        <!-- 실제 내용 (임시/작성전이 아닐 때만) -->
+        <template v-else>
+          <!-- 메인 계획 카드 -->
+          <div class="block-card">
+            <h3 class="block-title">메인 계획</h3>
+
+            <div class="field-block">
+              <div class="field-label">계획 목표</div>
+              <div class="field-value">
+                {{ mainForm.goal || "-" }}
               </div>
             </div>
 
-            <div>
-              <h4 class="text-sm font-medium mb-1">계획 내용 (일반용)</h4>
-              <div
-                class="border rounded p-2 text-sm bg-gray-50 whitespace-pre-line min-h-[40px]"
-              >
-                {{ item.publicContent || "-" }}
+            <div class="field-block">
+              <div class="field-label">계획 내용 (일반용)</div>
+              <div class="field-value whitespace-pre-line">
+                {{ mainForm.publicContent || "-" }}
               </div>
             </div>
 
             <!-- 관리자용 내용: role !== 1 일 때만 -->
-            <div v-if="role !== 1">
-              <h4 class="text-sm font-medium mb-1">계획 내용 (관리자용)</h4>
-              <div
-                class="border rounded p-2 text-sm bg-gray-50 whitespace-pre-line min-h-[40px]"
-              >
-                {{ item.privateContent || "-" }}
+            <div v-if="role !== 1" class="field-block">
+              <div class="field-label">계획 내용 (관리자용)</div>
+              <div class="field-value whitespace-pre-line">
+                {{ mainForm.privateContent || "-" }}
+              </div>
+            </div>
+
+            <!-- 첨부 파일: role !== 1 일 때만 -->
+            <div v-if="role !== 1" class="field-block mt-3">
+              <div class="field-label">첨부 파일</div>
+              <div v-if="attachments.length">
+                <ul class="mt-1 text-xs text-gray-700 space-y-1">
+                  <li
+                    v-for="file in attachments"
+                    :key="file.attachCode"
+                    class="file-row"
+                  >
+                    <a
+                      :href="file.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="file-link"
+                    >
+                      {{ file.originalFilename }}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div v-else class="text-xs text-gray-400">
+                첨부된 파일이 없습니다.
               </div>
             </div>
           </div>
+
+          <!-- 추가 계획 카드들 -->
+          <div class="space-y-4 mt-4">
+            <h3 class="font-semibold text-lg">추가 계획</h3>
+
+            <template v-if="planItems.length">
+              <div
+                v-for="(item, idx) in planItems"
+                :key="item.id || idx"
+                class="block-card"
+              >
+                <div
+                  class="flex justify-between items-center text-sm mb-2 border-b border-gray-200 pb-2"
+                >
+                  <div class="font-medium">계획 #{{ idx + 1 }}</div>
+                </div>
+
+                <div class="field-block">
+                  <div class="field-label">계획 목표</div>
+                  <div class="field-value">
+                    {{ item.goal || "-" }}
+                  </div>
+                </div>
+
+                <div class="field-block">
+                  <div class="field-label">계획 내용 (일반용)</div>
+                  <div class="field-value whitespace-pre-line">
+                    {{ item.publicContent || "-" }}
+                  </div>
+                </div>
+
+                <div v-if="role !== 1" class="field-block">
+                  <div class="field-label">계획 내용 (관리자용)</div>
+                  <div class="field-value whitespace-pre-line">
+                    {{ item.privateContent || "-" }}
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <p v-else class="text-sm text-gray-500">추가 계획이 없습니다.</p>
+          </div>
+        </template>
+      </template>
+    </div>
+
+    <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
+    <div
+      v-if="role === 3 && (status === 'CC3' || status === 'CC6')"
+      class="pt-4 border-t mt-2 space-y-3"
+    >
+      <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
+      <div v-if="rejectionInfo && rejectionInfo.reason" class="rejection-card">
+        <div class="font-semibold mb-1 text-sm">반려 이력</div>
+
+        <div class="mb-1">
+          반려일자:
+          <span class="font-medium">
+            {{ formattedRejectionDate }}
+          </span>
         </div>
 
-        <!-- 🔥 관리자(3) 전용 승인/반려 + 반려 이력 영역 -->
-        <div
-          v-if="role === 3 && (status === 'CC3' || status === 'CC6')"
-          class="pt-4 border-t mt-4 space-y-3"
+        <div>
+          <div class="font-medium">사유:</div>
+          <p class="whitespace-pre-line mt-1">
+            {{ rejectionInfo.reason }}
+          </p>
+        </div>
+      </div>
+
+      <!-- 승인/반려 버튼 -->
+      <div class="approve-actions">
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleApprove"
         >
-          <!-- ⛔ 이전 반려 이력 표시 박스 (있을 때만) -->
-          <div
-            v-if="rejectionInfo && rejectionInfo.reason"
-            class="border rounded p-3 bg-red-50 text-xs text-red-800"
-          >
-            <div class="font-semibold mb-1">반려 이력</div>
-
-            <!-- 날짜 -->
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-gray-700"> 반려일자: </span>
-              <span class="font-medium">
-                {{ formattedRejectionDate }}
-              </span>
-            </div>
-
-            <!-- 사유 -->
-            <div>
-              <div class="font-medium">사유:</div>
-              <p class="whitespace-pre-line mt-1">
-                {{ rejectionInfo.reason }}
-              </p>
-            </div>
-          </div>
-
-          <!-- 승인/반려 버튼 -->
-          <div class="flex justify-end gap-3">
-            <MaterialButton color="dark" size="sm" @click="handleApprove">
-              승인
-            </MaterialButton>
-            <MaterialButton color="dark" size="sm" @click="handleReject">
-              반려
-            </MaterialButton>
-          </div>
-        </div>
+          승인
+        </MaterialButton>
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleReject"
+        >
+          반려
+        </MaterialButton>
       </div>
     </div>
 
@@ -331,7 +356,7 @@ const error = ref("");
 const rejectModalOpen = ref(false);
 const rejectReason = ref("");
 
-// 🔻 상세 화면에서 보여줄 마지막 반려 이력
+// 🔻 마지막 반려 이력
 const rejectionInfo = ref({
   reason: "",
   date: "",
@@ -415,7 +440,6 @@ async function loadRejectionInfo() {
       const r = data.result;
       rejectionInfo.value = {
         reason: r.rejection_reason || "",
-        // sql 에서 approval_date AS rejection_date 로 넘겨주고 있다고 가정
         date: r.rejection_date || r.approval_date || "",
       };
     } else {
@@ -423,7 +447,6 @@ async function loadRejectionInfo() {
     }
   } catch (e) {
     console.error("[loadRejectionInfo]", e);
-    // 오류 나도 화면 망가지지 않게만 처리
     rejectionInfo.value = { reason: "", date: "" };
   }
 }
@@ -436,13 +459,13 @@ onMounted(async () => {
       throw new Error("planCode가 없습니다. (라우터 params 확인 필요)");
     }
 
-    const promises = [loadDetail()];
+    const tasks = [loadDetail()];
     if (submitCode) {
-      promises.push(loadBasicInfo());
+      tasks.push(loadBasicInfo());
     }
-    await Promise.all(promises);
+    await Promise.all(tasks);
 
-    // 🔹 관리자일 때만 반려 이력 조회
+    // 관리자일 때만 반려 이력 조회
     if (role.value === 3) {
       await loadRejectionInfo();
     }
@@ -453,6 +476,46 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+/* ---------- 상태 라벨 / 스타일 ---------- */
+function statusLabel(code) {
+  const c = (code || "").toString().toUpperCase();
+  switch (c) {
+    case "CC1":
+      return "임시저장";
+    case "CC2":
+      return "작성전";
+    case "CC3":
+      return "검토전";
+    case "CC5":
+      return "검토완료";
+    case "CC6":
+      return "재승인요청";
+    case "CC7":
+      return "반려";
+    default:
+      return code || "-";
+  }
+}
+
+function statusClass(code) {
+  const c = (code || "").toString().toUpperCase();
+  switch (c) {
+    case "CC1":
+    case "CC2":
+      return "status-pill--before";
+    case "CC3":
+      return "status-pill--review";
+    case "CC7":
+      return "status-pill--rejected";
+    case "CC5":
+      return "status-pill--done";
+    case "CC6":
+      return "status-pill--resubmit";
+    default:
+      return "status-pill--default";
+  }
+}
 
 // 상담지 상세로 이동
 function openCounselDetail() {
@@ -539,10 +602,216 @@ function closeRejectModal() {
 </script>
 
 <style scoped>
+section {
+  color: #111827;
+}
+
+/* 상단 액션 라인 */
+.form-action {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* 바깥 카드 */
+.detail-card {
+  background: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* 헤더 */
+.detail-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 상태 pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+
+/* 상태별 톤 (상담 상세와 통일) */
+.status-pill--before {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
+.status-pill--review {
+  background-color: #e5e7eb;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.status-pill--rejected {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.status-pill--done {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+}
+
+.status-pill--resubmit {
+  background-color: #fefce8;
+  color: #854d0e;
+  border-color: #fef3c7;
+}
+
+.status-pill--default {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+/* 메타 정보 카드 */
+.meta-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.meta-row + .meta-row {
+  margin-top: 0.35rem;
+}
+.meta-label {
+  display: inline-block;
+  width: 4.5rem;
+  color: #6b7280;
+}
+.meta-value {
+  color: #111827;
+}
+
+/* 조사지 버튼이 들어가는 행 정렬 */
+.meta-row-inline {
+  display: flex;
+  align-items: center;
+}
+.meta-value-inline {
+  display: inline-flex;
+  align-items: center;
+}
+
+.meta-card,
+.info-card,
+.block-card {
+  width: 100%;
+}
+
+/* 안내 카드 */
+.info-card {
+  display: block; /* 🔥 블록으로 강제 */
+  box-sizing: border-box;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+.muted-info {
+  background-color: #f9fafb;
+  color: #4b5563;
+}
+
+/* 블록 카드 (메인 계획 / 추가 계획) */
+.block-card {
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1rem 1rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.block-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* 필드 블록 */
+.field-block {
+  margin-top: 0.6rem;
+}
+.field-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+.field-value {
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+/* 첨부 파일 텍스트 */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.file-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #374151;
+  text-decoration: none;
+  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-link:hover {
+  text-decoration: underline;
+  color: #111827;
+}
+
+/* 반려 카드 */
+.rejection-card {
+  border-radius: 0.75rem;
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  padding: 0.9rem 1rem;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+/* 승인/반려 버튼 줄 (가운데 정렬) */
+.approve-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  width: 100%;
+}
+
+/* 모달 */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(15, 23, 42, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;

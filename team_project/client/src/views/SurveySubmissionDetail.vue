@@ -1,19 +1,21 @@
 <template>
   <section class="p-6 max-w-5xl mx-auto relative">
-    <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
-      ← 목록으로
-    </MaterialButton>
-    <!-- 관리자 전용: 우상단 담당자 배정 버튼 -->
-    <div v-if="isAdmin" class="absolute right-8 top-6 z-10">
-      <MaterialButton color="dark" size="sm" @click="goAssignPage">
-        담당자 배정
+    <div class="form-action">
+      <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+        ← 목록으로
       </MaterialButton>
+      <!-- 관리자 전용: 우상단 담당자 배정 버튼 -->
+      <div v-if="isAdmin" class="absolute right-8 top-6 z-10">
+        <MaterialButton color="dark" size="sm" @click="goAssignPage">
+          담당자 배정
+        </MaterialButton>
+      </div>
     </div>
 
     <div class="detail-card">
       <!-- 헤더 -->
       <header class="flex justify-between items-start detail-header">
-        <h2 class="text-2xl font-semibold mb-1">조사지 답변 상세보기</h2>
+        <h2 class="text-2xl font-semibold mb-1">조사지 답변</h2>
 
         <span class="status-pill">
           상태: {{ statusLabel(submission?.status) }}
@@ -30,32 +32,32 @@
       <!-- 본문 -->
       <div v-else class="detail-body">
         <!-- 상단 메타 정보 -->
+        <!-- 상단 메타 정보 -->
         <div class="meta-card">
-          <div class="meta-row">
-            <span class="meta-label">템플릿 코드</span>
-            <span class="meta-value">{{ submission.template_code }}</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">버전</span>
-            <span class="meta-value">
-              {{ submission.version_no }} / {{ submission.version_detail_no }}
-            </span>
-          </div>
           <div class="meta-row">
             <span class="meta-label">제출일</span>
             <span class="meta-value">{{ fmt(submission.submit_at) }}</span>
           </div>
+
           <div class="meta-row">
             <span class="meta-label">수정일</span>
             <span class="meta-value">{{ fmt(submission.updated_at) }}</span>
           </div>
+
+          <!-- 👇 여기부터 수정 -->
           <div class="meta-row">
             <span class="meta-label">작성자</span>
-            <span class="meta-value">{{ submission.written_by ?? "-" }}</span>
+            <span class="meta-value">
+              <!-- written_by_name이 오면 이름 우선, 없으면 코드, 그것도 없으면 '-' -->
+              {{ submission.written_by_name || "-" }}
+            </span>
           </div>
+
           <div class="meta-row">
             <span class="meta-label">담당자</span>
-            <span class="meta-value">{{ submission.assi_by ?? "-" }}</span>
+            <span class="meta-value">
+              {{ submission.assignee_name || "-" }}
+            </span>
           </div>
         </div>
 
@@ -140,15 +142,17 @@
     </div>
 
     <!-- 일반 전용: 우하단 수정 버튼 -->
-    <MaterialButton
-      v-if="isGeneral"
-      color="dark"
-      size="sm"
-      class="fixed right-6 bottom-6 shadow-lg rounded-full"
-      @click="goEdit"
-    >
-      수정하기
-    </MaterialButton>
+    <div class="form-actions">
+      <MaterialButton
+        v-if="isGeneral"
+        color="dark"
+        size="sm"
+        class="fixed right-6 bottom-6 shadow-lg rounded-full mt-3"
+        @click="goEdit"
+      >
+        수정하기
+      </MaterialButton>
+    </div>
   </section>
 </template>
 
@@ -465,5 +469,20 @@ section {
   margin-top: 0.4rem;
   font-size: 0.75rem;
   color: #9ca3af;
+}
+.form-actions {
+  margin-top: 10px;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.form-action {
+  margin-bottom: 10px;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 </style>

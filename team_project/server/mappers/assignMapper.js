@@ -8,15 +8,15 @@ module.exports = {
     try {
       await conn.beginTransaction();
 
-      // 1) survey_submission.assi_by 업데이트
+      // assi_by + status = 'CA3'
       await conn.query(sql.updateAssignee, [assignee, submitCode]);
 
-      // 2) counsel_note INSERT (CB2 상태)
+      // 기존처럼 상담 기록은 CB2로 남김
       await conn.query(sql.insertCounselNote, [submitCode, "CB2", new Date()]);
 
       await conn.commit();
 
-      return { submitCode, assignee, status: "CB2" };
+      return { submitCode, assignee, status: "CA3" };
     } catch (e) {
       await conn.rollback();
       throw e;

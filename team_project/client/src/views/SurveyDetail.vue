@@ -2,7 +2,7 @@
   <section class="p-6 max-w-5xl mx-auto">
     <!-- 헤더 -->
     <header class="mb-4 flex items-center justify-between header-row">
-      <h2 class="text-2xl font-semibold">조사지 상세보기</h2>
+      <h2 class="text-2xl font-semibold">버전 상세</h2>
 
       <div class="space-x-2">
         <MaterialButton
@@ -113,8 +113,8 @@
       </div>
 
       <!-- 하단 버튼 -->
-      <div class="mt-4 flex justify-end">
-        <MaterialButton color="dark" size="sm" class="px-5" @click="goEdit">
+      <div class="form-actions">
+        <MaterialButton color="dark" size="sm" @click="goEdit">
           수정하기
         </MaterialButton>
       </div>
@@ -321,5 +321,12 @@ section {
 .q-type {
   font-weight: 500;
   color: #111827;
+}
+.form-actions {
+  padding-top: 0.9rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 </style>

@@ -270,7 +270,7 @@ module.exports = {
     LIMIT 1
   `,
 
-  // 제출본 헤더
+  // 제출본 헤더 (작성자/담당자 이름 포함)
   getSubmissionHeaderBySubmit: `
   SELECT
     ss.submit_code,
@@ -279,13 +279,19 @@ module.exports = {
     ss.updated_at,
     ss.status,
     ss.written_by,
+    w.name AS written_by_name,   -- 👈 작성자 이름
     ss.assi_by,
+    a.name AS assignee_name,     -- 👈 담당자 이름
     stv.template_code,
     stv.version_detail_no,
-    st.version_no
+    st.version_no,
+    org.org_name                 -- (옵션) 기관 이름까지 보고 싶으면
   FROM survey_submission ss
   JOIN survey_template_ver stv ON stv.template_ver_code = ss.template_ver_code
-  JOIN survey_template     st  ON st.template_code      = stv.template_code
+  JOIN survey_template      st  ON st.template_code      = stv.template_code
+  LEFT JOIN users           w   ON w.user_code           = ss.written_by
+  LEFT JOIN users           a   ON a.user_code           = ss.assi_by
+  LEFT JOIN organization    org ON org.org_code          = w.org_code
   WHERE ss.submit_code = ?
 `,
 

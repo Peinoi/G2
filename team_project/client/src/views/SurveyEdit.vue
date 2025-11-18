@@ -1,28 +1,12 @@
 <template>
   <section class="p-6 max-w-5xl mx-auto">
     <!-- 헤더 -->
-    <header class="mb-4 flex items-center justify-between header-row">
+    <header class="mb-2 flex items-center justify-between header-row">
       <h2 class="text-2xl font-semibold">조사지 수정</h2>
 
-      <div class="space-x-2">
-        <MaterialButton
-          color="dark"
-          size="sm"
-          variant="outlined"
-          @click="goBack"
-        >
-          ← 목록
-        </MaterialButton>
-
-        <MaterialButton
-          color="dark"
-          size="sm"
-          :disabled="saving"
-          @click="saveEdit"
-        >
-          {{ saving ? "저장 중..." : "수정 저장" }}
-        </MaterialButton>
-      </div>
+      <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+        ← 목록
+      </MaterialButton>
     </header>
 
     <!-- 상태 -->
@@ -266,7 +250,8 @@
       <!-- /section-card -->
 
       <!-- 하단 컨트롤 -->
-      <div class="flex items-center justify-between mt-4">
+
+      <div class="form-actions">
         <MaterialButton
           color="dark"
           size="sm"
@@ -589,5 +574,13 @@ section {
   grid-template-columns: 40px minmax(0, 1.5fr) minmax(0, 2fr) 80px;
   gap: 0.5rem;
   align-items: center;
+}
+.form-actions {
+  margin-top: 10px;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 </style>
