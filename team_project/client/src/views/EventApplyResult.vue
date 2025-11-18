@@ -11,8 +11,7 @@
             <th class="px-3 py-2 text-left w-48">이벤트명</th>
             <th class="px-3 py-2 text-left w-36">이벤트 요청일</th>
             <th class="px-3 py-2 text-left w-36">메인 매니저</th>
-            <th class="px-3 py-2 text-left w-24">계획 진행</th>
-            <th class="px-3 py-2 text-left w-24">결과 진행</th>
+            <th class="px-3 py-2 text-left w-24">계획/결과 진행</th>
             <th class="px-3 py-2 text-left w-32">진행계획</th>
             <th class="px-3 py-2 text-left w-32">진행결과</th>
           </tr>
@@ -29,7 +28,6 @@
             <td class="px-3 py-2">{{ formatDate(row.event_register_date) }}</td>
             <td class="px-3 py-2">{{ row.main_manager_name || "-" }}</td>
             <td class="px-3 py-2">{{ row.register_status_name || "-" }}</td>
-            <td class="px-3 py-2">{{ row.result_status || "-" }}</td>
             <td class="px-3 py-2">
               <button class="view-btn" @click="viewPlan(row.event_code)">
                 보기
@@ -61,13 +59,33 @@ import axios from "axios";
 const router = useRouter();
 const events = ref([]);
 
+const getLoginUserCode = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.user_code || null;
+  } catch {
+    return null;
+  }
+};
+
 // 날짜 포맷 함수 (YYYY-MM-DD)
 const formatDate = (v) => (v ? String(v).slice(0, 10) : "-");
 
 // 이벤트 목록 불러오기
 const loadEvents = async () => {
   try {
-    const res = await axios.get("/api/event/list");
+    const user_code = getLoginUserCode();
+    if (!user_code) {
+      alert("로그인 상태가 아닙니다.");
+      return;
+    }
+
+    const res = await axios.get("/api/event/applyResult", {
+      params: { user_code }, // 로그인한 회원 코드
+    });
+
     console.log(res.data);
     events.value = res.data.data || [];
   } catch (err) {

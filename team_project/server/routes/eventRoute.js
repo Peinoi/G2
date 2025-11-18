@@ -92,21 +92,36 @@ router.get("/list", async (req, res) => {
 });
 
 // ==========================
-// 이벤트 단건 조회
-// GET /event/:event_code
+// 이벤트 작성자별 계획/결과 목록 조회
+// GET /event/applyResult
 // ==========================
-router.get("/:event_code", async (req, res) => {
+router.get("/applyResult", async (req, res) => {
   try {
-    const event = await eventService.getEvent(req.params.event_code);
+    // 쿼리스트링에서 검색 조건 받기
+    const filters = {
+      recruit_status: req.query.recruit_status || null,
+      recruit_start_date: req.query.recruit_start_date || null,
+      recruit_end_date: req.query.recruit_end_date || null,
+      event_start_date: req.query.event_start_date || null,
+      event_end_date: req.query.event_end_date || null,
+      event_name: req.query.event_name || null,
+      user_code: req.query.user_code || null,
+    };
+
+    const events = await eventService.getEventApplyResult(filters);
+
     res.status(200).json({
       status: "success",
-      data: event,
+      data: events,
     });
   } catch (err) {
-    console.error("[eventRoute.js || 이벤트 단건조회 실패]", err.message);
+    console.error(
+      "[eventRoute.js || 이벤트 작성자별 계획/결과 목록 조회 실패]",
+      err.message
+    );
     res.status(500).json({
       status: "error",
-      message: "이벤트 단건조회 중 에러 발생",
+      message: "이벤트 작성자별 계획/결과 목록 조회 중 에러 발생",
     });
   }
 });
@@ -168,6 +183,54 @@ router.post("/apply", async (req, res) => {
       status: "error",
       message: err.message,
     });
+  }
+});
+
+// ==========================
+// 이벤트 신청 내역 조회
+// GET /event/applyList?user_code=XXX
+// ==========================
+router.get("/applyList", async (req, res) => {
+  console.log("🔥 applyList 라우터 들어옴"); // 가장 중요
+  try {
+    const user_code = req.query.user_code;
+    console.log("user_code:", user_code);
+    if (!user_code) {
+      return res.status(400).json({
+        status: "error",
+        message: "user_code가 필요합니다.",
+      });
+    }
+
+    const myApplies = await eventService.getMyEventApplyList(user_code);
+    console.log("🔥 DB 결과:", myApplies);
+    res.status(200).json({
+      status: "success",
+      data: myApplies,
+    });
+  } catch (err) {
+    console.error(
+      "[eventRoute.js || 내가 신청한 이벤트 조회 실패]",
+      err.message
+    );
+    res.status(500).json({
+      status: "error",
+      message: "내가 신청한 이벤트 조회 중 에러 발생",
+    });
+  }
+});
+
+// ==========================
+// 이벤트 신청 취소
+// DELETE /event/apply/:apply_code
+// ==========================
+router.delete("/apply/:apply_code", async (req, res) => {
+  const apply_code = req.params.apply_code;
+  try {
+    const result = await eventService.cancelApply(apply_code);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
   }
 });
 
@@ -315,6 +378,30 @@ router.delete("/sub/:sub_event_code", async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "세부 이벤트 삭제 중 에러 발생",
+    });
+  }
+});
+
+// ==========================
+// 이벤트 단건 조회
+// GET /event/:event_code
+// ==========================
+router.get("/:event_code", async (req, res) => {
+  try {
+    const event_code = req.params.event_code;
+    const user_code = req.query.user_code; // 여기서 로그인 유저 코드 받기
+
+    const event = await eventService.getEvent(event_code, user_code);
+
+    res.status(200).json({
+      status: "success",
+      data: event,
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || 이벤트 단건조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "이벤트 단건조회 중 에러 발생",
     });
   }
 });
