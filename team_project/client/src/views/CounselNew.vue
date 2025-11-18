@@ -1,200 +1,209 @@
 <template>
-  <section class="p-6 max-w-5xl mx-auto space-y-6">
-    <!-- 상단 타이틀 -->
-    <header class="flex items-center justify-between">
-      <h2 class="text-2xl font-semibold">상담서 작성</h2>
+  <section class="p-6">
+    <div class="page-shell space-y-6">
+      <!-- 상단 타이틀 -->
+      <header class="page-header">
+        <h2 class="page-title text-2xl md:text-3xl font-bold tracking-tight">
+          상담서 작성
+        </h2>
 
-      <div class="space-x-2 flex items-center">
-        <MaterialButton color="dark" size="sm" @click="handleLoad">
-          불러오기
-        </MaterialButton>
-        <MaterialButton color="dark" size="sm" @click="handleTempSave">
-          임시 저장
-        </MaterialButton>
-      </div>
-    </header>
-
-    <!-- 기본정보 -->
-    <div class="border rounded p-4 bg-gray-50 space-y-3">
-      <div class="grid grid-cols-2 text-sm gap-2">
-        <div>
-          이름: <strong>{{ submitInfo.name }}</strong>
+        <div class="header-actions">
+          <MaterialButton color="dark" size="sm" @click="handleLoad">
+            불러오기
+          </MaterialButton>
+          <MaterialButton color="dark" size="sm" @click="handleTempSave">
+            임시 저장
+          </MaterialButton>
         </div>
-        <div>생년월일: {{ submitInfo.ssnFront }}</div>
+      </header>
+
+      <!-- 기본정보 카드 -->
+      <div class="meta-card space-y-3">
+        <div class="grid grid-cols-2 text-sm gap-2">
+          <div>
+            이름: <strong>{{ submitInfo.name }}</strong>
+          </div>
+          <div>생년월일: {{ submitInfo.ssnFront }}</div>
+        </div>
+
+        <div class="meta-bottom">
+          <MaterialButton color="dark" size="sm" @click="openSubmissionDetail">
+            조사지 제출일: {{ formattedSubmitAt }}
+          </MaterialButton>
+
+          <label class="flex items-center gap-2 text-sm">
+            상담일:
+            <input type="date" v-model="mainForm.counselDate" class="input" />
+          </label>
+        </div>
       </div>
 
-      <div class="flex items-center gap-6 text-sm">
-        <MaterialButton color="dark" size="sm" @click="openSubmissionDetail">
-          조사지 제출일: {{ formattedSubmitAt }}
-        </MaterialButton>
+      <!-- 메인 상담 카드 (제목 / 내용 / 첨부) -->
+      <div class="card-block space-y-4">
+        <!-- 상담 제목 -->
+        <div>
+          <label class="block text-sm mb-1 font-medium">상담 제목</label>
+          <MaterialInput
+            id="main-title"
+            variant="static"
+            size="default"
+            v-model="mainForm.title"
+            placeholder="상담 제목을 입력하세요"
+          />
+        </div>
 
-        <label class="flex items-center gap-2">
-          상담일:
-          <input type="date" v-model="mainForm.counselDate" class="input" />
-        </label>
-      </div>
-    </div>
+        <!-- 상담 내용 -->
+        <div>
+          <label class="block text-sm mb-1 font-medium">상담 내용</label>
+          <MaterialTextarea
+            id="main-content"
+            variant="outline"
+            :rows="5"
+            placeholder="상담 내용을 입력하세요..."
+            :value="mainForm.content"
+            @input="(e) => (mainForm.content = e.target.value)"
+          />
+        </div>
 
-    <!-- 상담 제목 / 내용 -->
-    <div class="space-y-4">
-      <!-- 상담 제목 -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">상담 제목</label>
-        <MaterialInput
-          id="main-title"
-          variant="outline"
-          size="default"
-          v-model="mainForm.title"
-          placeholder="상담 제목을 입력하세요"
-        />
-      </div>
+        <!-- 첨부 파일 영역 -->
+        <div>
+          <label class="block text-sm mb-1 font-medium">첨부 파일</label>
+          <input
+            ref="fileInputRef"
+            type="file"
+            multiple
+            @change="onMainFilesChange"
+            class="file-input"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            * 여러 개 파일을 한 번에 선택하거나, 나눠서 여러 번 선택할 수
+            있습니다.
+          </p>
 
-      <!-- 상담 내용 -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">상담 내용</label>
-        <MaterialTextarea
-          id="main-content"
-          variant="outline"
-          :rows="5"
-          placeholder="상담 내용을 입력하세요..."
-          :value="mainForm.content"
-          @input="(e) => (mainForm.content = e.target.value)"
-        />
-      </div>
-
-      <!-- ✅ 첨부 파일 영역 -->
-      <div>
-        <label class="block text-sm mb-1 font-medium">첨부 파일</label>
-        <input
-          ref="fileInputRef"
-          type="file"
-          multiple
-          @change="onMainFilesChange"
-          class="block w-full text-sm"
-        />
-        <p class="mt-1 text-xs text-gray-500">
-          * 여러 개 파일을 한 번에 선택하거나, 나눠서 여러 번 선택할 수
-          있습니다.
-        </p>
-
-        <!-- 🔹 기존(임시저장/작성된) 첨부파일 목록 -->
-        <ul
-          v-if="existingFiles.length"
-          class="mt-2 text-xs text-gray-700 space-y-1"
-        >
-          <li
-            v-for="file in existingFiles"
-            :key="file.attachCode"
-            class="flex items-center justify-between gap-2"
+          <!-- 기존 첨부파일 목록 -->
+          <ul
+            v-if="existingFiles.length"
+            class="mt-2 text-xs text-gray-700 space-y-1"
           >
-            <a
-              :href="file.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="truncate underline"
+            <li
+              v-for="file in existingFiles"
+              :key="file.attachCode"
+              class="file-row"
             >
-              {{ file.originalFilename }}
-            </a>
-            <button
-              type="button"
-              class="shrink-0 px-2 py-0.5 border rounded text-[11px] text-gray-600 hover:bg-gray-100"
-              @click="removeExistingFile(file.attachCode)"
-            >
-              삭제
-            </button>
-          </li>
-        </ul>
+              <a
+                :href="file.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="file-link"
+              >
+                {{ file.originalFilename }}
+              </a>
+              <button
+                type="button"
+                class="chip-button"
+                @click="removeExistingFile(file.attachCode)"
+              >
+                삭제
+              </button>
+            </li>
+          </ul>
 
-        <!-- 🔹 이번에 새로 선택한 파일 목록 -->
-        <ul
-          v-if="mainFiles.length"
-          class="mt-2 text-xs text-gray-700 space-y-1"
-        >
-          <li
-            v-for="(file, idx) in mainFiles"
-            :key="file.name + '_' + file.lastModified + '_' + idx"
-            class="flex items-center justify-between gap-2"
+          <!-- 새로 선택한 파일 목록 -->
+          <ul
+            v-if="mainFiles.length"
+            class="mt-2 text-xs text-gray-700 space-y-1"
           >
-            <span class="truncate">
-              {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
-            </span>
-            <button
-              type="button"
-              class="shrink-0 px-2 py-0.5 border rounded text-[11px] text-gray-600 hover:bg-gray-100"
-              @click="removeMainFile(idx)"
+            <li
+              v-for="(file, idx) in mainFiles"
+              :key="file.name + '_' + file.lastModified + '_' + idx"
+              class="file-row"
             >
-              삭제
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- 버튼 3종 -->
-    <div class="flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <MaterialButton color="dark" size="sm" @click="goBack">
-          작성 취소
-        </MaterialButton>
-
-        <MaterialButton color="dark" size="sm" @click="addRecord">
-          + 상담 기록 추가
-        </MaterialButton>
-
-        <!-- 우선순위 선택 -->
-        <select v-model="priority" class="input w-28">
-          <option value="BB1">긴급</option>
-          <option value="BB2">중점</option>
-          <option value="BB3">계획</option>
-        </select>
-
-        <!-- 작성 완료 -->
-        <MaterialButton color="dark" size="sm" @click="submitAll">
-          작성 완료
-        </MaterialButton>
-      </div>
-    </div>
-
-    <!-- 추가 상담 기록 -->
-    <div
-      v-for="record in records"
-      :key="record.id"
-      class="border rounded p-4 bg-white space-y-4"
-    >
-      <div class="flex justify-between items-start">
-        <h4 class="font-medium text-sm">추가 상담 기록</h4>
-
-        <MaterialButton color="dark" size="sm" @click="removeRecord(record.id)">
-          -
-        </MaterialButton>
+              <span class="file-link">
+                {{ file.name }} ({{ (file.size / 1024).toFixed(1) }} KB)
+              </span>
+              <button
+                type="button"
+                class="chip-button"
+                @click="removeMainFile(idx)"
+              >
+                삭제
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">상담일</label>
-        <input type="date" v-model="record.counselDate" class="input" />
+      <!-- 추가 상담 기록 카드들 -->
+      <div
+        v-for="record in records"
+        :key="record.id"
+        class="record-card space-y-4"
+      >
+        <div class="record-header">
+          <h4 class="font-medium text-sm">추가 상담 기록</h4>
+
+          <MaterialButton
+            color="dark"
+            size="sm"
+            variant="outlined"
+            @click="removeRecord(record.id)"
+          >
+            제거
+          </MaterialButton>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1 font-medium">상담일: </label>
+          <input type="date" v-model="record.counselDate" class="input" />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1 font-medium">상담 제목</label>
+          <MaterialInput
+            :id="`record-title-${record.id}`"
+            variant="static"
+            size="default"
+            v-model="record.title"
+            placeholder="상담 제목을 입력하세요"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1 font-medium">상담 내용</label>
+          <MaterialTextarea
+            :id="`record-content-${record.id}`"
+            variant="outline"
+            :rows="3"
+            placeholder="상담 내용을 입력하세요..."
+            :value="record.content"
+            @input="(e) => (record.content = e.target.value)"
+          />
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">상담 제목</label>
-        <MaterialInput
-          :id="`record-title-${record.id}`"
-          variant="outline"
-          size="default"
-          v-model="record.title"
-          placeholder="상담 제목을 입력하세요"
-        />
-      </div>
+      <!-- 하단 액션 줄 -->
+      <div class="action-bar">
+        <div class="left-actions">
+          <MaterialButton color="dark" size="sm" @click="goBack">
+            작성 취소
+          </MaterialButton>
 
-      <div>
-        <label class="block text-sm mb-1 font-medium">상담 내용</label>
-        <MaterialTextarea
-          :id="`record-content-${record.id}`"
-          variant="outline"
-          :rows="3"
-          placeholder="상담 내용을 입력하세요..."
-          :value="record.content"
-          @input="(e) => (record.content = e.target.value)"
-        />
+          <MaterialButton color="dark" size="sm" @click="addRecord">
+            + 상담 기록 추가
+          </MaterialButton>
+        </div>
+
+        <div class="right-actions">
+          <select v-model="priority" class="input priority-select">
+            <option value="BB1">긴급</option>
+            <option value="BB2">중점</option>
+            <option value="BB3">계획</option>
+          </select>
+
+          <MaterialButton color="dark" size="sm" @click="submitAll">
+            작성 완료
+          </MaterialButton>
+        </div>
       </div>
     </div>
   </section>
@@ -276,7 +285,7 @@ async function loadData() {
 
 onMounted(loadData);
 
-// ✅ 파일 변경 핸들러 (기존 + 새 파일 누적)
+// 파일 변경 핸들러
 function onMainFilesChange(e) {
   const files = Array.from(e.target.files || []);
 
@@ -292,7 +301,6 @@ function onMainFilesChange(e) {
 
   mainFiles.value = [...mainFiles.value, ...newOnes];
 
-  // 같은 파일 다시 선택할 수 있도록 초기화
   if (e.target) {
     e.target.value = "";
   }
@@ -302,6 +310,7 @@ function onMainFilesChange(e) {
 function removeMainFile(index) {
   mainFiles.value.splice(index, 1);
 }
+
 // 기존 첨부 삭제
 function removeExistingFile(attachCode) {
   if (!removedAttachmentCodes.value.includes(attachCode)) {
@@ -320,13 +329,12 @@ async function handleTempSave() {
       priority: priority.value,
       mainForm: mainForm.value,
       records: records.value,
-      removeAttachmentCodes: removedAttachmentCodes.value, // 🔥 삭제할 첨부
+      removeAttachmentCodes: removedAttachmentCodes.value,
     };
 
     const formData = new FormData();
     formData.append("formJson", JSON.stringify(formJson));
 
-    // 🔹 이번에 새로 선택한 파일들
     mainFiles.value.forEach((file) => {
       formData.append("mainFiles", file);
     });
@@ -379,7 +387,6 @@ async function handleLoad() {
         content: d.content || "",
       })) || [];
 
-    // 🔹 기존 첨부파일 세팅
     existingFiles.value =
       (res.attachments || []).map((a) => ({
         attachCode: a.attachCode,
@@ -387,7 +394,6 @@ async function handleLoad() {
         url: a.url,
       })) || [];
 
-    // 새로 추가한 파일/삭제 목록 초기화
     mainFiles.value = [];
     removedAttachmentCodes.value = [];
 
@@ -435,7 +441,7 @@ function validate() {
   return null;
 }
 
-// ✅ 작성 완료: FormData로 JSON + 파일
+// 작성 완료
 async function submitAll() {
   const err = validate();
   if (err) {
@@ -477,3 +483,178 @@ async function submitAll() {
   }
 }
 </script>
+
+<style scoped>
+section {
+  color: #111827;
+}
+
+/* 페이지 폭 통일 */
+.page-shell {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* 헤더 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-title {
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 기본정보 카드 */
+.meta-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+}
+
+.meta-bottom {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+/* 메인 상담 카드 */
+.card-block {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  padding: 1.25rem 1.1rem;
+}
+
+/* 공통 인풋 스타일 (date, select) */
+.input {
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.875rem;
+  outline: none;
+  min-width: 8rem;
+}
+
+.input:focus {
+  border-color: #111827;
+}
+
+/* 파일 인풋 */
+.file-input {
+  display: block;
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.file-link {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 작은 버튼 느낌 */
+.chip-button {
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  font-size: 0.7rem;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.chip-button:hover {
+  background-color: #e5e7eb;
+}
+
+/* 하단 액션 바 */
+.action-bar {
+  margin-top: 10px;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.left-actions,
+.right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.priority-select {
+  min-width: 5.5rem;
+}
+
+/* 추가 상담 기록 카드 */
+.record-card {
+  margin-top: 10px;
+  border-radius: 0.8rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1.1rem 1rem;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 공통 폰트 */
+table th,
+table td {
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+/* 파일 행: 텍스트 바로 옆에 삭제 버튼 */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+/* 파일 텍스트(링크) 스타일: 회색, 밑줄 제거 */
+.file-link {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #374151; /* 무채색 회색 계열 */
+  text-decoration: none; /* 기본 밑줄 제거 */
+  word-break: break-all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 호버 시만 살짝만 표시해주고 싶으면 */
+.file-link:hover {
+  text-decoration: underline;
+}
+</style>

@@ -15,6 +15,7 @@ const path = require("path");
 const signRouter = require("./routes/signUser");
 const userRouter = require("./routes/userRoute");
 const attachmentRouter = require("./routes/attachmentRoute");
+const assign = require("./routes/assignRoute");
 const historyRoute = require("./routes/historyRoute");
 const managerRoute = require("./routes/managerRoute");
 const authorityTransferRoute = require("./routes/authorityTransferRoute");
@@ -42,6 +43,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // 첨부�
 app.use("/user", signRouter);
 app.use("/userinfo", userRouter);
 app.use("/attachment", attachmentRouter);
+app.use("/assign", assign);
 app.use("/histories", historyRoute);
 app.use("/managers", managerRoute);
 app.use("/authority-transfer", authorityTransferRoute);

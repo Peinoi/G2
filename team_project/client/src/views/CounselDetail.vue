@@ -1,17 +1,13 @@
 <template>
-  <section class="p-6 max-w-5xl mx-auto space-y-6">
-    <!-- 상단 타이틀 -->
-    <header class="flex items-center justify-between mb-4">
-      <div>
-        <h2 class="text-2xl font-semibold">상담 상세</h2>
-      </div>
+  <section class="p-6 max-w-5xl mx-auto">
+    <!-- 상단 액션 라인 -->
+    <div class="form-action">
+      <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+        ← 목록으로
+      </MaterialButton>
 
-      <div class="space-x-2 flex items-center">
-        <!-- ← 목록으로 -->
-        <MaterialButton color="dark" size="sm" @click="goBack">
-          ← 목록으로
-        </MaterialButton>
-
+      <!-- 오른쪽: 상태에 따른 액션 버튼 묶음 -->
+      <div class="flex items-center gap-2">
         <!-- 작성하기 (담당자만 / CB1, CB2) -->
         <MaterialButton
           v-if="role === 2 && (status === 'CB1' || status === 'CB2')"
@@ -22,7 +18,7 @@
           작성하기
         </MaterialButton>
 
-        <!-- REQ → 수정하기 (담당자만 / CB3) -->
+        <!-- CB3 → 수정하기 (담당자만) -->
         <MaterialButton
           v-else-if="role === 2 && status === 'CB3'"
           color="dark"
@@ -42,187 +38,228 @@
           재수정하기
         </MaterialButton>
       </div>
-    </header>
+    </div>
 
-    <!-- 로딩/에러 -->
-    <div v-if="loading" class="text-sm text-gray-500">불러오는 중...</div>
-    <div v-else-if="error" class="text-sm text-red-600">{{ error }}</div>
-
-    <!-- 본문 -->
-    <template v-else>
-      <!-- 기본정보 (상태와 관계없이 항상 표시) -->
-      <div class="border rounded p-4 bg-gray-50 space-y-3">
-        <div class="grid grid-cols-2 text-sm gap-2">
-          <div>
-            이름: <strong>{{ submitInfo.name }}</strong>
-          </div>
-          <div>생년월일: {{ submitInfo.ssnFront }}</div>
+    <!-- 바깥 상세 카드 -->
+    <div class="detail-card">
+      <!-- 헤더 -->
+      <header class="flex justify-between items-start detail-header">
+        <div>
+          <h2 class="text-2xl font-semibold mb-1">상담 상세</h2>
         </div>
 
-        <div class="flex items-center gap-6 text-sm">
-          <MaterialButton color="dark" size="sm" @click="openSubmissionDetail">
-            조사지 제출일: {{ formattedSubmitAt }}
-          </MaterialButton>
+        <!-- 상태 뱃지 -->
+        <span class="status-pill" :class="statusClass(status)">
+          상태: {{ statusLabel(status) }}
+        </span>
+      </header>
 
-          <div class="flex items-center gap-2">
-            <span class="text-gray-500">우선순위:</span>
-            <span class="font-semibold">{{ priority }}</span>
-          </div>
-        </div>
+      <!-- 로딩/에러 -->
+      <div v-if="loading" class="text-sm text-gray-500 py-6">
+        불러오는 중...
+      </div>
+      <div v-else-if="error" class="text-sm text-red-600 py-6">
+        {{ error }}
       </div>
 
-      <!-- CB1 / CB2 일 때: 내용 숨기고 안내만 -->
-      <div
-        v-if="status === 'CB1' || status === 'CB2'"
-        class="text-sm text-gray-500 mt-4"
-      >
-        <template v-if="status === 'CB1'">
-          이 상담은 <strong>임시 저장</strong> 상태입니다.<br />
-          작성 중인 상담 내용은
-          <span class="font-semibold">[작성하기]</span> 화면에서만 확인·수정할
-          수 있습니다.
-        </template>
-
-        <template v-else>
-          이 상담은 아직 <strong>작성 전</strong> 상태입니다.<br />
-          상담 내용은
-          <span class="font-semibold">[작성하기]</span> 버튼을 눌러 작성해
-          주세요.
-        </template>
-      </div>
-
-      <!-- CB1/CB2 가 아닐 때: 실제 상담 내용 / 기록 / 승인/반려 노출 -->
+      <!-- 본문 -->
       <template v-else>
-        <!-- 메인 상담 -->
-        <div class="border rounded p-4 bg-white space-y-3">
-          <h3 class="font-semibold text-lg">주요 상담</h3>
-
-          <div class="text-sm text-gray-600">
-            상담일:
-            <span class="font-medium">{{ mainForm.counselDate }}</span>
+        <!-- 기본정보 (상태와 관계없이 항상 표시) -->
+        <div class="meta-card space-y-3">
+          <div class="meta-row">
+            <span class="meta-label">이름</span>
+            <span class="meta-value">
+              <strong>{{ submitInfo.name || "-" }}</strong>
+            </span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">생년월일</span>
+            <span class="meta-value">
+              {{ submitInfo.ssnFront || "-" }}
+            </span>
           </div>
 
-          <div>
-            <div class="text-sm text-gray-500 mb-1">상담 제목</div>
-            <div class="border rounded px-3 py-2 bg-gray-50">
-              {{ mainForm.title || "-" }}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-sm text-gray-500 mb-1">상담 내용</div>
-            <div
-              class="border rounded px-3 py-2 bg-gray-50 whitespace-pre-line"
-            >
-              {{ mainForm.content || "-" }}
-            </div>
-          </div>
-
-          <!-- 첨부 파일 영역 -->
-          <div class="mt-3">
-            <div class="text-sm text-gray-500 mb-1">첨부 파일</div>
-
-            <div v-if="attachments.length">
-              <ul class="list-disc pl-4 text-sm">
-                <li
-                  v-for="file in attachments"
-                  :key="file.attachCode"
-                  class="text-blue-600"
-                >
-                  <a
-                    :href="file.url"
-                    target="_blank"
-                    class="hover:underline break-all"
-                  >
-                    {{ file.originalFilename }}
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div v-else class="text-xs text-gray-400">
-              첨부된 파일이 없습니다.
-            </div>
-          </div>
-        </div>
-
-        <!-- 추가 상담 기록 -->
-        <div v-if="records.length" class="space-y-4">
-          <h3 class="font-semibold text-lg">추가 상담 기록</h3>
-
-          <div
-            v-for="(record, idx) in records"
-            :key="record.id || idx"
-            class="border rounded p-4 bg-white space-y-3"
-          >
-            <div class="flex justify-between items-center text-sm">
-              <div class="font-medium">기록 #{{ idx + 1 }}</div>
-              <div class="text-gray-500">
-                상담일:
-                <span class="font-medium">{{ record.counselDate }}</span>
-              </div>
-            </div>
-
-            <div>
-              <div class="text-sm text-gray-500 mb-1">상담 제목</div>
-              <div class="border rounded px-3 py-2 bg-gray-50">
-                {{ record.title || "-" }}
-              </div>
-            </div>
-
-            <div>
-              <div class="text-sm text-gray-500 mb-1">상담 내용</div>
-              <div
-                class="border rounded px-3 py-2 bg-gray-50 whitespace-pre-line"
+          <div class="meta-row meta-row-inline">
+            <span class="meta-label">조사지</span>
+            <span class="meta-value meta-value-inline">
+              <MaterialButton
+                color="dark"
+                size="sm"
+                @click="openSubmissionDetail"
               >
-                {{ record.content || "-" }}
+                조사지 제출일: {{ formattedSubmitAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">우선순위</span>
+            <span class="meta-value font-semibold">
+              {{ priorityLabel }}
+            </span>
+          </div>
+        </div>
+
+        <!-- CB1 / CB2 일 때: 내용 숨기고 안내만 -->
+        <div
+          v-if="status === 'CB1' || status === 'CB2'"
+          class="info-card muted-info"
+        >
+          <template v-if="status === 'CB1'">
+            이 상담은 <strong>임시 저장</strong> 상태입니다.<br />
+            작성 중인 상담 내용은
+            <span class="font-semibold">[작성하기]</span> 화면에서만 확인·수정할
+            수 있습니다.
+          </template>
+
+          <template v-else>
+            이 상담은 아직 <strong>작성 전</strong> 상태입니다.<br />
+            상담 내용은
+            <span class="font-semibold">[작성하기]</span> 버튼을 눌러 작성해
+            주세요.
+          </template>
+        </div>
+
+        <!-- CB1/CB2 가 아닐 때: 실제 상담 내용 / 기록 / 승인/반려 노출 -->
+        <template v-else>
+          <!-- 메인 상담 -->
+          <div class="block-card">
+            <h3 class="block-title">첫 상담</h3>
+
+            <div class="text-sm text-gray-600 mb-2">
+              상담일:
+              <span class="font-medium">{{ mainForm.counselDate || "-" }}</span>
+            </div>
+
+            <div class="field-block">
+              <div class="field-label">상담 제목</div>
+              <div class="field-value">
+                {{ mainForm.title || "-" }}
+              </div>
+            </div>
+
+            <div class="field-block">
+              <div class="field-label">상담 내용</div>
+              <div class="field-value whitespace-pre-line">
+                {{ mainForm.content || "-" }}
+              </div>
+            </div>
+
+            <!-- 첨부 파일 영역 -->
+            <div class="field-block mt-3">
+              <div class="field-label">첨부 파일</div>
+
+              <div v-if="attachments.length">
+                <ul class="list-disc pl-4 text-sm">
+                  <li
+                    v-for="file in attachments"
+                    :key="file.attachCode"
+                    class="text-blue-600"
+                  >
+                    <a
+                      :href="file.url"
+                      target="_blank"
+                      class="hover:underline break-all"
+                    >
+                      {{ file.originalFilename }}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div v-else class="text-xs text-gray-400">
+                첨부된 파일이 없습니다.
               </div>
             </div>
           </div>
-        </div>
 
-        <div v-else class="text-sm text-gray-500">
-          추가 상담 기록이 없습니다.
-        </div>
+          <!-- 추가 상담 기록 -->
+          <div class="space-y-4 mt-4">
+            <h3 class="font-semibold text-lg">추가 상담 기록</h3>
 
-        <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
-        <div
-          v-if="role === 3 && (status === 'CB3' || status === 'CB6')"
-          class="pt-4 border-t mt-4 space-y-3"
-        >
-          <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
-          <div
-            v-if="rejectionInfo.reason"
-            class="border rounded p-3 bg-red-50 text-xs text-red-800"
-          >
-            <div class="font-semibold mb-1">반려 이력</div>
+            <template v-if="records.length">
+              <div
+                v-for="(record, idx) in records"
+                :key="record.id || idx"
+                class="block-card"
+              >
+                <div
+                  class="flex justify-between items-center text-sm mb-2 border-b border-gray-200 pb-2"
+                >
+                  <div class="font-medium">기록 #{{ idx + 1 }}</div>
+                  <div class="text-gray-500">
+                    상담일:
+                    <span class="font-medium">
+                      {{ record.counselDate || "-" }}
+                    </span>
+                  </div>
+                </div>
 
-            <div class="mb-1">
-              반려일자:
-              <span class="font-medium">
-                {{ formattedRejectionDate }}
-              </span>
-            </div>
+                <div class="field-block">
+                  <div class="field-label">상담 제목</div>
+                  <div class="field-value">
+                    {{ record.title || "-" }}
+                  </div>
+                </div>
 
-            <div>
-              <div class="font-medium">사유:</div>
-              <p class="whitespace-pre-line mt-1">
-                {{ rejectionInfo.reason }}
-              </p>
-            </div>
+                <div class="field-block">
+                  <div class="field-label">상담 내용</div>
+                  <div class="field-value whitespace-pre-line">
+                    {{ record.content || "-" }}
+                  </div>
+                </div>
+              </div>
+            </template>
+            <p v-else class="text-sm text-gray-500">
+              추가 상담 기록이 없습니다.
+            </p>
           </div>
-
-          <!-- 승인/반려 버튼 -->
-          <div class="flex justify-end gap-3">
-            <MaterialButton color="dark" size="sm" @click="handleApprove">
-              승인
-            </MaterialButton>
-            <MaterialButton color="dark" size="sm" @click="handleReject">
-              반려
-            </MaterialButton>
-          </div>
-        </div>
+        </template>
       </template>
-    </template>
+    </div>
+    <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
+    <div
+      v-if="role === 3 && (status === 'CB3' || status === 'CB6')"
+      class="pt-4 border-t mt-2 space-y-3"
+    >
+      <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
+      <div v-if="rejectionInfo.reason" class="rejection-card">
+        <div class="font-semibold mb-1 text-sm">반려 이력</div>
+
+        <div class="mb-1">
+          반려일자:
+          <span class="font-medium">
+            {{ formattedRejectionDate }}
+          </span>
+        </div>
+
+        <div>
+          <div class="font-medium">사유:</div>
+          <p class="whitespace-pre-line mt-1">
+            {{ rejectionInfo.reason }}
+          </p>
+        </div>
+      </div>
+
+      <!-- 승인/반려 버튼 -->
+      <div class="approve-actions">
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleApprove"
+        >
+          승인
+        </MaterialButton>
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleReject"
+        >
+          반려
+        </MaterialButton>
+      </div>
+    </div>
 
     <!-- 반려 사유 입력 모달 -->
     <div v-if="rejectModalOpen" class="modal-overlay">
@@ -260,6 +297,7 @@ import MaterialTextarea from "@/components/MaterialTextarea.vue";
 
 const route = useRoute();
 const router = useRouter();
+
 const submitCode = computed(() =>
   Number(route.params.submitCode || route.query.submitCode || 0)
 );
@@ -289,10 +327,8 @@ const mainForm = ref({
 });
 
 const records = ref([]);
-const priority = ref("계획");
+const priority = ref("BB3");
 const status = ref("");
-
-const code = submitCode.value;
 
 // 🔻 마지막 반려 이력 (reason + date)
 const rejectionInfo = ref({
@@ -305,12 +341,27 @@ const formattedRejectionDate = computed(() => {
   return v ? String(v).slice(0, 10) : "-";
 });
 
+const priorityLabel = computed(() => {
+  const code = (priority.value || "").toString().toUpperCase();
+  switch (code) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return priority.value || "-";
+  }
+});
+
 // 데이터 로딩
 async function loadData() {
   loading.value = true;
   error.value = "";
 
   try {
+    const code = submitCode.value;
     const { data } = await axios.get(`/api/counsel/${code}`);
 
     if (!data?.success || !data.result) {
@@ -327,7 +378,8 @@ async function loadData() {
       content: res.main?.content || "",
     };
 
-    priority.value = res.priority || "계획";
+    // ✅ 우선순위 코드(BB1/BB2/BB3) 기준으로 받는다고 가정
+    priority.value = res.priority || "BB3";
     status.value = res.status || "";
 
     records.value =
@@ -355,8 +407,7 @@ async function loadData() {
 // 🔹 반려 이력 조회
 async function loadRejectionInfo() {
   try {
-    // 👉 라우터에서 submitCode 다시 안전하게 가져오기
-    const code = Number(route.params.submitCode || route.query.submitCode || 0);
+    const code = submitCode.value;
 
     if (!Number.isInteger(code) || code <= 0) {
       console.warn("[loadRejectionInfo] invalid submitCode:", {
@@ -385,17 +436,66 @@ async function loadRejectionInfo() {
   }
 }
 
+/* ---------- 상태 라벨 / 스타일 ---------- */
+function statusLabel(code) {
+  const c = (code || "").toString().toUpperCase();
+  switch (c) {
+    case "CB1":
+      return "상담전"; // 임시저장
+    case "CB2":
+      return "상담전";
+    case "CB3":
+      return "검토전";
+    case "CB4":
+      return "반려";
+    case "CB5":
+      return "검토완료";
+    case "CB6":
+      return "재승인요청";
+    default:
+      return code || "-";
+  }
+}
+
+// 리스트 화면과 동일한 클래스명
+function statusClass(code) {
+  const c = (code || "").toString().toUpperCase();
+  switch (c) {
+    case "CB1":
+    case "CB2":
+      return "status-pill--before";
+    case "CB3":
+      return "status-pill--review";
+    case "CB4":
+      return "status-pill--rejected";
+    case "CB5":
+      return "status-pill--done";
+    case "CB6":
+      return "status-pill--resubmit";
+    default:
+      return "status-pill--default";
+  }
+}
+
 function openSubmissionDetail() {
+  const code = submitCode.value;
+  if (!code) return;
   window.open(`/survey/submission/${code}`, "_blank");
 }
 function goBack() {
   router.push({ name: "counselList" });
 }
 function goEdit() {
-  router.push({ name: "counsel-edit", params: { submitCode } });
+  router.push({
+    name: "counsel-edit",
+    params: { submitCode: submitCode.value },
+  });
 }
 function goWrite() {
-  router.push({ name: "counsel-new", params: { submitCode } });
+  router.push({
+    name: "counsel-new",
+    params: { submitCode: submitCode.value },
+  });
 }
 
 const rejectModalOpen = ref(false);
@@ -404,6 +504,7 @@ const rejectReason = ref("");
 // 승인
 async function handleApprove() {
   try {
+    const code = submitCode.value;
     const { data } = await axios.post(`/api/counsel/${code}/approve`);
     if (data?.success) {
       alert("승인되었습니다.");
@@ -431,6 +532,7 @@ async function confirmReject() {
   }
 
   try {
+    const code = submitCode.value;
     const { data } = await axios.post(`/api/counsel/${code}/reject`, {
       reason: rejectReason.value,
     });
@@ -455,10 +557,192 @@ loadData();
 </script>
 
 <style scoped>
+section {
+  color: #111827;
+}
+
+/* 상단 액션 라인 */
+.form-action {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* 바깥 카드 */
+.detail-card {
+  background: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+/* 헤더 */
+.detail-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 상태 pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+
+/* 상태 pill 공통 */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+
+/* 리스트와 동일한 상태별 톤 */
+.status-pill--before {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
+.status-pill--review {
+  background-color: #e5e7eb;
+  color: #111827;
+  border-color: #d1d5db;
+}
+
+.status-pill--rejected {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.status-pill--done {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+}
+
+.status-pill--resubmit {
+  background-color: #fefce8;
+  color: #854d0e;
+  border-color: #fef3c7;
+}
+
+.status-pill--default {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+/* 메타 정보 카드 */
+.meta-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.meta-row + .meta-row {
+  margin-top: 0.35rem;
+}
+.meta-label {
+  display: inline-block;
+  width: 4.5rem;
+  color: #6b7280;
+}
+.meta-value {
+  color: #111827;
+}
+
+/* 조사지 버튼이 들어가는 행 정렬 */
+.meta-row-inline {
+  display: flex;
+  align-items: center;
+}
+.meta-value-inline {
+  display: inline-flex;
+  align-items: center;
+}
+.meta-card,
+.info-card,
+.block-card {
+  width: 100%;
+}
+
+/* 안내 카드 */
+.info-card {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+.muted-info {
+  background-color: #f9fafb;
+  color: #4b5563;
+}
+
+/* 블록 카드 (메인 상담 / 기록) */
+.block-card {
+  border-radius: 0.85rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  padding: 1rem 1rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.block-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* 필드 블록 */
+.field-block {
+  margin-top: 0.6rem;
+}
+.field-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+.field-value {
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+/* 반려 카드 */
+.rejection-card {
+  border-radius: 0.75rem;
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  padding: 0.9rem 1rem;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+/* 모달 */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(15, 23, 42, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -479,5 +763,14 @@ loadData();
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.approve-actions {
+  display: flex;
+  justify-content: center; /* 가운데 정렬 */
+  align-items: center;
+  gap: 1rem; /* 버튼 사이 간격 */
+  margin-top: 0.4rem; /* 위와 약간 띄우기 (원하면 조절) */
+  width: 100%; /* 부모 카드 기준 전체 폭 차지 */
 }
 </style>
