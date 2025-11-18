@@ -43,20 +43,17 @@ async function updateUser(data) {
 
 // 기관 수정
 async function updateOrg(data) {
-  const { orgName, deptName, roleName, phone, address } = data;
+  const { user_id, org_name, department } = data;
   try {
     const result = await pool.query(userInfoSQL.ORG_UPDATE, [
-      orgName,
-      deptName,
-      roleName,
-      phone,
-      address,
-      orgName,
+      org_name,
+      department,
+      user_id,
     ]);
     if (result.affectedRows == 1) {
       return { ok: true, message: '기관 수정 성공' };
     }
-    return { ok: false, message: '기관 수정 실패' };
+    return { ok: false, message: '해당 기관명이 없습니다.' };
   } catch (err) {
     console.error('[ updateOrg 실패 ] : ', err);
     throw err;

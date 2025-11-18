@@ -7,6 +7,7 @@ async function findInfo(userData) {
 }
 // 사용자, 기관, 자녀 수정
 async function infoUpdate(type, role, data) {
+  console.log(data);
   if (role === 'AA1') {
     if (type === 'org') {
       return { ok: false, message: '권한 안 맞음' };

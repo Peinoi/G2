@@ -104,6 +104,7 @@ export default {
         email: '',
       },
       orgData: {
+        orgCode: '',
         orgName: '',
         managerName: '',
         deptName: '',
@@ -130,6 +131,7 @@ export default {
     this.userData.email = '';
     this.originalUser = { ...this.userData };
 
+    this.orgData.orgCode = '';
     this.orgData.orgName = '';
     this.orgData.managerName = '';
     this.orgData.deptName = '';
@@ -159,14 +161,22 @@ export default {
         return;
       }
       await this.userFullInfo();
+      this.editMode = false;
+      alert('수정 완료');
     },
     async saveOrgInfo(updated) {
-      const result = await updateInfo('org', this.auth.role, updated);
+      const updateData = {
+        user_id: this.auth.userId,
+        org_name: updated.orgName,
+        department: updated.deptName,
+      };
+      const result = await updateInfo('org', this.auth.role, updateData);
       if (!result.ok) {
         alert(result.message);
         return;
       }
       await this.userFullInfo();
+      alert('수정 완료');
     },
 
     async updateChild(childData) {
@@ -230,6 +240,7 @@ export default {
         this.originalUser = { ...this.userData };
 
         this.orgData = {
+          orgCode: res[0].org_code,
           orgName: res[0].org_name || '소속기관 없음',
           managerName: res[0].manager_name || '담당자 미정',
           deptName: res[0].department,

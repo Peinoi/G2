@@ -56,12 +56,12 @@ export async function findUserInfo(userData) {
 }
 
 // 사용자, 기관, 자녀 정보 수정
-export async function updateInfo(type, role, payload) {
+export async function updateInfo(type, role, updateData) {
   try {
     const result = await axios.put('/api/userinfo/updateInfo', {
       type,
       role,
-      data: payload,
+      data: updateData,
     });
     return result.data;
   } catch (err) {
