@@ -84,10 +84,38 @@ async function sponsorProgramUpdate(clientData) {
 
   return sponsorInsertResult;
 }
+//승인 요청
+async function requestApprovalProgram(programCode, requesterCode) {
+  console.log("서비스 코드와 아이디" + programCode + "|" + requesterCode);
+  return await sponsorMapper.requestApprovalProgram(programCode, requesterCode);
+}
+//승인 완료
+async function approvalProgram(programCode) {
+  console.log("서비스 코드와 아이디" + programCode);
+  return await sponsorMapper.approvalProgram(programCode);
+}
+//반려
+async function rejectSupportResult(resultCode, reason) {
+  return sponsorMapper.rejectSupportPlan(Number(resultCode), reason);
+}
 
+// 반려사유 조회
+async function getRejectionReason(resultCode) {
+  return sponsorMapper.getRejectionReason(resultCode);
+}
+
+//재승인요청
+async function resubmitResult(resultCode, requesterCode) {
+  return sponsorMapper.resubmitResult(resultCode, requesterCode);
+}
 module.exports = {
   sponsorUsersList,
   sponsorProgramAdd,
   sponsorUsers,
   sponsorProgramUpdate,
+  requestApprovalProgram,
+  approvalProgram,
+  rejectSupportResult,
+  getRejectionReason,
+  resubmitResult,
 };

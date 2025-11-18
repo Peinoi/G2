@@ -8,7 +8,7 @@
       <input
         v-model="keyword"
         class="priority-input"
-        placeholder="이벤트명/담당자/기관 검색"
+        :placeholder="searchPlaceholder"
         @keyup.enter="searchList"
       />
 
@@ -37,11 +37,15 @@
             <th>승인코드</th>
             <th>이벤트명</th>
             <th>담당자</th>
-            <th>기관</th>
-            <th>모집 인원</th>
-            <th>모집 기간</th>
+            <!-- 🔹 기관: 시스템 관리자(AA4)만 -->
+            <th v-if="isAA4">기관</th>
+            <!-- 🔹 작성일 추가 -->
+            <th>작성일</th>
+            <th>모집인원</th>
+            <th>모집기간</th>
             <th>시행기간</th>
             <th>상태</th>
+            <th>처리일</th>
           </tr>
         </thead>
         <tbody>
@@ -54,7 +58,9 @@
             <td>{{ item.approval_code }}</td>
             <td>{{ item.event_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <td>{{ item.org_name }}</td>
+            <td v-if="isAA4">{{ item.org_name }}</td>
+            <!-- 🔹 작성일 (이벤트 결과 작성일) -->
+            <td>{{ formatDate(item.create_date) }}</td>
             <td>{{ item.max_participants }}</td>
             <td>
               {{
@@ -69,10 +75,14 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
+            <td>{{ formatDate(item.approval_date) }}</td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" colspan="8">데이터가 없습니다.</td>
+            <!-- 기관 컬럼 여부에 따라 colspan 조정 (작성일 추가) -->
+            <td class="priority-empty" :colspan="isAA4 ? 10 : 9">
+              데이터가 없습니다.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -107,8 +117,11 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/store/authLogin"; // 경로는 프로젝트 구조에 맞게 수정
 
 const router = useRouter();
+const auth = useAuthStore();
+
 const list = ref([]);
 
 // 페이지 관련 상태
@@ -126,6 +139,15 @@ const totalPages = computed(() =>
 const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
+
+// 역할 플래그
+const isAA3 = computed(() => auth.role === "AA3"); // 기관 관리자
+const isAA4 = computed(() => auth.role === "AA4"); // 시스템 관리자
+
+// 검색 placeholder (기관관리자는 기관 검색 텍스트 제거)
+const searchPlaceholder = computed(() =>
+  isAA4.value ? "이벤트명/담당자/기관 검색" : "이벤트명/담당자 검색"
+);
 
 // 공통코드 매핑 (요청 상태 BA)
 const CODE_LABEL_MAP = {
@@ -174,6 +196,11 @@ function formatDateRange(start, end) {
 
 // 🔹 이벤트 결과 승인 목록 호출
 async function loadList() {
+  // 권한 체크 (혹시 모를 직접 접근)
+  if (!auth.isLogin || (!isAA3.value && !isAA4.value)) {
+    return;
+  }
+
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/event-result", {
@@ -183,6 +210,9 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
+        // 🔹 기관 필터용 파라미터
+        loginId: auth.userId,
+        role: auth.role,
       },
     });
 
@@ -215,8 +245,7 @@ function goDetail(item) {
   router.push({
     name: "event-result-detail", // 라우터에 이 이름으로 등록
     params: {
-      // SQL에서 alias 로 넘겨줄 컬럼 이름에 맞춰서 사용
-      resultCode: item.result_code, // 또는 item.event_result_code 로 쓰면 거기에 맞춰서 수정
+      resultCode: item.result_code, // SQL에서 alias 로 내려주는 이름과 맞추기
     },
     query: {
       role: 3, // 관리자 화면
@@ -224,7 +253,26 @@ function goDetail(item) {
   });
 }
 
-onMounted(loadList);
+// ✅ 처음 진입 시 권한 체크 + 목록 로딩
+onMounted(() => {
+  auth.reload();
+
+  if (!auth.isLogin) {
+    alert("로그인이 필요합니다.");
+    router.push({ name: "SignIn" }); // 실제 로그인 라우트 이름에 맞게 수정
+    return;
+  }
+
+  if (auth.role !== "AA3" && auth.role !== "AA4") {
+    alert(
+      "접근 권한이 없습니다. (기관 관리자/시스템 관리자만 이용 가능합니다)"
+    );
+    router.push({ name: "Home" }); // 메인 페이지 라우트 이름에 맞게 수정
+    return;
+  }
+
+  loadList();
+});
 </script>
 
 <style scoped>

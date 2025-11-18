@@ -1,29 +1,30 @@
 // index.js
-import { createRouter, createWebHistory } from 'vue-router';
-import Dashboard from '../views/Dashboard.vue';
-import Tables from '../views/Tables.vue';
-import Billing from '../views/Billing.vue';
-import RTL from '../views/Rtl.vue';
-import Notifications from '../views/Notifications.vue';
-import Profile from '../views/Profile.vue';
-import SignIn from '../views/SignIn.vue';
-import SignUp from '../views/SignUp.vue';
-import Test from '../views/Test.vue';
-import Sponsor from '../views/Sponsor/Sponsor.vue';
-import SponsorProgramList from '../views/Sponsor/ProgramList.vue';
-import EventMain from '../views/EventMain.vue';
-import EventList from '../views/EventList.vue';
-import EventForm from '../views/EventForm.vue';
-import EventInfo from '../views/EventInfo.vue';
-import Organization from '../views/Organization.vue';
-import { useMenuStore } from '@/store/sidebar';
-import { sponsorMenu } from '@/config/menus';
-import { eventMenu } from '@/config/menus';
-import { surveyMenu } from '@/config/menus';
-import { spportMenu } from '@/config/menus';
-import { appReqMenu } from '@/config/menus';
+import { createRouter, createWebHistory } from "vue-router";
+import Dashboard from "../views/Dashboard.vue";
+import Tables from "../views/Tables.vue";
+import Billing from "../views/Billing.vue";
+import RTL from "../views/Rtl.vue";
+import Notifications from "../views/Notifications.vue";
+import Profile from "../views/Profile.vue";
+import SignIn from "../views/SignIn.vue";
+import SignUp from "../views/SignUp.vue";
+import Test from "../views/Test.vue";
+import Sponsor from "../views/Sponsor/Sponsor.vue";
+import SponsorProgramList from "../views/Sponsor/ProgramList.vue";
+import EventMain from "../views/EventMain.vue";
+import EventList from "../views/EventList.vue";
+import EventForm from "../views/EventForm.vue";
+import EventInfo from "../views/EventInfo.vue";
+import Organization from "../views/Organization.vue";
+import { useMenuStore } from "@/store/sidebar";
+import { sponsorMenu } from "@/config/menus";
+import { eventMenu } from "@/config/menus";
+import { surveyMenu } from "@/config/menus";
+import { spportMenu } from "@/config/menus";
+import { appReqMenu } from "@/config/menus";
+import { historyMenu } from "@/config/menus";
 import { infoMenu } from '@/config/menus';
-import UserInfo from '../views/UserInfo.vue';
+import UserInfo from "../views/UserInfo.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -55,8 +56,19 @@ const router = createRouter({
       component: SponsorProgramList,
     },
     {
-      path: '/organization',
-      name: 'Organization',
+      path: "/sponsor/:programCode/plan-detail",
+      name: "sponsorship-plan-detail",
+      component: () => import("@/components/Sponsor/Common/ProgramAdd.vue"),
+      props: (route) => ({
+        programCode: Number(route.params.programCode),
+        approvalMode: true,
+        role: Number(route.query.role || 0),
+      }),
+    },
+
+    {
+      path: "/organization",
+      name: "Organization",
       component: Organization,
     },
     {
@@ -105,8 +117,23 @@ const router = createRouter({
       component: () => import('../views/SponsorshipResultApproval.vue'),
     },
     {
-      path: '/dashboard',
-      name: 'Dashboard',
+      path: "/historyList",
+      name: "HistoryList",
+      component: () => import("../views/HistoryList.vue"),
+    },
+    {
+      path: "/authorityTransfer",
+      name: "AuthorityTransfer",
+      component: () => import("../views/AuthorityTransfer.vue"),
+    },
+    {
+      path: "/applicationStatus",
+      name: "ApplicationStatus",
+      component: () => import("../views/ApplicationStatus.vue"),
+    },
+    {
+      path: "/dashboard",
+      name: "Dashboard",
       component: Dashboard,
     },
     {
@@ -396,17 +423,21 @@ router.beforeEach((to, from, next) => {
 
   // 승인 요청 그룹
   const appReqPages = [
-    'Organization',
-    'ManagerApprovals',
-    'StaffApprovals',
-    'PriorityApprovals',
-    'SupportPlanApprovals',
-    'SupportResultApprovals',
-    'EventPlanApprovals',
-    'EventResultApprovals',
-    'SponsorshipPlanApprovals',
-    'SponsorshipResultApprovals',
+    "Organization",
+    "ManagerApprovals",
+    "StaffApprovals",
+    "PriorityApprovals",
+    "SupportPlanApprovals",
+    "SupportResultApprovals",
+    "EventPlanApprovals",
+    "EventResultApprovals",
+    "SponsorshipPlanApprovals",
+    "SponsorshipResultApprovals",
+    "AuthorityTransfer",
   ];
+
+  // 히스토리 그룹
+  const historyPages = ["HistoryList"];
 
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
@@ -437,6 +468,7 @@ router.beforeEach((to, from, next) => {
     menu.setPageTitle('지원 페이지');
     menu.setMenu(spportMenu);
   }
+
   // 승인 요청 그룹 라우트일 경우 자동 메뉴 설정
   if (appReqPages.includes(to.name)) {
     menu.setPageTitle('승인 요청 관리');
@@ -448,8 +480,14 @@ router.beforeEach((to, from, next) => {
   if (infoPage.includes(to.name)) {
     menu.setPageTitle('마이 페이지');
     menu.setMenu(infoMenu);
+    
+  // 히스토리 그룹 라우트일 경우 자동 메뉴 설정
+  if (historyPages.includes(to.name)) {
+    menu.setPageTitle("히스토리");
+    menu.setMenu(historyMenu);
   }
 
   next();
 });
+
 export default router;

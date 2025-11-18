@@ -11,7 +11,7 @@ export const useMenuStore = defineStore("menu", {
   getters: {
     filteredMenu(state) {
       // role별 메뉴 필터링
-      if (state.role === "AA3") return state.rawMenu; // 관리자 전체 허용
+      if (state.role === "AA4") return state.rawMenu; // 관리자 전체 허용
       return state.rawMenu.filter((item) => item.role.includes(state.role));
     },
   },

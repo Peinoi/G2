@@ -1,3 +1,5 @@
+// src/store/authLogin.js
+
 import { defineStore } from "pinia";
 import { login as loginApi } from "../api/user";
 

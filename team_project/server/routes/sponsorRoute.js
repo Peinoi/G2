@@ -41,6 +41,11 @@ const {
   sponsorProgramAdd,
   sponsorUsers,
   sponsorProgramUpdate,
+  requestApprovalProgram,
+  approvalProgram,
+  rejectSupportResult,
+  getRejectionReason,
+  resubmitResult,
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -117,12 +122,12 @@ router.post("/", upload.array("attachments"), async (req, res) => {
   }
 });
 
-router.put("/:no", async (req, res) => {
+router.put("/:no", upload.array("attachments"), async (req, res) => {
   try {
     const programCode = req.params.no;
     let clientData = req.body;
+
     clientData.program_code = programCode;
-    console.log(clientData);
     const serviceSponsor = await sponsorProgramUpdate(clientData);
     console.log(
       "[ sponsorProgramUpdateRoute.js || sponsorProgramUpdateRoute 성공]"
@@ -142,4 +147,178 @@ router.put("/:no", async (req, res) => {
     });
   }
 });
+
+/**
+ *  지원결과 수정 (JSON + 파일)
+ *   PUT /api/result/:resultCode
+ *   - formJson + resultFiles[]
+ */
+router.put("/:resultCode", upload.array("resultFiles"), async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode || 0);
+    if (!resultCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "resultCode가 필요합니다." });
+    }
+    const raw = req.body.formJson || "{}";
+    const formJson = JSON.parse(raw);
+    formJson.resultCode = formJson.resultCode || resultCode;
+
+    const result = await supportResultService.updateResultWithItems(
+      formJson,
+      req.files || []
+    );
+
+    res.json({ success: true, result: toSafeJson(result) });
+  } catch (e) {
+    console.error("[PUT /result/:resultCode]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "지원결과 수정 중 오류",
+    });
+  }
+});
+
+/**
+ * 승인 요청
+ *   POST /api/result/:resultCode/approve
+ */
+router.post("/:programCode/request-approval", async (req, res) => {
+  try {
+    const programCode = Number(req.params.programCode);
+    const requesterCode = req.body.requesterCode;
+    console.log("프로그램 번호" + programCode);
+    console.log("유저 아이디" + requesterCode);
+    if (!programCode || !requesterCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "잘못된 요청입니다." });
+    }
+
+    const result = await requestApprovalProgram(programCode, requesterCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /:programCode/request-approval]", e);
+    res.status(500).json({ success: false, message: "승인 요청 처리 중 오류" });
+  }
+});
+
+//승인 완료 승인 대기 -> 승인 완료
+router.put("/:programCode/request-approval", async (req, res) => {
+  try {
+    const programCode = Number(req.params.programCode);
+    console.log("프로그램 번호" + programCode);
+    if (!programCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "잘못된 요청입니다." });
+    }
+
+    const result = await approvalProgram(programCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /:programCode/request-approval]", e);
+    res.status(500).json({ success: false, message: "승인 요청 처리 중 오류" });
+  }
+});
+
+/**
+ * 🔹 지원결과 반려
+ *   POST /api/result/:resultCode/reject
+ *   body: { reason: "반려 사유" }
+ */
+router.put("/:resultCode/reject", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode || 0);
+    const { reason } = req.body;
+
+    if (!resultCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "유효한 resultCode가 아닙니다." });
+    }
+
+    const result = await rejectSupportResult(resultCode, reason || "");
+
+    res.json({ success: true, result: result });
+  } catch (e) {
+    console.error("[PUT /result/:resultCode/reject]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "지원결과 반려 처리 중 오류",
+    });
+  }
+});
+
+//반려사유 조회
+router.get("/:resultCode/rejection-reason", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode);
+
+    if (!resultCode) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 결과 코드가 아닙니다.",
+      });
+    }
+
+    const result = await getRejectionReason(resultCode);
+
+    if (!result) {
+      // 반려 이력이 없는 경우
+      return res.status(404).json({
+        success: false,
+        message: "반려 사유를 찾을 수 없습니다.",
+      });
+    }
+
+    // { rejection_reason: '...' } 그대로 넘겨줌
+    return res.json({
+      success: true,
+      result,
+      rejection_reason: result.rejection_reason,
+      rejection_date: result.approval_date,
+    });
+  } catch (e) {
+    console.error("[GET /api/result/:resultCode/rejection-reason]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+//재승인요청
+router.post("/:resultCode/resubmit", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode);
+    const requesterCode = Number(req.body.requesterCode || 0); // 담당자 user_code
+
+    if (!resultCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "유효한 resultCode 아닙니다." });
+    }
+    if (!requesterCode) {
+      // 나중에 로그인 붙이면 req.user.user_code 같은 걸로 대체
+      return res
+        .status(400)
+        .json({ success: false, message: "요청자 코드가 없습니다." });
+    }
+
+    const result = await resubmitResult(resultCode, requesterCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /result/:resultCode/resubmit]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "재승인 요청 처리 중 오류가 발생했습니다.",
+    });
+  }
+});
+
 module.exports = router;

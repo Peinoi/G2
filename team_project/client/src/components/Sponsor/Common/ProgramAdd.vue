@@ -1,10 +1,12 @@
 <template>
   <div class="p-6">
     <div id="container">
-      <h2 class="text-xl font-bold mb-2">
+      <h2 v-show="!approval_mode" class="text-xl font-bold mb-2">
         후원 프로그램 {{ isEditMode ? "수정" : "등록" }}
       </h2>
+      <h2 v-show="approval_mode">후원 프로그램 승인</h2>
       <hr />
+
       <div class="form-field-group">
         <label for="program_name">프로그램 명</label>
         <div class="field-container">
@@ -13,6 +15,7 @@
             id="program_name"
             name="program_name"
             v-model="formData.program_name"
+            :disabled="isLocked"
           />
         </div>
 
@@ -24,31 +27,67 @@
             v-model="formData.sponsor_type"
           >
             <option value="단기">단기</option>
+
             <option value="정기" disabled>정기</option>
           </select>
         </div>
 
         <label for="program_status">상태</label>
-        <div class="field-container">
-          <select
-            id="program_status"
-            name="program_status"
-            v-model="formData.status"
-          >
-            <option value="집행전">집행전</option>
-            <option value="집행 중" :disabled="!isEditMode">집행 중</option>
-            <option value="집행 완료" :disabled="!isEditMode">집행 완료</option>
-            <option value="집행 불가" :disabled="!isEditMode">집행 불가</option>
-          </select>
+        <div class="field-container checkbox-group">
+          <label>
+            <input
+              type="radio"
+              value="진행전"
+              v-model="formData.status"
+              name="program_status"
+              disabled
+            />
+            진행전
+          </label>
+
+          <template v-if="isEditMode">
+            <label>
+              <input
+                type="radio"
+                value="진행중"
+                v-model="formData.status"
+                name="program_status"
+                disabled
+              />
+              진행중
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                value="완료"
+                v-model="formData.status"
+                name="program_status"
+                disabled
+              />
+              완료
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                value="중단"
+                v-model="formData.status"
+                name="program_status"
+                disabled
+              />
+              중단
+            </label>
+          </template>
         </div>
 
         <label for="startDate">시작일</label>
         <div class="field-container">
           <input
             type="date"
-            name="startDate"
             id="startDate"
             v-model="formData.start_date"
+            :disabled="isLocked"
           />
         </div>
 
@@ -56,18 +95,21 @@
         <div class="field-container">
           <input
             type="date"
-            name="endDate"
             id="endDate"
             v-model="formData.end_date"
+            :disabled="isLocked"
           />
         </div>
+
         <label for="amount_setting">금액 단위 설정</label>
+
         <div class="field-container checkbox-group">
           <button
             type="button"
             class="add-button"
             @click="addUnitInput"
             v-show="amountSettingType === '지정'"
+            :disabled="isLocked"
           >
             단위 추가 +
           </button>
@@ -75,7 +117,6 @@
 
         <template v-if="amountSettingType === '지정'">
           <template v-for="unit in amountUnits" :key="unit.id">
-            <label></label>
             <div class="field-container dynamic-unit-input">
               <input
                 type="text"
@@ -84,12 +125,14 @@
                 :value="numberFormat(unit.value)"
                 @input="formatUnitInput(unit, $event)"
                 placeholder="금액 단위를 입력하세요 (예: 10,000)"
-                oninput="this.value = this.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1');"
+                :disabled="isLocked"
               />
+
               <button
                 type="button"
                 class="remove-button"
                 @click="removeUnitInput(unit.id)"
+                :disabled="isLocked"
               >
                 삭제
               </button>
@@ -97,31 +140,69 @@
           </template>
         </template>
 
-        <label for="amout">목표 금액</label>
+        <label for="amount">목표 금액</label>
         <div class="field-container">
           <input
             type="text"
-            id="amout"
-            name="amout"
+            id="amount"
+            name="amount"
             v-model="formattedGoalAmount"
             inputmode="numeric"
-            oninput="this.value = this.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1');"
+            :disabled="isLocked"
           />
+
+          <div class="amount">원</div>
         </div>
 
-        <label for="">승인</label>
-        <div class="field-container">
-          <select v-model="formData.approval_status">
-            <option value="승인전">승인전</option>
-            <option value="승인요청" :disabled="!isEditMode">승인 요청</option>
-            <option value="심사중" :disabled="!isEditMode">심사중</option>
-            <option value="승인 완료" :disabled="!isEditMode">승인 완료</option>
-          </select>
+        <label>승인</label>
+        <div class="field-container checkbox-group">
+          <label>
+            <input
+              type="radio"
+              value="승인전"
+              v-model="formData.approval_status"
+              name="approval_status"
+              disabled
+            />
+            승인전
+          </label>
+
+          <template v-if="isEditMode">
+            <label>
+              <input
+                type="radio"
+                value="승인대기중"
+                v-model="formData.approval_status"
+                name="approval_status"
+                disabled
+              />
+              승인대기중
+            </label>
+            <label>
+              <input
+                type="radio"
+                value="승인"
+                v-model="formData.approval_status"
+                name="approval_status"
+                disabled
+              />
+              승인
+            </label>
+
+            <label>
+              <input
+                type="radio"
+                value="반려"
+                v-model="formData.approval_status"
+                name="approval_status"
+                disabled
+              />
+              반려
+            </label>
+          </template>
         </div>
-        <!-- 첨부파일 -->
+
         <label>포스터</label>
-
-        <!-- <h3>첨부파일</h3> -->
         <div class="field-container">
           <input
             v-if="!isEditMode"
@@ -129,21 +210,65 @@
             multiple
             @change="handleFileChange"
             class="file-input"
+            :disabled="isLocked"
           />
+
+          <ul class="file-list">
+            <li
+              v-for="file in formData.attachments"
+              :key="file.server_filename || file.name"
+            >
+              <span
+                :class="{
+                  'file-name-clickable': isEditMode && file.isExisting,
+                }"
+                @click="
+                  isEditMode && file.isExisting ? previewFile(file) : null
+                "
+              >
+                {{ file.original_filename || file.name }}
+              </span>
+            </li>
+          </ul>
         </div>
-        <ul>
-          <li v-for="file in formData.attachments" :key="file.server_filename">
-            {{ file.original_filename }}
-          </li>
-        </ul>
       </div>
 
-      <div class="button-group-footer">
-        <button class="primary-button" v-on:click="programAdd()">
+      <div v-show="!approval_mode" class="button-group-footer">
+        <button
+          class="primary-button"
+          @click="programAdd()"
+          :disabled="isLocked"
+        >
           {{ isEditMode ? "수정" : "등록" }}
         </button>
-        <button class="secondary-button" v-on:click="goList()">닫기</button>
+
+        <button class="secondary-button" @click="goList()">닫기</button>
       </div>
+
+      <div v-show="approval_mode" class="button-group-footer">
+        <button class="primary-button" @click="approveProgram()">승인</button>
+        <button class="secondary-button" @click="openRejectModal()">
+          반려
+        </button>
+        <router-link to="/sponsorshipPlanApprovals">
+          <button class="secondary-button">닫기</button></router-link
+        >
+      </div>
+    </div>
+    <div v-show="rejectModal" class="modal">
+      <div class="modal-box">
+        <h3>반려 사유 입력</h3>
+        <textarea
+          v-model="rejectReason"
+          placeholder="반려 사유를 입력하세요"
+        ></textarea>
+
+        <button @click="sendReject">반려</button>
+        <button @click="rejectModal = false">취소</button>
+      </div>
+    </div>
+    <div v-if="previewImage" class="preview-modal" @click="closePreview">
+      <img :src="previewImage" class="preview-img" @click.stop />
     </div>
   </div>
 </template>
@@ -151,37 +276,72 @@
 <script setup>
 import axios from "axios";
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
-// import numberFormat from "@/utils/numberFormat"; // 실제 파일 경로에 맞게 주석 해제
+import { useRouter } from "vue-router";
+const router = useRouter();
+const isLocked = computed(() => {
+  return isEditMode.value && formData.value.approval_status === "승인대기중";
+});
+//승인 반려
+let approval_mode = ref(false);
+let rejectModal = ref(false);
+let rejectReason = ref("");
+import { onMounted } from "vue";
 
+onMounted(async () => {
+  if (props.programCode) {
+    const res = await axios.get(`/api/sponsor/${props.programCode}`);
+
+    const detail = res.data.serviceSponsor.sponsorRows[0] || {};
+    const files = res.data.serviceSponsor.attachments || [];
+
+    Object.assign(formData.value, detail);
+
+    formData.value.attachments = files.map((f) => ({
+      ...f,
+      isExisting: true,
+    }));
+
+    isEditMode.value = true;
+  }
+
+  approval_mode.value = props.approvalMode;
+});
+
+// ===================== Props ============================================ //
 const props = defineProps({
   initialProgram: {
     type: Object,
     default: null,
   },
+  approvalMode: {
+    type: Boolean,
+    default: false,
+  },
+  programCode: Number,
 });
 const emit = defineEmits(["goToList"]);
 
-// ----------------------------------------------------
-// 상태 및 헬퍼 함수
-// ----------------------------------------------------
+// ===================== 수정모드 관련 ============================================ //
+
 const isEditMode = ref(false);
 const amountSettingType = ref("지정");
 const amountUnits = ref([]);
 let nextUnitId = 1;
 
 const formData = ref({
-  // DB의 필드명과 일치해야 합니다.
   program_name: "",
   sponsor_type: "단기",
-  status: "집행전",
+  status: "진행전",
   start_date: null,
   end_date: null,
-  goal_amount: null,
+  goal_amount: 0,
   approval_status: "승인전",
   attachments: [],
 });
 
-// 숫자 포맷팅 임시 함수 (실제로는 utils/numberFormat 파일이 필요합니다)
+// 이미지 미리보기 URL 추가
+const previewImage = ref("");
+
 const numberFormat = (value) => {
   if (value === null || value === undefined || isNaN(value)) return "";
   return value.toLocaleString();
@@ -195,7 +355,7 @@ const resetFormData = () => {
   formData.value = {
     program_name: "",
     sponsor_type: "단기",
-    status: "집행전",
+    status: "진행전",
     start_date: null,
     end_date: null,
     goal_amount: null,
@@ -207,79 +367,58 @@ const resetFormData = () => {
   nextUnitId = 1;
 };
 
-// 금액 단위 데이터를 배열로 변환하는 함수
 const parseDonationUnits = (unitStr) => {
   if (!unitStr) return [];
-  // 콤마(,)를 기준으로 분리하고, 각 항목을 숫자형으로 변환
   return unitStr
     .split(",")
     .map((val) => {
       const value = Number(val.trim());
-      return {
-        id: nextUnitId++, // 증가하는 ID 부여
-        value: isNaN(value) ? null : value,
-      };
+      return { id: nextUnitId++, value: isNaN(value) ? null : value };
     })
-    .filter((unit) => unit.value !== null); // 유효하지 않은 값 제거
+    .filter((unit) => unit.value !== null);
 };
 
-// ----------------------------------------------------
-// Props Watcher (수정 모드 진입 로직)
-// ----------------------------------------------------
 watch(
   () => props.initialProgram,
   (newVal) => {
     if (newVal) {
-      //  수정 모드 (데이터 존재)
       isEditMode.value = true;
-
-      // 폼 데이터 채우기 (날짜 포맷 처리 포함)
-      formData.value.program_name = newVal.program_name;
-      formData.value.sponsor_type = newVal.sponsor_type;
-      formData.value.status = newVal.status;
-      // DB에서 넘어온 날짜 포맷 (YYYY-MM-DDTHH:MM:SS)을 YYYY-MM-DD로 자릅니다.
+      formData.value.program_name = newVal.program_name || "";
+      formData.value.sponsor_type = newVal.sponsor_type || "단기";
+      formData.value.status = newVal.status || "진행전";
+      formData.value.approval_status = newVal.approval_status || "승인전";
       formData.value.start_date = newVal.start_date
         ? newVal.start_date.slice(0, 10)
         : null;
       formData.value.end_date = newVal.end_date
         ? newVal.end_date.slice(0, 10)
         : null;
-      formData.value.goal_amount = newVal.goal_amount;
-      formData.value.approval_status = newVal.approval_status;
+      formData.value.goal_amount = newVal.goal_amount || 0;
 
-      // 금액 단위 설정 채우기
-      amountSettingType.value = newVal.donation_type;
-      if (newVal.donation_type === "지정") {
-        nextUnitId = 1; // ID 초기화 후 다시 부여
-        amountUnits.value = parseDonationUnits(newVal.donation_unit);
-      } else {
-        amountUnits.value = [];
-      }
+      amountSettingType.value = newVal.donation_type || "지정";
+      amountUnits.value =
+        amountSettingType.value === "지정" && newVal.donation_unit
+          ? parseDonationUnits(newVal.donation_unit)
+          : [];
+
+      formData.value.attachments =
+        newVal.attachments?.map((file) => ({ ...file, isExisting: true })) ||
+        [];
     } else {
-      //  등록 모드 (데이터 없음)
       isEditMode.value = false;
       resetFormData();
     }
-    // if (newVal.attachments && newVal.attachments.length > 0) {
-    //   // attachments 객체 형식 맞추기 (name, server_filename 등)
-    //   formData.value.attachments = newVal.attachments.map((file) => ({
-    //     name: file.original_filename, // 화면에 표시할 이름
-    //     server_filename: file.server_filename, // 실제 서버 파일명
-    //     file_path: file.file_path, // 경로
-    //     isExisting: true, // 기존 파일임을 표시
-    //   }));
-    // } else {
-    //   isEditMode.value = false;
-    //   resetFormData();
-    // }
+  },
+
+  { immediate: true }
+);
+watch(
+  () => props.approvalMode,
+  (v) => {
+    approval_mode.value = v;
   },
   { immediate: true }
 );
-
-// ----------------------------------------------------
-// Computed & 동적 인풋 핸들러
-// ----------------------------------------------------
-// 목표 금액을 위한 Computed 속성 정의 (Getter/Setter 사용)
 const formattedGoalAmount = computed({
   get() {
     return numberFormat(formData.value.goal_amount);
@@ -290,55 +429,87 @@ const formattedGoalAmount = computed({
   },
 });
 
-// 금액 단위 입력 필드 포매팅을 위한 함수
 const formatUnitInput = (unit, event) => {
   const inputElement = event.target;
-  const rawValue = inputElement.value;
-  const cleanedValue = rawValue.toString().replace(/[^0-9]/g, "");
-
+  const cleanedValue = inputElement.value.toString().replace(/[^0-9]/g, "");
   unit.value = cleanedValue ? Number(cleanedValue) : null;
   inputElement.value = numberFormat(unit.value);
 };
 
-// '단위 추가' 버튼 클릭 시 실행될 함수
 const addUnitInput = () => {
   if (amountSettingType.value === "지정") {
-    amountUnits.value.push({
-      id: nextUnitId++,
-      value: null,
-    });
+    amountUnits.value.push({ id: nextUnitId++, value: null });
   }
 };
 
-// '삭제' 버튼 클릭 시 실행될 함수
 const removeUnitInput = (id) => {
   amountUnits.value = amountUnits.value.filter((unit) => unit.id !== id);
 };
-const handleFileChange = (event) => {
-  // 선택된 FileList를 JavaScript Array로 변환하여 formData에 저장
-  formData.value.attachments = Array.from(event.target.files);
 
-  // 디버깅을 위해 이 시점에서 로그를 찍어볼 수 있습니다.
-  console.log("Files selected:", formData.value.attachments.length);
+const handleFileChange = (event) => {
+  const existingFiles = formData.value.attachments.filter(
+    (item) => item.isExisting
+  );
+  formData.value.attachments = [
+    ...existingFiles,
+    ...Array.from(event.target.files),
+  ];
 };
-// ----------------------------------------------------
-// 최종 제출 로직 (등록/수정)
-// ----------------------------------------------------
+// ===================== 수정모드 관련 ============================================ //
+
+// ===================== 첨부파일 관련 ============================================ //
+
+// 파일 미리보기 함수 (추가)
+const previewFile = (file) => {
+  // file.file_path가 서버에서 반환한 파일 경로라고 가정
+  const filePath = file.file_path;
+  if (!filePath) {
+    alert("파일 경로를 찾을 수 없습니다.");
+    return;
+  }
+
+  const ext = file.original_filename.split(".").pop().toLowerCase(); // 이미지 파일 (.jpg, .jpeg, .png, .gif, .webp)
+
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    previewImage.value = filePath; // 모달 표시
+    return;
+  } // PDF 파일
+
+  if (ext === "pdf") {
+    window.open(filePath, "_blank"); // 새 창 미리보기
+    return;
+  } // 그 외 파일은 다운로드 (필요하다면)
+
+  if (
+    confirm(
+      `'${file.original_filename}' 파일은 이미지 또는 PDF가 아닙니다. 다운로드하시겠습니까?`
+    )
+  ) {
+    window.location.href = filePath;
+  }
+};
+
+// 미리보기 모달 닫기 함수 (추가)
+const closePreview = () => {
+  previewImage.value = "";
+};
+// ===================== 첨부파일 관련 ============================================ //
+
+// ===================== 프로그램 등록 ============================================ //
+
 const programAdd = async () => {
   const actionText = isEditMode.value ? "수정" : "등록";
-
-  // 1. 금액 단위 문자열 생성
   let donationUnit = null;
+
   if (amountSettingType.value === "지정") {
     const validUnits = amountUnits.value
       .map((unit) => unit.value)
       .filter((value) => value !== null && value > 0);
     donationUnit = validUnits.length > 0 ? validUnits.join(",") : null;
   }
-
-  // 2. FormData 생성
+  const userDataString = localStorage.getItem("user");
+  const userData = JSON.parse(userDataString);
   const form = new FormData();
-
   form.append("program_name", formData.value.program_name);
   form.append("sponsor_type", formData.value.sponsor_type);
   form.append("status", formData.value.status);
@@ -349,46 +520,36 @@ const programAdd = async () => {
   form.append("goal_amount", formData.value.goal_amount || 0);
   form.append("approval_status", formData.value.approval_status);
 
-  // 수정 시 필요한 필드
   if (isEditMode.value) {
     form.append("program_code", props.initialProgram?.program_code);
     form.append("current_amount", props.initialProgram?.current_amount || 0);
-    form.append("writer", props.initialProgram?.writer || "admin_temp");
+    form.append("writer", userData.user_id);
   } else {
     form.append("create_date", new Date().toISOString().slice(0, 10));
-    form.append("writer", "admin_temp");
+    form.append("writer", userData.user_id);
   }
 
-  // 3. 첨부파일 추가 (여러 개 가능)
-  if (formData.value.attachments && formData.value.attachments.length > 0) {
-    formData.value.attachments.forEach((file) => {
-      form.append("attachments", file);
+  if (formData.value.attachments?.length > 0) {
+    formData.value.attachments.forEach((item) => {
+      if (item instanceof File) form.append("attachments", item);
     });
   }
 
   try {
-    let response;
     if (isEditMode.value) {
-      // 수정 요청
-      response = await axios.put(
+      await axios.put(
         `/api/sponsor/${props.initialProgram.program_code}`,
         form,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
     } else {
-      // 등록 요청
-      response = await axios.post("/api/sponsor", form, {
+      await axios.post("/api/sponsor", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     }
-
-    console.log(` 프로그램 ${actionText} 성공:`, response.data);
     alert(`프로그램이 성공적으로 ${actionText}되었습니다.`);
     goList();
   } catch (error) {
-    console.error(`프로그램 ${actionText} 실패:`, error);
     if (error.response) {
       alert(
         `${actionText} 실패: ${error.response.data.message || "서버 오류 발생"}`
@@ -398,7 +559,58 @@ const programAdd = async () => {
     }
   }
 };
+// ===================== 프로그램 등록 ============================================ //
+
+// ===================== 승인 관련 ============================================ //
+
+const approveProgram = async () => {
+  if (formData.value.approval_status === "승인") {
+    return;
+  }
+  const programCode = props.programCode;
+  if (!confirm("승인 확정하시겠습니까?")) return;
+
+  try {
+    await axios.put(`/api/sponsor/${programCode}/request-approval`);
+    alert("승인 완료되었습니다.");
+    router.push("/sponsorshipPlanApprovals");
+  } catch (e) {
+    alert("승인 처리 중 오류 발생");
+  }
+};
+
+// ===================== 반려 관련 ============================================ //
+
+const openRejectModal = () => {
+  if (formData.value.approval_status === "승인") {
+    return;
+  }
+  rejectModal.value = true;
+  console.log(rejectModal.value);
+};
+
+const sendReject = async () => {
+  if (!rejectReason.value.trim()) {
+    alert("반려 사유를 입력하세요.");
+    return;
+  }
+
+  const programCode = props.programCode;
+
+  try {
+    await axios.put(`/api/sponsor/${programCode}/reject`, {
+      reason: rejectReason.value,
+    });
+
+    alert("반려되었습니다.");
+    rejectModal.value = false;
+    router.push("/sponsorshipPlanApprovals");
+  } catch (e) {
+    alert("반려 처리 중 오류 발생");
+  }
+};
 </script>
+
 <style scoped>
 /* (스타일 시트 내용은 변경하지 않았습니다.) */
 /* ============================================== */
@@ -486,9 +698,19 @@ select:focus {
   font-size: 15px;
   color: #4b5563;
 }
-.checkbox-group input[type="checkbox"] {
+.checkbox-group label {
+  /* 라벨을 인라인 블록으로 만들어 가로 배열 */
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 15px; /* 라디오 버튼 사이 간격 */
+  grid-column: auto; /* Grid 배치 무시 */
+}
+
+.checkbox-group input[type="radio"] {
   transform: scale(1.1);
-  margin-right: 3px;
+  margin-right: 5px; /* 라디오 버튼과 텍스트 사이 간격 */
+  width: auto; /* 라디오 버튼 너비 고정 해제 */
 }
 
 .field-container .add-button:hover {
@@ -591,6 +813,41 @@ input[type="file"] {
   background-color: #6b7280;
 }
 
+/* 파일 이름 스타일 추가 */
+.file-list {
+  padding-left: 0;
+  list-style: none;
+}
+.file-name-clickable {
+  cursor: pointer;
+  color: #3b82f6; /* 파란색으로 표시 */
+  font-weight: 500;
+}
+.file-name-clickable:hover {
+  text-decoration: underline;
+}
+
+/* 이미지 미리보기 모달 (추가) */
+.preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* 다른 요소 위에 표시 */
+}
+
+.preview-img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
 /* ============================================== */
 /* 4. 모바일 대응 */
 /* ============================================== */
@@ -623,5 +880,25 @@ input[type="file"] {
 }
 .amount {
   float: right;
+}
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-box {
+  background: #fff;
+  padding: 20px;
+  width: 350px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 </style>
