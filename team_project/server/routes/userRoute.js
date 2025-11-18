@@ -20,11 +20,32 @@ router.post('/childAdd', async (req, res) => {
   console.log(userData);
   try {
     const result = await userInfoService.childAdd(userData);
-    console.log(result);
     res.json(result);
   } catch (err) {
     console.error('[ childAdd 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: '[ childAdd 라우터 오류 ]' });
+  }
+});
+
+// 자녀 정보 수정
+router.put('/updateChild', async (req, res) => {
+  try {
+    const result = await userInfoService.childUpdate(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('[ updateChild 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: '[ updateChild 라우터 오류 ]' });
+  }
+});
+
+// 자녀 정보 삭제
+router.delete('/deleteChild', async (req, res) => {
+  try {
+    const result = await userInfoService.childDelete(req.body.childCode);
+    res.json(result);
+  } catch (err) {
+    console.error('[ deleteChild 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: '[ deleteChild 라우터 오류 ]' });
   }
 });
 

@@ -39,4 +39,39 @@ async function addChild(data) {
   }
 }
 
-module.exports = { findUserInfo, addChild };
+// 자녀 수정
+async function updateChild(data) {
+  try {
+    const { child_name, ssn, gender, disability_type, child_code } = data;
+    const result = await pool.query(userInfoSQL.CHILD_UPDATE, [
+      child_name,
+      ssn,
+      gender,
+      disability_type,
+      child_code,
+    ]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '자녀 수정 성공' };
+    }
+    return { ok: false, message: '자녀 수정 실패' };
+  } catch (err) {
+    console.error('[ updateChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
+// 자녀 삭제
+async function deleteChild(data) {
+  try {
+    const result = await pool.query(userInfoSQL.CHILD_DELETE, [data]);
+    if (result.affectedRows == 1) {
+      return { ok: true, message: '자녀 삭제 성공' };
+    }
+    return { ok: false, message: '자녀 삭제 실패' };
+  } catch (err) {
+    console.error('[ deleteChild 실패 ] : ', err);
+    throw err;
+  }
+}
+
+module.exports = { findUserInfo, addChild, updateChild, deleteChild };

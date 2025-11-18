@@ -59,7 +59,29 @@ export async function findUserInfo(userData) {
 export async function addChild(childData) {
   try {
     const result = await axios.post('/api/userinfo/childAdd', childData);
-    return result;
+    return result.data;
+  } catch (err) {
+    console.error('[ addChild 오류 ]', err);
+  }
+}
+
+// 자녀 정보 수정
+export async function updateChild(childData) {
+  try {
+    const result = await axios.put('/api/userinfo/updateChild', childData);
+    return result.data;
+  } catch (err) {
+    console.error('[ updateChild 오류 ]', err);
+  }
+}
+
+// 자녀 정보 삭제
+export async function deleteChild(childCode) {
+  try {
+    const result = await axios.delete('/api/userinfo/deleteChild', {
+      data: { childCode },
+    });
+    return result.data;
   } catch (err) {
     console.error('[ addChild 오류 ]', err);
   }

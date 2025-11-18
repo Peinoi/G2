@@ -80,7 +80,7 @@ import { useAuthStore } from '@/store/authLogin';
 import UserBasicInfo from '@/components/userInfo/UserBasicInfo.vue';
 import UserOrgInfo from '@/components/userInfo/UserOrgInfo.vue';
 import UserChildInfo from '@/components/userInfo/UserChildInfo.vue';
-import { findUserInfo, addChild } from '@/api/user';
+import { findUserInfo, addChild, deleteChild, updateChild } from '@/api/user';
 import dateFormat from '@/utils/dateFormat';
 
 export default {
@@ -181,11 +181,27 @@ export default {
         console.error('[ addChild 오류 ]', err);
       }
     },
-    updateChild({ index, child }) {
-      this.childList.splice(index, 1, child);
+
+    // 자녀 정보 수정
+    async updateChild(childData) {
+      const result = await updateChild(childData);
+      if (!result.ok) {
+        alert('수정 실패');
+        return;
+      }
+      await this.userFullInfo();
+      alert('수정 성공');
     },
-    deleteChild(index) {
-      this.childList.splice(index, 1);
+
+    // 자녀 정보 삭제
+    async deleteChild(childCode) {
+      const result = await deleteChild(childCode);
+      if (!result.ok) {
+        alert('삭제 실패');
+        return;
+      }
+      await this.userFullInfo();
+      alert('삭제 성공');
     },
 
     async userFullInfo() {
@@ -223,6 +239,7 @@ export default {
         this.childList = childData
           .filter((item) => item.child_name != null)
           .map((item) => ({
+            child_code: item.child_code,
             child_name: item.child_name,
             ssn: item.ssn,
             gender: item.gender,

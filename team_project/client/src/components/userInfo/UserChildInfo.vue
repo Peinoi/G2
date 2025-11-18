@@ -48,7 +48,7 @@
 
             <material-button
               color="danger"
-              @click="$emit('delete-child', index)"
+              @click="$emit('delete-child', childList[index].child_code)"
             >
               삭제
             </material-button>
@@ -125,9 +125,10 @@ export default {
 
   data() {
     return {
-      mode: 'list', // list | form
-      editIndex: null, // index for editing
+      mode: 'list',
+      editIndex: null,
       localChild: {
+        child_code: this.childList.child_code,
         child_name: '',
         ssn: '',
         gender: '',
@@ -135,12 +136,12 @@ export default {
       },
     };
   },
-
   methods: {
     enterAddMode() {
       this.mode = 'form';
       this.editIndex = null;
       this.localChild = {
+        child_code: this.childList.child_code,
         child_name: '',
         ssn: '',
         gender: '',
@@ -162,8 +163,7 @@ export default {
     saveChild() {
       if (this.editIndex !== null) {
         this.$emit('update-child', {
-          index: this.editIndex,
-          child: this.localChild,
+          ...this.localChild,
         });
       } else {
         this.$emit('add-child', this.localChild);

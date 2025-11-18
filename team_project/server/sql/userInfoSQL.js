@@ -48,4 +48,23 @@ INSERT INTO child(
    , registered_date
 ) VALUES(?, ?, ?, ?, ?, ?)`;
 
-module.exports = { FIND_USER_INFO, FIND_ORG_INFO, CHILD_ADD };
+const CHILD_UPDATE = `
+UPDATE child
+SET child_name = ?
+	, ssn = ?
+   , gender = ?
+   , disability_type = ?
+WHERE child_code = ?`;
+
+const CHILD_DELETE = `
+DELETE FROM child
+WHERE child_code = ?;
+`;
+
+module.exports = {
+  FIND_USER_INFO,
+  FIND_ORG_INFO,
+  CHILD_ADD,
+  CHILD_UPDATE,
+  CHILD_DELETE,
+};

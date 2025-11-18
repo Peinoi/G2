@@ -12,4 +12,16 @@ async function childAdd(userData) {
   return result;
 }
 
-module.exports = { findInfo, childAdd };
+// 자녀 수정
+async function childUpdate(data) {
+  const result = await userInfoMapper.updateChild(data);
+  return result;
+}
+
+// 자녀 삭제
+async function childDelete(data) {
+  const result = await userInfoMapper.deleteChild(data);
+  return result;
+}
+
+module.exports = { findInfo, childAdd, childUpdate, childDelete };
