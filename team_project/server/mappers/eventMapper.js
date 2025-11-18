@@ -1,9 +1,9 @@
 // eventMapper.js
 const pool = require("../configs/db.js");
-const eventSQL = require("../sql/eventSQL");
+const eventSQL = require("../sql/eventSQL.js");
 
 const moment = require("moment");
-const commonCodeService = require("../services/commonCodeService");
+const commonCodeService = require("../services/commonCodeService.js");
 // ==========================
 // 이벤트
 // ==========================
@@ -68,8 +68,57 @@ async function selectEventList(filters) {
   }
 }
 
+// ✅ 이벤트 작성자별 계획/결과 목록(검색조건)
+async function selectEventApplyResult(filters) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    const params = [
+      filters.recruit_status,
+      filters.recruit_status,
+      filters.recruit_start_date,
+      filters.recruit_start_date,
+      filters.recruit_end_date,
+      filters.recruit_end_date,
+      filters.event_start_date,
+      filters.event_start_date,
+      filters.event_end_date,
+      filters.event_end_date,
+      filters.event_name,
+      filters.event_name,
+      filters.user_code,
+    ];
+
+    const rows = await conn.query(eventSQL.selectEventApplyResult, params);
+    if (!rows || !rows.length) return [];
+
+    for (const event of rows) {
+      event.register_status_name = await commonCodeService.getCodeName(
+        "DF",
+        event.register_status
+      );
+    }
+
+    console.log("공통코드", rows[0].register_status);
+    // console.log(
+    //   "[eventMapper.js || 이벤트 작성자별 계획/결과 목록 조회 성공]",
+    //   rows
+    // );
+    return rows;
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트 작성자별 계획/결과 목록 조회 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 // ✅ 이벤트 단건조회 + 세부 이벤트 + 서브 매니저 + 첨부파일
-async function selectEventOneFull(event_code) {
+async function selectEventOneFull(event_code, user_code) {
   let conn;
   try {
     conn = await pool.getConnection();
@@ -115,12 +164,50 @@ async function selectEventOneFull(event_code) {
       })
     );
 
+    // 6️⃣ 신청제(DD1)일 경우 이미 신청했는지 확인
+    let alreadyApplied = false;
+    if (user_code && event.event_type === "DD1") {
+      const appliedRows = await conn.query(eventSQL.selectEventApplyExist, [
+        user_code,
+        event_code,
+        null,
+        null,
+      ]);
+      alreadyApplied = appliedRows[0].cnt > 0;
+    }
+    // 7️⃣ 예약제(DD2) 신청 여부 반영
+    if (user_code && event.event_type === "DD2") {
+      const subEventsWithApplied = await Promise.all(
+        subEvents.map(async (sub) => {
+          const rows = await conn.query(eventSQL.selectEventApplyExist, [
+            user_code,
+            event_code,
+            sub.sub_event_code,
+            sub.sub_event_code,
+          ]);
+          const applied = rows[0].cnt > 0;
+          return { ...sub, applied };
+        })
+      );
+      // 예약제(DD2)인 경우 반환
+      return {
+        ...event,
+        sub_events: subEventsWithApplied,
+        attachments,
+        sub_managers: subManagers,
+        alreadyApplied: false, // 예약제 버튼
+      };
+    }
+
+    // 신청제(DD1)인 경우는 그대로 alreadyApplied만 반환
     return {
       ...event,
       sub_events: subEvents,
       attachments,
       sub_managers: subManagers,
+      alreadyApplied, // 신청제 버튼
     };
+    // 반환
   } catch (err) {
     console.error("[eventMapper.js || selectEventOneFull 실패]", err);
     throw err;
@@ -339,6 +426,72 @@ async function addEventApply(data) {
   }
 }
 
+// 이벤트 신청 내역 조회
+async function selectEventApplyList(user_code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    console.log("=== DEBUG user_code:", user_code);
+    const rows = await conn.query(eventSQL.selectEventApplyList, [user_code]);
+
+    // 필요하다면 apply_type, apply_status 코드명을 commonCodeService에서 매핑
+    for (const row of rows) {
+      row.apply_type_name = await commonCodeService.getCodeName(
+        "DD",
+        row.apply_type
+      );
+      row.apply_status_name = await commonCodeService.getCodeName(
+        "DE",
+        row.apply_status
+      );
+
+      // 신청일정, 신청인원, 마감인원은 이미 SQL에서 계산되어 있음
+      // 필요 시 JS에서 포맷 변경 가능
+    }
+    console.log("=== DEBUG rows:", rows);
+    console.log("[eventMapper.js || 이벤트 신청 내역 조회 성공]", rows);
+    return rows;
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트 신청 내역 조회 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// ==========================
+// 이벤트 신청 취소
+// ==========================
+async function cancelApply(apply_code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    // 1️⃣ 신청 내역 확인 (선택적, 로그 용도)
+    const [apply] = await conn.query(
+      `SELECT event_code, sub_event_code FROM event_apply WHERE apply_code = ?`,
+      [apply_code]
+    );
+    if (!apply) throw new Error("신청 내역을 찾을 수 없습니다.");
+
+    // 2️⃣ 신청 내역 삭제
+    await conn.query(eventSQL.deleteEventApply, [apply_code]);
+
+    await conn.commit();
+    return { status: "success", message: "신청이 취소되었습니다." };
+  } catch (err) {
+    if (conn) await conn.rollback();
+    console.error("[eventMapper.js || 신청 취소 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 // 중복 신청 여부 확인
 async function checkDuplicateApply(data) {
   let conn;
@@ -549,4 +702,7 @@ module.exports = {
   deleteSubEvent,
   addEventFull,
   checkDuplicateApply,
+  selectEventApplyList,
+  cancelApply,
+  selectEventApplyResult,
 };

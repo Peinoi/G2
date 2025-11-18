@@ -30,6 +30,7 @@ const selectEventMainpage = `
 const selectEventList = `
   SELECT 
     e.event_code,
+    e.user_code,
     e.event_name,
     e.event_register_date,
     e.event_start_date,
@@ -65,6 +66,52 @@ const selectEventList = `
     AND (? IS NULL OR e.event_end_date <= ?)
     -- 이벤트명
     AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
+  GROUP BY e.event_code
+  ORDER BY e.event_code DESC
+`;
+
+// 이벤트 작성자별 계획/결과 목록(검색조건)
+const selectEventApplyResult = `
+  SELECT 
+    e.event_code,
+    e.user_code,
+    e.event_name,
+    e.event_register_date,
+    e.event_start_date,
+    e.event_end_date,
+    e.recruit_start_date,
+    e.recruit_end_date,
+    e.max_participants,
+    COALESCE(SUM(se.sub_recruit_count), 0) AS total_sub_recruit_count,
+    a.server_filename,
+    a.file_path,
+    org.org_name AS org_name,
+    u.name AS main_manager_name,
+    e.register_status
+  FROM event e
+  LEFT JOIN sub_event se ON e.event_code = se.event_code
+  LEFT JOIN (
+    SELECT linked_record_pk, MIN(server_filename) AS server_filename, MIN(file_path) AS file_path
+    FROM attachment
+    WHERE linked_table_name = 'event'
+      AND LOWER(SUBSTRING_INDEX(original_filename, '.', -1)) IN ('jpg', 'jpeg', 'png', 'gif')
+    GROUP BY linked_record_pk
+  ) a ON e.event_code = a.linked_record_pk
+  LEFT JOIN organization org ON e.org_code = org.org_code
+  LEFT JOIN users u ON e.user_code = u.user_code
+  WHERE 1=1
+    -- 모집상태
+    AND (? IS NULL OR e.recruit_status = ?)
+    -- 모집기간
+    AND (? IS NULL OR e.recruit_start_date >= ?)
+    AND (? IS NULL OR e.recruit_end_date <= ?)
+    -- 시행기간
+    AND (? IS NULL OR e.event_start_date >= ?)
+    AND (? IS NULL OR e.event_end_date <= ?)
+    -- 이벤트명
+    AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
+    -- 이벤트 등록자명
+    AND e.user_code = ?
   GROUP BY e.event_code
   ORDER BY e.event_code DESC
 `;
@@ -123,7 +170,6 @@ WHERE m.manager_category_code IS NOT NULL
 
 // 이벤트 단건조회
 const selectEventOne = `
--- selectEventOne
 SELECT 
     e.event_code,
     e.event_name,
@@ -166,7 +212,7 @@ INSERT INTO event (
 VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
 `;
 
-// 이벤트 신청 내역
+// 이벤트 신청 내역 등록
 const insertEventApply = `
 INSERT INTO event_apply (
   apply_date
@@ -177,7 +223,62 @@ INSERT INTO event_apply (
 VALUES ( ?, ?, ?, ?, ? )
 `;
 
-// 이벤트 신청 내역 확인 (중복 신청 체크)
+// 이벤트 신청 내역 조회
+const selectEventApplyList = `
+SELECT
+    ea.apply_code,
+    DATE_FORMAT(ea.apply_date, '%Y-%m-%d') AS apply_date,
+    ea.apply_type,
+    ea.apply_status,
+    ea.user_code,
+    ea.event_code,
+    ea.sub_event_code,
+    e.event_name,
+    se.sub_event_name,
+    -- 신청일정
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN 
+            CONCAT(
+                DATE_FORMAT(e.event_start_date, '%Y-%m-%d'),
+                ' ~ ',
+                DATE_FORMAT(e.event_end_date, '%Y-%m-%d')
+            )
+        WHEN ea.apply_type = 'DD2' THEN 
+            CONCAT(
+                DATE_FORMAT(se.sub_event_start_date, '%Y-%m-%d %H:%i'),
+                ' ~ ',
+                DATE_FORMAT(se.sub_event_end_date, '%Y-%m-%d %H:%i')
+            )
+        ELSE '-'
+    END AS apply_period,
+    -- 신청인원
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN
+            (SELECT COUNT(*) FROM event_apply ea2 WHERE ea2.event_code = ea.event_code AND ea2.sub_event_code IS NULL)
+        WHEN ea.apply_type = 'DD2' THEN
+            (SELECT COUNT(*) FROM event_apply ea2 WHERE ea2.sub_event_code = ea.sub_event_code)
+        ELSE 0
+    END AS current_count,
+    -- 마감인원
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN e.max_participants
+        WHEN ea.apply_type = 'DD2' THEN se.sub_recruit_count
+        ELSE 0
+    END AS max_count
+FROM event_apply ea
+LEFT JOIN event e ON ea.event_code = e.event_code
+LEFT JOIN sub_event se ON ea.sub_event_code = se.sub_event_code
+WHERE ea.user_code = ?
+ORDER BY ea.apply_date DESC
+`;
+
+// 이벤트 신청 취소
+const deleteEventApply = `
+DELETE FROM event_apply
+WHERE apply_code = ?
+`;
+
+// 이벤트 중복 신청 체크
 const selectEventApplyExist = `
 SELECT
   COUNT(*) AS cnt
@@ -255,4 +356,7 @@ module.exports = {
   selectAttachList,
   selectManager,
   selectEventApplyExist,
+  selectEventApplyList,
+  deleteEventApply,
+  selectEventApplyResult,
 };

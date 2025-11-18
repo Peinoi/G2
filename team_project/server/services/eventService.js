@@ -30,10 +30,24 @@ async function getEventList(filters) {
   }
 }
 
-// ✅ 이벤트 단건 조회
-async function getEvent(event_code) {
+// ✅ 이벤트 작성자별 계획/결과 목록(검색조건)
+async function getEventApplyResult(filters) {
   try {
-    const event = await eventMapper.selectEventOneFull(event_code);
+    const events = await eventMapper.selectEventApplyResult(filters);
+    return events;
+  } catch (err) {
+    console.error(
+      "[eventService.js || 이벤트 작성자별 계획/결과 목록 조회 실패]",
+      err.message
+    );
+    throw err;
+  }
+}
+
+// ✅ 이벤트 단건 조회
+async function getEvent(event_code, user_code) {
+  try {
+    const event = await eventMapper.selectEventOneFull(event_code, user_code);
     return event;
   } catch (err) {
     console.error("[eventService.js || 이벤트 단건조회 실패]", err.message);
@@ -78,6 +92,31 @@ async function createEventApply(data) {
       "[eventService.js || 이벤트 신청 내역 등록 실패]",
       err.message
     );
+    throw err;
+  }
+}
+
+// 이벤트 신청 내역 조회
+async function getMyEventApplyList(user_code) {
+  try {
+    const applies = await eventMapper.selectEventApplyList(user_code);
+    return applies;
+  } catch (err) {
+    console.error(
+      "[eventService.js || 내가 신청한 이벤트 내역 조회 실패]",
+      err.message
+    );
+    throw err;
+  }
+}
+
+// ✅ 이벤트 신청 취소
+async function cancelApply(apply_code) {
+  try {
+    const result = await eventMapper.cancelApply(apply_code);
+    return result;
+  } catch (err) {
+    console.error("[eventService.js || 이벤트 신청 취소 실패]", err.message);
     throw err;
   }
 }
@@ -183,4 +222,7 @@ module.exports = {
   removeSubEvent,
   createEventFull,
   createEventApply,
+  getMyEventApplyList,
+  cancelApply,
+  getEventApplyResult,
 };

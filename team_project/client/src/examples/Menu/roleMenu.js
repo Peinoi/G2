@@ -34,7 +34,7 @@ export const roleMenu = {
     { name: "상담", path: "/counsel-list", color: "success" },
     { name: "지원", path: "/plan-list", color: "info" },
     { name: "후원", path: "/sponsorprogramlist", color: "success" },
-    { name: "이벤트", path: "/test", color: "success" },
+    { name: "이벤트", path: "/event", color: "success" },
     { name: "기관 및 요청 관리", path: "/organization", color: "success" },
     { name: "히스토리", path: "/historyList", color: "success" },
   ],

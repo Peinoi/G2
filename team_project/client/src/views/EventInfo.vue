@@ -137,8 +137,15 @@ const isApplied = ref(false);
 const fetchEvent = async () => {
   try {
     const code = route.query.code;
-    const res = await axios.get(`/api/event/${code}`);
+    const userCode = getLoginUserCode(); // localStorage에서 로그인 유저 가져오기
+
+    const res = await axios.get(`/api/event/${code}`, {
+      params: { user_code: userCode },
+    });
     event.value = res.data.data;
+
+    // 이미 신청했으면 버튼 비활성화
+    isApplied.value = !!event.value.alreadyApplied;
 
     // 대표 이미지 설정
     const img = event.value.attachments.find((x) =>
@@ -160,8 +167,6 @@ const fetchEvent = async () => {
       color: s.applied ? "gray" : undefined, // 이미 신청한 일정은 회색표시
     }));
 
-    // 이미 신청했으면 버튼 비활성화
-    isApplied.value = !!event.value.alreadyApplied;
     await nextTick();
   } catch (err) {
     console.error("fetchEvent error:", err);
