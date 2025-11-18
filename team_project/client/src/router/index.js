@@ -24,6 +24,8 @@ import { spportMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
 import { historyMenu } from "@/config/menus";
 import { infoMenu } from '@/config/menus';
+import SponsorDetail from '@/components/Sponsor/Common/SponsorDetail.vue'
+import PaymentPage from '@/components/Sponsor/User/PaymentPage.vue'
 import UserInfo from "../views/UserInfo.vue";
 
 const router = createRouter({
@@ -64,6 +66,16 @@ const router = createRouter({
         approvalMode: true,
         role: Number(route.query.role || 0),
       }),
+    },{
+      path: '/sponsordetail/:programCode',
+      name: 'SponsorDetail',
+      component: SponsorDetail,
+      props: true,
+    },{
+      path: '/paymentpage/:programCode',
+      name: 'PaymentPage',
+      component: PaymentPage,
+      props: true,
     },
 
     {
@@ -407,7 +419,7 @@ router.beforeEach((to, from, next) => {
   const menu = useMenuStore();
 
   // 후원 페이지 그룹
-  const sponsorPages = ['Sponsor', 'SponsorProgramList'];
+  const sponsorPages = ['Sponsor', 'SponsorProgramList','SponsorDetail','PaymentPage'];
 
   // event 그룹
   const eventPages = [
