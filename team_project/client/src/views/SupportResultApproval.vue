@@ -40,7 +40,7 @@
             <th>장애유형</th>
             <th>보호자</th>
             <th>담당자</th>
-            <th v-if="showOrgColumn">기관</th>
+            <th v-if="isOrgVisible">기관</th>
             <th>결과 작성일</th>
             <th>우선순위</th>
             <th>상태</th>
@@ -59,7 +59,7 @@
             <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <td v-if="showOrgColumn">{{ item.org_name }}</td>
+            <td v-if="isOrgVisible">{{ item.org_name }}</td>
             <td>{{ formatDate(item.written_at) }}</td>
 
             <td>
@@ -77,11 +77,17 @@
               </span>
             </td>
 
-            <td>{{ formatDate(item.approval_date) }}</td>
+            <td>
+              {{
+                item.state === "BA1" || !item.approval_date
+                  ? "-"
+                  : formatDate(item.approval_date)
+              }}
+            </td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" :colspan="showOrgColumn ? 10 : 9">
+            <td class="priority-empty" :colspan="isOrgVisible ? 10 : 9">
               데이터가 없습니다.
             </td>
           </tr>
@@ -120,8 +126,9 @@ import axios from "axios";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/authLogin.js";
 
-const auth = useAuthStore();
 const router = useRouter();
+const auth = useAuthStore();
+
 const list = ref([]);
 
 // 페이지 관련 상태
@@ -140,8 +147,44 @@ const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
 
-// 🔹 기관 컬럼 표시 여부
-const showOrgColumn = computed(() => auth.role === "AA4");
+// 유저 역할 코드 (AA3 / AA4 등)
+const userRole = computed(() => {
+  return (
+    auth.role || // 예: 'AA3', 'AA4'
+    (auth.user && auth.user.roleCode) ||
+    ""
+  );
+});
+
+// 로그인 아이디 (기관 필터 기준)
+const loginId = computed(() => {
+  return (
+    auth.userId ||
+    auth.loginId ||
+    auth.id ||
+    (auth.user && auth.user.userId) ||
+    ""
+  );
+});
+
+// 기관 관리자 여부 (AA3)
+const isOrgManager = computed(() => userRole.value === "AA3");
+
+// 시스템 관리자 여부 (AA4)
+const isSystemAdmin = computed(() => userRole.value === "AA4");
+
+// 이 페이지 접근 가능 여부 (AA3 또는 AA4)
+const canViewSupportResultPage = computed(
+  () => isOrgManager.value || isSystemAdmin.value
+);
+
+// 기관 컬럼 표시 여부 (기관 관리자면 숨김)
+const isOrgVisible = computed(() => !isOrgManager.value);
+
+// 상세화면 role 값 (AA3 → 3, AA4 → 4)
+const detailRole = computed(() => {
+  return isSystemAdmin.value ? 4 : 3;
+});
 
 // 공통코드 매핑
 const CODE_LABEL_MAP = {
@@ -153,7 +196,7 @@ const CODE_LABEL_MAP = {
   // 우선순위 유형(BB)
   BB1: "긴급",
   BB2: "중점",
-  BB3: "계획",
+  BB3: "준비",
 };
 
 function searchList() {
@@ -209,8 +252,8 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
-        loginId: auth.userId,
-        role: auth.role,
+        loginId: loginId.value, // 🔹 로그인 아이디
+        role: userRole.value, // 🔹 역할 (AA3 / AA4)
       },
     });
 
@@ -241,17 +284,17 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 지원결과 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "resultDetail", // 라우터에서 이 이름으로 등록해 두면 됨
-    params: { resultCode: item.result_code }, // support_result.result_code
+    name: "resultDetail",
+    params: { resultCode: item.result_code },
     query: {
-      role: 3, // 관리자 화면
+      role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },
   });
 }
 
 onMounted(() => {
-  if (!auth.isAA3 && auth.role !== "AA4") {
-    alert("기관 관리자 또는 시스템 관리자만 접근할 수 있습니다.");
+  if (!canViewSupportResultPage.value) {
+    alert("기관 관리자 및 시스템 관리자만 접근할 수 있습니다.");
     router.push("/");
     return;
   }

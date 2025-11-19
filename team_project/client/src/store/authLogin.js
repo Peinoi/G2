@@ -8,6 +8,7 @@ export const useAuthStore = defineStore("authLogin", {
     userId: "",
     role: "",
     userCode: "",
+    orgCode: "",
     isLogin: false,
   }),
   getters: {
@@ -34,6 +35,7 @@ export const useAuthStore = defineStore("authLogin", {
         this.userId = loginData.user_id;
         this.role = loginData.role;
         this.userCode = loginData.user_code;
+        this.orgCode = loginData.org_code;
         this.isLogin = true;
       } catch (err) {
         console.error("[ pinia reload 오류 ] : ", err);
@@ -43,7 +45,6 @@ export const useAuthStore = defineStore("authLogin", {
     // 로그인
     async login({ userId, userPw }) {
       const result = await loginApi({ userId, userPw });
-
       // 아이디, 패스워드 오기입 시 false가 되어 SignIn.vue에서 에러 발생시킴
       if (!result.ok) {
         throw new Error(result.message);
@@ -52,6 +53,7 @@ export const useAuthStore = defineStore("authLogin", {
       this.userId = result.user_id;
       this.role = result.role;
       this.userCode = result.user_code;
+      this.orgCode = result.org_code;
       this.isLogin = true;
 
       localStorage.setItem(
@@ -60,6 +62,7 @@ export const useAuthStore = defineStore("authLogin", {
           userId: result.user_id,
           role: result.role,
           userCode: result.user_code,
+          orgCode: result.org_code,
         })
       );
       return result;
@@ -70,6 +73,7 @@ export const useAuthStore = defineStore("authLogin", {
       this.userId = "";
       this.role = "";
       this.userCode = "";
+      this.orgCode = "";
       this.isLogin = false;
       localStorage.removeItem("user");
     },

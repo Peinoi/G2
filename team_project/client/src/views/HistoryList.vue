@@ -111,7 +111,7 @@
         <table class="hist-table">
           <thead>
             <tr>
-              <th>No</th>
+              <th>기록코드</th>
               <th>수정일시</th>
               <th>유형</th>
               <th v-if="isSystem">기관</th>
@@ -132,8 +132,8 @@
             </tr>
 
             <!-- 목록 행 -->
-            <tr v-for="(row, idx) in items" :key="row.record_code">
-              <td>{{ startIndex + idx }}</td>
+            <tr v-for="row in items" :key="row.record_code">
+              <td>{{ row.record_code }}</td>
               <td>{{ formatDateTime(row.revision_date) }}</td>
 
               <!-- 유형: BD 코드 → 한글 -->
@@ -146,10 +146,14 @@
               <!-- 🔹 새 컬럼: 수정자 권한 (AA1~AA4) → 한글 -->
               <td>{{ getModifierRoleName(row.modifier_role) }}</td>
 
-              <td>{{ row.change_item }}</td>
+              <td>{{ getChangeItemLabel(row) }}</td>
 
-              <td class="hist-before">{{ row.before_change }}</td>
-              <td class="hist-after">{{ row.after_change }}</td>
+              <td class="hist-before">
+                {{ formatHistoryValue(row.before_change) }}
+              </td>
+              <td class="hist-after">
+                {{ formatHistoryValue(row.after_change) }}
+              </td>
             </tr>
 
             <!-- 로딩 중 -->
@@ -214,7 +218,6 @@ const loading = ref(false);
 const orgOptions = ref([]);
 const managerOptions = ref([]);
 
-const startIndex = computed(() => (page.value - 1) * size.value + 1);
 const totalPages = computed(() =>
   totalCount.value === 0 ? 1 : Math.ceil(totalCount.value / size.value)
 );
@@ -241,6 +244,87 @@ const modifierRoleMap = {
 };
 
 const getModifierRoleName = (roleCode) => modifierRoleMap[roleCode] || "-";
+
+// 🔹 변경 항목 컬럼명을 한글로 변환
+const getChangeItemLabel = (row) => {
+  if (!row) return "";
+
+  const rawColumn = row.change_item || ""; // 예: answers, answers.76, survey_answer.answers
+
+  // . 또는 [ 기준으로 앞부분만 컬럼명으로 사용
+  // 기존: rawColumn.split(/[.\[]/)[0];
+  const baseColumn = rawColumn.split(/[.[[]/)[0]; // answers.76 -> answers
+
+  // 공통 컬럼명 매핑
+  const commonColumnLabelMap = {
+    status: "상태",
+    answers: "조사지 답변",
+    name: "이름",
+    role: "권한 구분",
+    is_active: "가입 상태",
+    org_code: "소속 기관",
+
+    main_title: "상담 제목",
+    main_content: "상담 내용",
+    main_counsel_date: "상담 일자",
+    plan_from: "예상 지원 시작일",
+    plan_to: "예상 지원 종료일",
+
+    goal_p: "계획 목표",
+    publicContent_p: "이용자 내용",
+    privateContent_p: "기관 내용",
+
+    actual_from: "실제 지원 시작일",
+    actual_to: "실제 지원 종료일",
+    goal: "계획했던 목표",
+    publicContent: "일반용 내용",
+    privateContent: "기관용 내용",
+    prionity: "우선순위",
+  };
+
+  if (commonColumnLabelMap[baseColumn]) {
+    return commonColumnLabelMap[baseColumn];
+  }
+
+  // 그래도 없으면 원래 문자열 그대로
+  return rawColumn;
+};
+
+// 🔹 before_change / after_change 값 포맷팅
+const formatHistoryValue = (value) => {
+  if (value == null || value === "") return "";
+
+  // 문자열이 아닌 값이 올 수도 있으니 문자열로 맞춰줌
+  const str = String(value).trim();
+
+  // JSON Object 형식인지 확인
+  if (str.startsWith("{") && str.endsWith("}")) {
+    try {
+      const obj = JSON.parse(str);
+
+      // 객체가 아니면 그냥 리턴
+      if (typeof obj !== "object" || Array.isArray(obj) || obj === null) {
+        return str;
+      }
+
+      // { "76": "곰", "77": ["영국","일본"] } → "76: 곰, 77: 영국, 일본"
+      const parts = Object.entries(obj).map(([key, val]) => {
+        if (Array.isArray(val)) {
+          return `${key}: ${val.join(", ")}`;
+        }
+        return `${key}: ${val}`;
+      });
+
+      return parts.join(", ");
+    } catch (e) {
+      // JSON 파싱 실패하면 그냥 원본 출력
+      return str;
+    }
+  }
+
+  // JSON이 아니면 그대로 출력
+  return str;
+};
 
 // 날짜 format
 const formatDateTime = (v) =>
