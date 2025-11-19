@@ -12,7 +12,7 @@ module.exports = {
       await conn.query(sql.updateAssignee, [assignee, submitCode]);
 
       // 기존처럼 상담 기록은 CB2로 남김
-      await conn.query(sql.insertCounselNote, [submitCode, "CB2", new Date()]);
+      await conn.query(sql.insertCounselNote, [submitCode, "CB2"]);
 
       await conn.commit();
 

@@ -27,7 +27,7 @@ module.exports = {
     return surveyMapper.updateSurveyVersion(templateCode, data);
   },
 
-  // 역할별 조사지 제출 목록
+  // 제출본 목록
   listSubmissions(role, userId) {
     return surveyMapper.listSubmissionsByRole(Number(role), Number(userId));
   },
@@ -41,8 +41,25 @@ module.exports = {
   updateSubmission(submitCode, body) {
     return surveyMapper.updateSubmissionAnswers(Number(submitCode), body);
   },
-
+  // 세부버전
   getSurveyDetailByVer(templateVerCode) {
     return surveyMapper.getSurveyDetailByVer(Number(templateVerCode));
+  },
+
+  // 현재 로그인 사용자의 자녀 목록
+  listChildrenByUser(userId) {
+    return surveyMapper.listChildrenByUser(Number(userId));
+  },
+  //장애유형 업데이트
+  updateUserDisabilityType(userId, disabilityType) {
+    return surveyMapper.updateUserDisabilityType(
+      Number(userId),
+      disabilityType
+    );
+  },
+
+  // 장애 유형 조회
+  getUserDisabilityType(userId) {
+    return surveyMapper.getUserDisabilityType(Number(userId));
   },
 };

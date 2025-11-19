@@ -1,5 +1,6 @@
 const pool = require("../configs/db");
 const sql = require("../sql/supportPlanSql");
+const { logHistoryDiff } = require("../utils/historyUtil");
 
 function safeJSON(v) {
   return JSON.parse(
@@ -12,6 +13,7 @@ function decodeOriginalName(file) {
   return file?.originalname || "";
 }
 
+//목록
 async function listSupportPlansByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
@@ -50,7 +52,8 @@ async function listSupportPlansByRole(role, userId) {
       submitAt: r.submit_at,
       writerName: r.writer_name,
       assiName: r.assi_name,
-      orgName: r.org_name || null, // 🔥 기관명 추가
+      orgName: r.org_name || null,
+      childName: r.child_name || null,
     }));
 
     return safeJSON(mapped);
@@ -59,7 +62,7 @@ async function listSupportPlansByRole(role, userId) {
   }
 }
 
-// 🔹 작성 화면에서 기본정보 불러오기
+//기본정보
 async function getPlanBasic(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -70,11 +73,27 @@ async function getPlanBasic(submitCode) {
       throw new Error("해당 submit_code의 정보를 찾을 수 없습니다.");
     }
 
+    const childName = row.child_name || null;
+    const writerName = row.writer_name || null;
+
     return safeJSON({
       submitCode: row.submit_code,
-      name: row.writer_name,
-      ssnFront: row.ssn,
-      counselSubmitAt: row.counsel_submit_at,
+
+      // 지원자
+      childName: childName,
+      name: writerName,
+
+      // 보호자 = 작성자
+      guardianName: writerName,
+
+      // ⭐ 담당자 추가
+      assigneeName: row.assignee_name || null,
+
+      // 장애유형
+      disabilityType: row.disability_type || null,
+
+      // 상담지 제출일
+      counselSubmitAt: row.counsel_submit_at || null,
     });
   } finally {
     conn.release();
@@ -184,15 +203,7 @@ async function savePlanWithItems(formJson, files) {
       }
     }
 
-    // 4) ✅ request_approval에 승인 요청 한 줄 넣기
-    //    - requester_code : 담당자 user_code (assi_by)
-    //    - processor_code : 1 (임시)
-    //    - approval_type  : 'AE4'
-    //    - state          : 'BA1' (요청)
-    //    - linked_table_name : 'support_plan'
-    //    - linked_record_pk  : planCode
-
-    // (선택) 이미 승인요청이 있는지 체크해서 중복 방지
+    // 이미 승인요청이 있는지 체크해서 중복 방지
     const [existReq] = await conn.query(sql.getApprovalForPlan, [planCode]);
 
     if (!existReq) {
@@ -283,12 +294,46 @@ async function updatePlanWithItems(formJson, files) {
   try {
     await conn.beginTransaction();
 
-    const { planCode, mainForm, planItems, removedAttachCodes } = formJson;
+    const { planCode, mainForm, planItems, removedAttachCodes, modifier } =
+      formJson;
 
     const planId = Number(planCode);
     if (!planId) {
       throw new Error("planCode가 유효하지 않습니다.");
     }
+
+    // ⭐ 1) 수정 전 상태 조회 (beforeRow)
+    const beforePlan = await conn.query(
+      `
+      SELECT
+        plan_from,
+        plan_to
+      FROM support_plan
+      WHERE plan_code = ?
+    `,
+      [planId]
+    );
+
+    const beforeItems = await conn.query(
+      `
+      SELECT
+        item_title,
+        content_for_user,
+        content_for_org
+      FROM support_plan_item
+      WHERE plan_code = ?
+      ORDER BY plan_item_code ASC
+    `,
+      [planId]
+    );
+
+    const beforeRow = {
+      plan_from: beforePlan[0]?.plan_from || null,
+      plan_to: beforePlan[0]?.plan_to || null,
+      goal_p: beforeItems[0]?.item_title || "",
+      publicContent_p: beforeItems[0]?.content_for_user || "",
+      privateContent_p: beforeItems[0]?.content_for_org || "",
+    };
 
     // 예상 진행기간 → plan_from / plan_to
     let planFrom = null;
@@ -308,15 +353,14 @@ async function updatePlanWithItems(formJson, files) {
       planId,
     ]);
 
-    // 2) 기존 item 전부 삭제
+    // 기존 item 전부 삭제
     await conn.query(sql.deleteSupportPlanItemsByPlanCode, [planId]);
 
-    // written_at
     const writtenAt =
       (mainForm?.planDate && mainForm.planDate.slice(0, 10)) ||
       new Date().toISOString().slice(0, 10);
 
-    // 2-1) 메인 계획 insert
+    // 메인 item 재생성
     await conn.query(sql.insertSupportPlanItem, [
       planId,
       mainForm?.goal || "",
@@ -325,7 +369,7 @@ async function updatePlanWithItems(formJson, files) {
       writtenAt,
     ]);
 
-    // 2-2) 추가 계획들 insert
+    // 추가 item 입력
     if (Array.isArray(planItems)) {
       for (const item of planItems) {
         await conn.query(sql.insertSupportPlanItem, [
@@ -338,7 +382,7 @@ async function updatePlanWithItems(formJson, files) {
       }
     }
 
-    // 3) 삭제 예정 첨부 삭제
+    // 첨부 삭제
     if (Array.isArray(removedAttachCodes) && removedAttachCodes.length > 0) {
       for (const code of removedAttachCodes) {
         const id = Number(code);
@@ -347,7 +391,7 @@ async function updatePlanWithItems(formJson, files) {
       }
     }
 
-    // 4) 새로 업로드된 파일들 attachment에 insert
+    // 새 파일 추가
     if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
         const originalName = decodeOriginalName(file);
@@ -363,6 +407,56 @@ async function updatePlanWithItems(formJson, files) {
         ]);
       }
     }
+
+    // ⭐ 2) 수정 후 상태 조회 (afterRow)
+    const afterPlan = await conn.query(
+      `
+      SELECT
+        plan_from,
+        plan_to
+      FROM support_plan
+      WHERE plan_code = ?
+    `,
+      [planId]
+    );
+
+    const afterItems = await conn.query(
+      `
+      SELECT
+        item_title,
+        content_for_user,
+        content_for_org
+      FROM support_plan_item
+      WHERE plan_code = ?
+      ORDER BY plan_item_code ASC
+    `,
+      [planId]
+    );
+
+    const afterRow = {
+      plan_from: afterPlan[0]?.plan_from || null,
+      plan_to: afterPlan[0]?.plan_to || null,
+      goal_p: afterItems[0]?.item_title || "",
+      publicContent_p: afterItems[0]?.content_for_user || "",
+      privateContent_p: afterItems[0]?.content_for_org || "",
+    };
+
+    // ⭐ 3) 히스토리 기록
+    await logHistoryDiff(conn, {
+      tableName: "support_plan",
+      tablePk: planId,
+      modifier: modifier, // 프론트에서 보내온 user_code
+      historyType: "BD3", // 계획 수정 타입 코드
+      beforeRow,
+      afterRow,
+      fields: [
+        "plan_from",
+        "plan_to",
+        "goal_p",
+        "publicContent_p",
+        "privateContent_p",
+      ],
+    });
 
     await conn.commit();
     return safeJSON({ planCode: planId });

@@ -14,43 +14,67 @@
       </p>
       <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-      <!-- 기본정보 카드 -->
-      <div class="meta-card space-y-3">
-        <div class="grid grid-cols-2 text-sm gap-2">
-          <div>
-            이름: <strong>{{ submitInfo.name || "-" }}</strong>
-          </div>
-          <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
-        </div>
-
-        <div class="meta-bottom">
-          <!-- 계획 상세 보기 -->
-          <MaterialButton color="dark" size="sm" @click="openPlanDetail">
-            계획서 제출일: {{ formattedPlanSubmitAt }}
-          </MaterialButton>
-
-          <!-- 결과 작성일 -->
-          <div class="flex items-center gap-2 text-sm">
-            <span>결과 작성일:</span>
-            <span class="px-2 py-1 border rounded bg-white">
-              {{ mainForm.resultDate }}
+      <!-- ✅ 기본정보 카드 (작성 화면과 동일 형태) -->
+      <div class="meta-card">
+        <div class="meta-grid">
+          <!-- 1. 지원자 -->
+          <div class="meta-item">
+            <span class="meta-label">지원자</span>
+            <span class="meta-value">
+              {{ submitInfo.childName || "본인" }}
             </span>
           </div>
 
-          <!-- 실제 진행기간: YYYY-MM ~ YYYY-MM -->
-          <div class="flex items-center gap-2 text-sm">
-            <span>실제 진행기간:</span>
-            <input
-              type="month"
-              v-model="mainForm.actualStart"
-              class="input h-8"
-            />
-            <span>~</span>
-            <input
-              type="month"
-              v-model="mainForm.actualEnd"
-              class="input h-8"
-            />
+          <!-- 2. 보호자 -->
+          <div class="meta-item">
+            <span class="meta-label">보호자</span>
+            <span class="meta-value">
+              {{ submitInfo.guardianName || "-" }}
+            </span>
+          </div>
+
+          <!-- 3. 담당자 -->
+          <div class="meta-item">
+            <span class="meta-label">담당자</span>
+            <span class="meta-value">
+              {{ submitInfo.assigneeName || "-" }}
+            </span>
+          </div>
+
+          <!-- 4. 장애유형 -->
+          <div class="meta-item">
+            <span class="meta-label">장애유형</span>
+            <span class="meta-value">
+              {{ submitInfo.disabilityType || "-" }}
+            </span>
+          </div>
+
+          <!-- 5. 계획작성일 -->
+          <div class="meta-item">
+            <span class="meta-label">계획작성일</span>
+            <span class="meta-value">
+              <MaterialButton color="dark" size="sm" @click="openPlanDetail">
+                {{ formattedPlanSubmitAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <!-- 6. 실제 진행기간 -->
+          <div class="meta-item">
+            <span class="meta-label">실제 진행기간</span>
+            <span class="meta-value period-value">
+              <input
+                type="month"
+                v-model="mainForm.actualStart"
+                class="input input-month"
+              />
+              <span class="mx-1">~</span>
+              <input
+                type="month"
+                v-model="mainForm.actualEnd"
+                class="input input-month"
+              />
+            </span>
           </div>
         </div>
       </div>
@@ -278,15 +302,20 @@ import MaterialInput from "@/components/MaterialInput.vue";
 const route = useRoute();
 const router = useRouter();
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 // 라우터에서 받은 값들
 const resultCode = Number(route.params.resultCode || 0);
 const planCode = ref(Number(route.query.planCode || 0));
 const submitCode = Number(route.query.submitCode || 0);
 
-// 기본 정보
+// ✅ 기본 정보 (작성 화면과 동일 구조)
 const submitInfo = ref({
-  name: "",
-  ssnFront: "",
+  childName: "",
+  guardianName: "",
+  assigneeName: "",
+  disabilityType: "",
   planSubmitAt: "",
 });
 
@@ -345,7 +374,7 @@ async function loadData() {
 
     // 기본 정보 + 결과 상세를 동시에 요청
     const [basicRes, detailRes] = await Promise.all([
-      axios.get(`/api/result/${submitCode}`), // 🔹 submitCode 기준
+      axios.get(`/api/result/${submitCode}`), // 작성 화면과 동일 API
       axios.get(`/api/result/detail/${resultCode}`),
     ]);
 
@@ -357,10 +386,10 @@ async function loadData() {
     const basicResData = basic.result;
 
     submitInfo.value = {
-      name: basicResData.name || "",
-      ssnFront: (basicResData.ssnFront || "")
-        .replace(/[^0-9]/g, "")
-        .slice(0, 6),
+      childName: basicResData.childName || "",
+      guardianName: basicResData.guardianName || "",
+      assigneeName: basicResData.assigneeName || "",
+      disabilityType: basicResData.disabilityType || "",
       planSubmitAt: basicResData.planSubmitAt || "",
     };
 
@@ -371,7 +400,7 @@ async function loadData() {
     }
     const d = detail.result;
 
-    // 🔹 planCode를 응답에서 최대한 뽑아내기 (camel + snake 둘 다 대응)
+    // planCode를 응답에서 최대한 뽑아내기
     planCode.value = Number(
       d.main?.planCode ??
         d.main?.plan_code ??
@@ -456,7 +485,7 @@ function markFileForDelete(attachCode) {
   }
 }
 
-// 계획 상세로 이동 (planCode + submitCode 같이 넘기기)
+// 계획 상세로 이동
 function openPlanDetail() {
   if (!planCode.value) {
     alert(
@@ -491,8 +520,18 @@ function removeResultItem(id) {
   resultItems.value = resultItems.value.filter((p) => p.id !== id);
 }
 
-// 유효성 체크
+// ✅ 유효성 체크 (작성 화면과 동일하게 실제 진행기간 포함)
 function validate() {
+  if (!mainForm.value.actualStart) {
+    return "실제 진행기간 시작 월을 선택해주세요.";
+  }
+  if (!mainForm.value.actualEnd) {
+    return "실제 진행기간 종료 월을 선택해주세요.";
+  }
+  if (mainForm.value.actualStart > mainForm.value.actualEnd) {
+    return "실제 진행기간의 시작 월이 종료 월보다 늦을 수 없습니다.";
+  }
+
   if (!mainForm.value.goal.trim()) return "결과 목표를 입력해주세요.";
   if (!mainForm.value.publicContent.trim())
     return "결과 내용(일반용)을 입력해주세요.";
@@ -521,11 +560,12 @@ async function submitAll() {
   try {
     const formJson = {
       resultCode,
-      planCode: planCode.value, // 🔹 ref 말고 숫자만 전송
+      planCode: planCode.value,
       submitCode,
       mainForm: mainForm.value,
       resultItems: resultItems.value,
       removedAttachCodes: removedAttachCodes.value,
+      modifier,
     };
 
     const formData = new FormData();
@@ -598,12 +638,71 @@ section {
   font-size: 0.85rem;
 }
 
-.meta-bottom {
+/* ===== 기본정보 그리드 (작성 화면과 동일) ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* 결과 작성일 pill */
+.date-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 1.1rem;
-  margin-top: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  font-size: 0.8rem;
+}
+
+/* ✅ 기간 인풋 정렬 + 크기 (작성 화면과 동일) */
+.period-value {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.input-month {
+  width: 95px;
+  min-width: 80px;
+  max-width: 110px;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.75rem;
+}
+
+/* 수정 화면에서만: 좀 더 강제 */
+.meta-card .period-value {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.meta-card .input-month {
+  box-sizing: border-box;
+  width: 95px;
+  min-width: 80px;
+  max-width: 110px;
+  height: 1.8rem;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 
 /* 메인 카드 (지원결과 내용) */
@@ -627,7 +726,6 @@ section {
   padding: 0.35rem 0.6rem;
   font-size: 0.875rem;
   outline: none;
-  min-width: 8rem;
   background-color: #ffffff;
 }
 

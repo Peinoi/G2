@@ -108,6 +108,48 @@ async function getRejectionReason(resultCode) {
 async function resubmitResult(resultCode, requesterCode) {
   return sponsorMapper.resubmitResult(resultCode, requesterCode);
 }
+
+async function payments(payData) {
+  const programDataArray = [
+    payData.userID,
+    payData.transaction_amount,
+    payData.program_code,
+  ];
+  console.log("서비스", programDataArray);
+  const sponsorInsertResult = await sponsorMapper.payments(programDataArray);
+
+  return sponsorInsertResult;
+}
+// 나의 후원 내역 조회
+async function mygivingList() {
+  //  programCode를 인수로 받습니다.
+  const sponsorFindDB = await sponsorMapper.mygivingSQL();
+  console.log("asdassfaeebhsrenfd");
+  return sponsorFindDB;
+}
+
+// 프로그램 등록
+async function activityAdd(clientData) {
+  console.log("클라이언트 데이터");
+  console.log(clientData);
+
+  const programDataArray = [
+    clientData.writer,
+    clientData.title,
+    clientData.status,
+    clientData.content,
+    clientData.used_amount,
+    clientData.program_code,
+  ];
+
+  // 배열화된 데이터를 매퍼로 전달하여 쿼리 실행
+  const sponsorInsertResult = await sponsorMapper.activityAddSQL(
+    programDataArray
+  );
+
+  return sponsorInsertResult;
+}
+
 module.exports = {
   sponsorUsersList,
   sponsorProgramAdd,
@@ -118,4 +160,7 @@ module.exports = {
   rejectSupportResult,
   getRejectionReason,
   resubmitResult,
+  payments,
+  mygivingList,
+  activityAdd,
 };

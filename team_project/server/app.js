@@ -20,7 +20,7 @@ const historyRoute = require("./routes/historyRoute");
 const managerRoute = require("./routes/managerRoute");
 const authorityTransferRoute = require("./routes/authorityTransferRoute");
 const applicationRoute = require("./routes/applicationRoute");
-
+const kakaoPayRouter = require("./routes/kakaoPayRouter.js");
 dotenv.config();
 
 const app = express();
@@ -48,6 +48,7 @@ app.use("/histories", historyRoute);
 app.use("/managers", managerRoute);
 app.use("/authority-transfer", authorityTransferRoute);
 app.use("/applications", applicationRoute);
+app.use("/pay/kakao", kakaoPayRouter);
 
 // const port = process.env.PORT;
 const port = process.env.PORT;

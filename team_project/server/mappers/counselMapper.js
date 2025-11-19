@@ -1,6 +1,7 @@
 // server/mappers/counselMapper.js
 const pool = require("../configs/db");
 const sql = require("../sql/counselSql");
+const { logHistoryDiff } = require("../utils/historyUtil");
 
 // BigInt → Number (JSON 직렬화 보호)
 function safeJSON(v) {
@@ -71,7 +72,11 @@ async function saveCounsel(body, files = []) {
       mainForm,
       records,
       removeAttachmentCodes = [], // 🔹 프론트에서 넘어오는 삭제 대상 첨부코드 배열
+      modifier, // ⭐ 히스토리용 수정자(user_code)
     } = body;
+
+    // ⭐ beforeRow 준비용 변수
+    let beforeRow = null;
 
     // 1) 기존 상담 존재 여부 확인
     const exist = await conn.query(sql.getCounselBySubmit, [submitCode]);
@@ -89,41 +94,55 @@ async function saveCounsel(body, files = []) {
       ]);
       counsel_code = res.insertId;
       needApprovalRequest = true; // 👉 처음 작성이므로 승인요청 생성
+
+      // ⚠️ 최초 작성은 beforeRow가 없으므로 히스토리 기록은 생략(원하면 나중에 추가 가능)
     } else {
       // 🔹 기존 상담 있음
       counsel_code = exist[0].counsel_code;
       const currentStatus = (exist[0].status || "").trim().toUpperCase();
 
+      // ⭐ 1-1) 수정 전 상태 읽기 (기존 상담이 있을 때만)
+      const beforeDetails = await conn.query(sql.getCounselDetailsByCounsel, [
+        counsel_code,
+      ]);
+      const beforePriorityRows = await conn.query(
+        sql.getCurrentPriorityBySubmit,
+        [submitCode]
+      );
+
+      const beforeMain = beforeDetails[0] || {};
+      const beforePriority = beforePriorityRows[0]?.level || null;
+
+      beforeRow = {
+        priority: beforePriority,
+        main_counsel_date: beforeMain.counsel_date || null,
+        main_title: beforeMain.title || "",
+        main_content: beforeMain.content || "",
+      };
+
       if (currentStatus === "CB1") {
-        // 🔥 임시저장(CB1) 상태에서 "작성 완료" → 실제 검토요청
         await conn.query(sql.updateCounselNote, [
           "CB3", // 임시 → 검토전
           now, // written_at
           counsel_code,
         ]);
-        needApprovalRequest = true; // 👉 이번에 처음 승인요청 생성
+        needApprovalRequest = true;
       } else if (currentStatus === "CB2") {
         await conn.query(sql.updateCounselNote, ["CB3", now, counsel_code]);
         needApprovalRequest = true;
       } else if (currentStatus === "CB4") {
-        // 🔥 반려 상태에서 재작성하는 경우:
-        //    - updateCounselNoteKeepStatus: status를 CB6 등으로 변경
-        //    - 승인요청 다시 넣어야 함
         await conn.query(sql.updateCounselNoteKeepStatus, [
           now, // written_at
-          counsel_code, // WHERE counsel_code = ?
+          counsel_code,
         ]);
-        needApprovalRequest = true; // 👉 재작성이므로 승인요청 다시 생성
+        needApprovalRequest = true;
       } else {
-        // ✅ 일반 수정:
-        //    - 기존 status 그대로 유지 (CB3면 CB3, CB5면 CB5 유지 등)
-        //    - 승인요청은 새로 만들지 않음
+        // ✅ 일반 수정
         await conn.query(sql.updateCounselNote, [
           currentStatus, // 기존 상태 그대로
           now, // written_at
           counsel_code,
         ]);
-        // needApprovalRequest = false 그대로 유지
       }
     }
 
@@ -153,8 +172,7 @@ async function saveCounsel(body, files = []) {
     await conn.query(sql.resetPriority, [submitCode]);
     await conn.query(sql.insertPriority, [submitCode, priority || "BB3", "Y"]);
 
-    // 5) 🔥 첨부파일 처리
-    // 5-1) 기존 첨부 중 "삭제 예정"으로 체크된 것만 삭제
+    // 5) 첨부파일 처리
     if (Array.isArray(removeAttachmentCodes) && removeAttachmentCodes.length) {
       for (const attachCode of removeAttachmentCodes) {
         if (attachCode == null) continue;
@@ -165,14 +183,13 @@ async function saveCounsel(body, files = []) {
       }
     }
 
-    // 5-2) 새로 업로드된 파일들 INSERT
     if (Array.isArray(files) && files.length > 0) {
-      const basePath = "/uploads/counsel"; // app.js에서 app.use("/uploads", ...) 주었던 경로 기준
+      const basePath = "/uploads/counsel";
 
       for (const f of files) {
         await conn.query(sql.insertAttachment, [
-          f.originalname, // 🔹 한글 그대로 저장
-          f.filename, // 서버 저장 파일명
+          f.originalname,
+          f.filename,
           basePath,
           "counsel_note",
           counsel_code,
@@ -180,7 +197,7 @@ async function saveCounsel(body, files = []) {
       }
     }
 
-    // 6) 🔥 승인요청은 "처음 작성" 또는 "임시저장 후 첫 제출", "반려 후 재작성"일 때만 생성
+    // 6) 승인요청 처리
     if (needApprovalRequest) {
       await conn.query(sql.insertRequestApproval, [
         2, // requester_code (담당자, 임시)
@@ -190,6 +207,37 @@ async function saveCounsel(body, files = []) {
         "counsel_note", // linked_table_name
         counsel_code, // linked_record_pk
       ]);
+    }
+
+    // ⭐ 7) 수정 후(after) 상태 읽고 history 기록 (기존 상담이 있던 경우에만)
+    if (exist.length > 0) {
+      const afterDetails = await conn.query(sql.getCounselDetailsByCounsel, [
+        counsel_code,
+      ]);
+      const afterPriorityRows = await conn.query(
+        sql.getCurrentPriorityBySubmit,
+        [submitCode]
+      );
+
+      const afterMain = afterDetails[0] || {};
+      const afterPriority = afterPriorityRows[0]?.level || null;
+
+      const afterRow = {
+        priority: afterPriority,
+        main_counsel_date: afterMain.counsel_date || null,
+        main_title: afterMain.title || "",
+        main_content: afterMain.content || "",
+      };
+
+      await logHistoryDiff(conn, {
+        tableName: "counsel_note",
+        tablePk: counsel_code,
+        modifier, // 프론트에서 body.modifier로 넘어온 user_code
+        historyType: "BD2", // ⭐ 상담 수정 타입 코드 (조사지 BD1, 상담 BD2, 계획 BD3, 결과 BD4 이런 식)
+        beforeRow,
+        afterRow,
+        fields: ["priority", "main_counsel_date", "main_title", "main_content"],
+      });
     }
 
     await conn.commit();
@@ -240,8 +288,10 @@ async function getCounselDetail(submitCode) {
 
     return safeJSON({
       submit_info: {
-        name: h.writer_name,
-        ssnFront: h.ssn_front,
+        childName: h.child_name,
+        guardianName: h.guardian_name,
+        assigneeName: h.assignee_name,
+        disabilityType: h.disability_type,
         submitAt: h.submit_at,
       },
       main: mainDetail
@@ -263,14 +313,12 @@ async function getCounselDetail(submitCode) {
       })),
       priority,
       status: h.status,
-
-      // 🔹 프론트에서 바로 쓰기 좋게 가공
       attachments: (attachRows || []).map((a) => ({
         attachCode: a.attach_code,
         originalFilename: decodeFilenameFromDb(a.original_filename),
         serverFilename: a.server_filename,
-        filePath: a.file_path, // 예: '/uploads/counsel'
-        url: `${a.file_path}/${a.server_filename}`, // 예: '/uploads/counsel/파일명_20251114.hwp'
+        filePath: a.file_path,
+        url: `${a.file_path}/${a.server_filename}`,
       })),
     });
   } finally {
