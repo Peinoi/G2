@@ -31,6 +31,7 @@
             id="title"
             placeholder="제목을 입력해주세요"
             class="at-input"
+            v-model="title"
           />
         </div>
       </div>
@@ -42,18 +43,83 @@
             id="content"
             placeholder="내용을 입력해주세요"
             class="at-textarea"
+            v-model="content"
           />
         </div>
       </div>
 
-      <div class="at-row">
+      <div class="at-row at-expenditure-header">
         <div class="at-field-group at-field-grow">
-          <label for="amount" class="at-label">사용 금액</label>
-          <material-input
-            id="amount"
-            placeholder="금액을 입력해주세요"
-            class="at-input"
-          />
+          <label class="at-label">후원금 사용 용도</label>
+        </div>
+        <div>
+          <material-button @click="addExpenditure" class="at-btn-add"
+            >추가</material-button
+          >
+        </div>
+      </div>
+
+      <div
+        v-for="item in expenditureList"
+        :key="item.id"
+        class="at-expenditure-item"
+      >
+        <div class="at-row at-expenditure-row">
+          <div class="at-field-group at-field-half">
+            <label :for="`usageItem-${item.id}`" class="at-label"
+              >사용 항목</label
+            >
+            <material-input
+              :id="`usageItem-${item.id}`"
+              placeholder="예: 물품 구매"
+              class="at-input"
+              v-model="item.usageItem"
+            />
+          </div>
+
+          <div class="at-field-group at-field-half">
+            <label :for="`recipient-${item.id}`" class="at-label">사용처</label>
+            <material-input
+              :id="`recipient-${item.id}`"
+              placeholder="예: A 보육원"
+              class="at-input"
+              v-model="item.recipient"
+            />
+          </div>
+        </div>
+
+        <div class="at-row at-expenditure-row">
+          <div class="at-field-group at-field-half">
+            <label :for="`amount-${item.id}`" class="at-label"
+              >지급 금액 (원)</label
+            >
+            <material-input
+              :id="`amount-${item.id}`"
+              placeholder="숫자만 입력"
+              class="at-input"
+              type="number"
+              v-model.number="item.amount"
+            />
+          </div>
+
+          <div class="at-field-group at-field-half at-date-field">
+            <label :for="`usedAt-${item.id}`" class="at-label">사용일</label>
+            <input
+              :id="`usedAt-${item.id}`"
+              class="at-select"
+              type="date"
+              v-model="item.usedAt"
+            />
+          </div>
+
+          <div class="at-delete-col">
+            <material-button
+              class="at-btn-delete"
+              @click="removeExpenditure(item.id)"
+            >
+              삭제
+            </material-button>
+          </div>
         </div>
       </div>
     </div>
@@ -66,17 +132,39 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import axios from "axios";
 import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
 import { ref, onBeforeMount, defineEmits } from "vue";
-let sponsorList = ref([]);
+
+// --- [데이터 정의] ---
+let sponsorList = ref([]); // 프로그램 목록
+const programCode = ref("");
+const title = ref("");
+const content = ref("");
+
+// 후원금 사용 내역을 담을 배열 (동적 항목)
+const expenditureList = ref([
+  // 초기 1개 항목
+  {
+    id: Date.now(),
+    usageItem: "",
+    recipient: "",
+    amount: null,
+    usedAt: "",
+  },
+]);
+
+// --- [로직 함수] ---
 const emit = defineEmits(["goToList"]);
 
+/**
+ * 프로그램 목록 API 호출
+ */
 const getSponsorList = async () => {
   let result = await axios.get(`/api/sponsor`).catch((err) => console.log(err));
-  // API 호출 실패 처리 추가 (이전 대화에서 논의된 부분)
   if (!result || !result.data) {
     console.log("조회 결과 데이터가 유효하지 않습니다.");
     sponsorList.value = [];
@@ -85,21 +173,68 @@ const getSponsorList = async () => {
   const res = result.data.serviceSponsor;
   let list = JSON.parse(JSON.stringify(res));
   sponsorList.value = list;
-  console.log(JSON.parse(JSON.stringify(sponsorList.value)));
 };
-onBeforeMount(() => {
-  getSponsorList();
-});
-defineExpose({
-  getSponsorList,
-});
+
+/**
+ * 새로운 후원금 사용 내역 항목을 추가합니다.
+ */
+const addExpenditure = () => {
+  expenditureList.value.push({
+    id: Date.now(),
+    usageItem: "",
+    recipient: "",
+    amount: null,
+    usedAt: "",
+  });
+};
+
+/**
+ * 특정 ID를 가진 후원금 사용 내역 항목을 삭제합니다.
+ */
+const removeExpenditure = (id) => {
+  // 항목이 하나만 남았을 때는 삭제를 방지합니다.
+  if (expenditureList.value.length === 1) {
+    alert("최소 하나의 사용 용도 항목은 유지해야 합니다.");
+    return;
+  }
+
+  expenditureList.value = expenditureList.value.filter(
+    (item) => item.id !== id
+  );
+};
+
+/**
+ * 목록 페이지로 이동합니다.
+ */
 const goList = () => {
   emit("goToList");
 };
+
+/**
+ * 활동 보고서를 제출합니다.
+ */
 const activityAdd = () => {
-  console.log("등록");
+  console.log("--- 등록 데이터 확인 ---");
+  console.log("프로그램 코드:", programCode.value);
+  console.log("제목:", title.value);
+  console.log("내용:", content.value);
+  console.log(
+    "후원금 사용 내역:",
+    JSON.parse(JSON.stringify(expenditureList.value))
+  );
+  // TODO: 여기에 등록 API 호출 로직을 구현합니다.
 };
+
+// --- [생명 주기 훅] ---
+onBeforeMount(() => {
+  getSponsorList();
+});
+
+defineExpose({
+  getSponsorList,
+});
 </script>
+
 <style scoped>
 /* AuthorityTransfer.vue의 스타일 테마를 기반으로 재구성 */
 
@@ -193,27 +328,8 @@ const activityAdd = () => {
   box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
 }
 
-/* MaterialButton이 아닌 일반 버튼처럼 보이도록 클래스 재정의 (컴포넌트 자체 스타일이 적용되므로, 여기서는 레이아웃만 조정) */
-/* .at-btn, .at-btn-primary 스타일은 MaterialButton이 레이아웃에 맞게 보이도록 유지합니다. */
-
-.at-btn {
-  /* MaterialButton의 크기와 모양을 AuthorityTransfer 테마에 맞춤 */
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 5px;
-  /* border, background, color 등은 MaterialButton의 스타일을 따름 */
-}
-
-.at-btn-primary {
-  /* MaterialButton의 primary 스타일이 AuthorityTransfer의 primary와 다르다면, 이 클래스를 이용해 오버라이드할 수 있습니다. */
-  /* 현재는 MaterialButton이 잘 적용된다고 가정하고 추가 스타일은 최소화 */
-}
-
+/* 액션 버튼 그룹 */
 .at-actions {
-  /* 버튼 그룹 컨테이너 스타일 */
   margin-top: 30px;
   padding-top: 20px;
   text-align: center;
@@ -221,6 +337,84 @@ const activityAdd = () => {
   display: flex;
   justify-content: center;
   gap: 10px; /* 버튼 간격 */
+}
+
+.at-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 5px;
+}
+
+/* --------------------- [추가된 스타일] --------------------- */
+
+/* '후원금 사용 용도' 헤더와 버튼 배치 */
+.at-expenditure-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* 수직 정렬 */
+  margin-top: 25px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e5e7eb; /* 구분을 위해 진한 선 */
+}
+
+/* 항목 추가 버튼 (색상 변경) */
+.at-btn-add {
+  background-color: #10b981; /* Green */
+  color: white;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 동적으로 생성되는 각 사용 내역 항목 컨테이너 */
+.at-expenditure-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.at-expenditure-row {
+  gap: 20px; /* 필드 간의 수평 간격 */
+  margin-bottom: 15px;
+  align-items: flex-end; /* 필드 높이 정렬 */
+}
+
+/* 2개의 필드가 한 줄에 들어가도록 너비 조정 */
+.at-field-half {
+  flex: 1; /* 남은 공간을 균등하게 분할 */
+  min-width: 40%; /* 최소 너비 설정 (모바일 대응) */
+}
+
+/* 삭제 버튼 컨테이너 (오른쪽 정렬) */
+.at-delete-col {
+  display: flex;
+  align-items: flex-end; /* 라벨과 입력 필드 높이에 맞춤 */
+  padding-left: 10px;
+}
+
+/* 삭제 버튼 스타일 */
+.at-btn-delete {
+  background-color: #ef4444; /* Red */
+  color: white;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap; /* 버튼 내용 줄바꿈 방지 */
+}
+
+/* 날짜 입력 필드 스타일 (일반 input[type=date]에 at-select 스타일 재사용) */
+.at-date-field input[type="date"] {
+  height: 38px; /* MaterialInput과 높이 맞추기 */
+  line-height: 38px;
+  /* at-select의 스타일을 상속받으면서 높이만 재조정 */
 }
 
 /* 모바일 대응 */
@@ -235,6 +429,24 @@ const activityAdd = () => {
   .at-actions .at-btn {
     width: 100%;
     margin: 0;
+  }
+
+  /* 동적 항목 모바일 대응 */
+  .at-expenditure-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .at-field-half {
+    min-width: 100%;
+  }
+  .at-delete-col {
+    /* 모바일에서 삭제 버튼을 항목의 가장 아래에 위치 */
+    padding-left: 0;
+    width: 100%;
+    margin-top: 10px;
+  }
+  .at-btn-delete {
+    width: 100%;
   }
 }
 </style>
