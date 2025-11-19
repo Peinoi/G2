@@ -91,7 +91,14 @@ const goToEventAdd = () => {
 };
 
 const goToEventInfo = (event_code) => {
-  router.push({ name: "EventInfo", query: { code: event_code } });
+  if (!event_code) {
+    console.warn("eventCode가 없습니다!");
+    return;
+  }
+  router.push({
+    name: "EventInfo",
+    params: { eventCode: event_code },
+  });
 };
 
 const events = ref([]);

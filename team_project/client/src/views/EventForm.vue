@@ -19,11 +19,16 @@
           </div>
           <div>
             <label>기관 코드</label>
-            <input type="text" v-model="eventInfo.org_code" required />
+            <input type="text" v-model="eventInfo.org_code" readonly />
           </div>
           <div>
             <label>메인 매니저 코드</label>
-            <input type="text" v-model="eventInfo.user_code" required />
+            <input
+              type="text"
+              v-model="eventInfo.user_code"
+              readonly
+              required
+            />
           </div>
           <div>
             <label>등록일</label>
@@ -207,6 +212,9 @@ import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
 import dateFormat from "@/utils/dateFormat";
 
+const user_code = JSON.parse(localStorage.getItem("user") || "{}").user_code;
+const org_code = JSON.parse(localStorage.getItem("user") || "{}").org_code;
+
 const route = useRoute();
 const router = useRouter();
 
@@ -223,8 +231,8 @@ const getNextDay = (dateString) => {
 
 const eventInfo = ref({
   event_code: "",
-  org_code: "",
-  user_code: "",
+  org_code: org_code,
+  user_code: user_code,
   event_type: "DD1",
   event_name: "",
   event_content: "",
@@ -237,7 +245,7 @@ const eventInfo = ref({
   event_start_date: "",
   event_end_date: "",
   recruit_status: "DC1",
-  register_status: "DE1",
+  register_status: "BA1", // 요청
   attachments: [],
   sub_managers: [],
 });

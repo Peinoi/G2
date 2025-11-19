@@ -1,106 +1,179 @@
 <template>
-  <div class="event-info">
-    <!-- 대표 이미지 -->
-    <div class="event-image">
-      <img
-        v-if="mainImage"
-        :src="mainImage"
-        alt="이벤트 이미지"
-        class="main-img"
-      />
-      <div v-else class="no-image">이미지 없음</div>
-    </div>
+  <section class="p-6 max-w-5xl mx-auto space-y-6">
+    <!-- 상단 액션라인 -->
+    <div class="flex justify-between items-center">
+      <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
+        ← 목록으로
+      </MaterialButton>
 
-    <!-- 기본 정보 -->
-    <div class="card">
-      <h3>기본 정보</h3>
-      <div class="info-grid">
-        <div><strong>이벤트명:</strong> {{ event.event_name }}</div>
-        <div><strong>기관명:</strong> {{ event.org_name }}</div>
-        <div><strong>매니저:</strong> {{ event.main_manager_name }}</div>
-        <div><strong>모집상태:</strong> {{ event.recruit_status_name }}</div>
-        <div><strong>최대 참여자:</strong> {{ event.max_participants }}</div>
-        <div><strong>장소:</strong> {{ event.event_location }}</div>
+      <div class="flex items-center gap-2">
+        <!-- 일반 사용자 신청 버튼 -->
+        <MaterialButton v-if="canApply" @click="applySimple"
+          >신청하기</MaterialButton
+        >
+
+        <MaterialButton v-else-if="applied" disabled>신청 완료</MaterialButton>
+
+        <!-- 작성자 버튼 -->
+        <MaterialButton v-if="canEdit" @click="goEdit">수정하기</MaterialButton>
+
+        <MaterialButton v-if="canReEdit" @click="goEdit"
+          >재수정하기</MaterialButton
+        >
+
+        <!-- 관리자 승인/반려 -->
+        <MaterialButton v-if="isAdmin" @click="handleApprove"
+          >승인</MaterialButton
+        >
+
+        <MaterialButton v-if="isAdmin" @click="handleReject"
+          >반려</MaterialButton
+        >
       </div>
     </div>
 
-    <!-- 기간 정보 -->
-    <div class="card">
-      <h3>기간</h3>
-      <div class="info-grid">
-        <div>
-          <strong>모집:</strong>
-          {{ formatDate(event.recruit_start_date) }} ~
-          {{ formatDate(event.recruit_end_date) }}
+    <!-- 이벤트 기본정보 카드 -->
+    <div class="detail-card space-y-4">
+      <header class="flex justify-between items-center">
+        <h2 class="text-2xl font-semibold">이벤트 상세</h2>
+        <span class="status-pill" :class="statusClass(event.register_status)">
+          {{ event.register_status_name }}
+        </span>
+      </header>
+
+      <div class="event-main-image">
+        <img v-if="mainImage" :src="mainImage" alt="대표 이미지" />
+        <div v-else class="no-image">이미지 없음</div>
+      </div>
+
+      <div class="meta-card">
+        <div class="meta-row">
+          <span>이벤트명</span><span>{{ event.event_name }}</span>
         </div>
-        <div>
-          <strong>진행:</strong>
-          {{ formatDate(event.event_start_date) }} ~
-          {{ formatDate(event.event_end_date) }}
+        <div class="meta-row">
+          <span>기관명</span><span>{{ event.org_name }}</span>
+        </div>
+        <div class="meta-row">
+          <span>매니저</span><span>{{ event.main_manager_name }}</span>
+        </div>
+        <div class="meta-row">
+          <span>장소</span><span>{{ event.event_location }}</span>
+        </div>
+        <div class="meta-row">
+          <span>최대 참여자</span><span>{{ event.max_participants }}</span>
         </div>
       </div>
-    </div>
 
-    <!-- 내용 -->
-    <div class="card">
-      <h3>내용</h3>
-      <p>{{ event.event_content }}</p>
-    </div>
+      <div class="block-card">
+        <div class="field-block">
+          <div class="field-label">모집 기간</div>
+          <div class="field-value">
+            {{ formatDate(event.recruit_start_date) }} ~
+            {{ formatDate(event.recruit_end_date) }}
+          </div>
+        </div>
+        <div class="field-block">
+          <div class="field-label">진행 기간</div>
+          <div class="field-value">
+            {{ formatDate(event.event_start_date) }} ~
+            {{ formatDate(event.event_end_date) }}
+          </div>
+        </div>
+      </div>
 
-    <!-- 예약제일 경우: 달력 표시 -->
-    <div
-      v-if="event.event_type === 'DD2' && event.sub_events.length"
-      class="card"
-    >
-      <h3>예약 가능한 일정</h3>
-      <FullCalendar ref="calendarRef" :options="calendarOptions" />
-    </div>
+      <div class="block-card">
+        <div class="field-block">
+          <div class="field-label">내용</div>
+          <div class="field-value whitespace-pre-line">
+            {{ event.event_content }}
+          </div>
+        </div>
+      </div>
 
-    <!-- 첨부파일 -->
-    <div v-if="event.attachments.length" class="card">
-      <h3>첨부파일</h3>
-      <ul>
-        <li v-for="file in event.attachments" :key="file.server_filename">
-          <a
-            :href="file.file_path"
-            :download="file.original_filename"
-            target="_blank"
-          >
-            {{ file.original_filename }}
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- 신청제일 경우: 하단 신청 버튼 -->
-    <div v-if="event.event_type === 'DD1'" class="apply-button-wrap">
-      <button v-if="!isApplied" class="apply-btn" @click="applySimple">
-        신청하기
-      </button>
-
-      <button
-        v-else
-        class="apply-btn"
-        disabled
-        style="background: gray; cursor: not-allowed"
+      <!-- 예약 일정 카드 -->
+      <div
+        v-if="event.event_type === 'DD2' && event.sub_events.length"
+        class="block-card"
       >
-        신청 완료
-      </button>
+        <div class="field-block">
+          <div class="field-label">예약 가능한 일정</div>
+          <FullCalendar ref="calendarRef" :options="calendarOptions" />
+        </div>
+      </div>
+
+      <!-- 첨부파일 카드 -->
+      <div v-if="event.attachments.length" class="block-card">
+        <div class="field-block">
+          <div class="field-label">첨부파일</div>
+          <ul class="file-list">
+            <li v-for="file in event.attachments" :key="file.server_filename">
+              <a :href="file.file_path" :download="file.original_filename">{{
+                file.original_filename
+              }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
-import { useRoute } from "vue-router";
+import { ref, onMounted, nextTick, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
-import dateFormat from "@/utils/dateFormat";
-
 import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 
+const route = useRoute();
+const router = useRouter();
+const calendarRef = ref(null);
+
+const eventCode = Number(route.params.eventCode || 0);
+const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
+
+const event = ref({
+  sub_events: [],
+  attachments: [],
+});
+
+const mainImage = ref("");
+const isApplied = ref(false);
+
+// 상태 버튼 표시
+const canApply = computed(
+  () => role.value === 1 && event.value.event_type === "DD1" && !isApplied.value
+);
+const applied = computed(() => role.value === 1 && isApplied.value);
+const canEdit = computed(
+  () => role.value === 2 && event.value.register_status === "BA2"
+);
+const canReEdit = computed(
+  () => role.value === 2 && event.value.register_status === "BA3"
+);
+
+const isAdmin = computed(() => role.value === 3);
+
+// 상태 Pill 클래스
+const statusClass = (status) => {
+  switch (status) {
+    case "BA1":
+      return "status-pill--before";
+    case "BA2":
+      return "status-pill--done";
+    case "BA3":
+      return "status-pill--rejected";
+    default:
+      return "";
+  }
+};
+
+// 날짜 포맷
+const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+
+// 로그인 유저 코드
 const getLoginUserCode = () => {
   const userStr = localStorage.getItem("user");
   if (!userStr) return null;
@@ -112,59 +185,30 @@ const getLoginUserCode = () => {
   }
 };
 
-const calendarRef = ref(null);
-
-const route = useRoute();
-const event = ref({
-  sub_events: [],
-  attachments: [],
-});
-
-const calendarOptions = ref({
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: "dayGridMonth",
-  events: [],
-  eventClick: (info) => onEventClick(info),
-});
-
-const formatDate = (d) => (d ? dateFormat(d, "yyyy-MM-dd") : "");
-
-// 대표 이미지
-const mainImage = ref("");
-
-const isApplied = ref(false);
-
+// 이벤트 조회
 const fetchEvent = async () => {
   try {
-    const code = route.query.code;
-    const userCode = getLoginUserCode(); // localStorage에서 로그인 유저 가져오기
-
-    const res = await axios.get(`/api/event/${code}`, {
+    const userCode = getLoginUserCode();
+    const res = await axios.get(`/api/event/${eventCode}`, {
       params: { user_code: userCode },
     });
-    event.value = res.data.data;
-
-    // 이미 신청했으면 버튼 비활성화
+    event.value = res.data.data || {};
     isApplied.value = !!event.value.alreadyApplied;
 
-    // 대표 이미지 설정
+    // 대표 이미지
     const img = event.value.attachments.find((x) =>
       /\.(jpg|jpeg|png|gif)$/i.test(x.original_filename)
     );
     mainImage.value = img ? img.file_path : "";
 
-    // 캘린더 이벤트 구성
-    calendarOptions.value.events = event.value.sub_events.map((s) => ({
+    // 캘린더 이벤트
+    calendarOptions.value.events = (event.value.sub_events || []).map((s) => ({
       id: String(s.sub_event_code),
       title: s.sub_event_name,
       start: s.sub_event_start_date,
       end: s.sub_event_end_date,
-      extendedProps: {
-        code: s.sub_event_code,
-        max: s.sub_recruit_count,
-        isApplied: !!s.applied,
-      },
-      color: s.applied ? "gray" : undefined, // 이미 신청한 일정은 회색표시
+      extendedProps: { code: s.sub_event_code, isApplied: !!s.applied },
+      color: s.applied ? "gray" : undefined,
     }));
 
     await nextTick();
@@ -173,13 +217,10 @@ const fetchEvent = async () => {
   }
 };
 
-// 신청 공통 함수 (신청제 / 예약제)
+// 단순 신청
 const applyEvent = async ({ sub_event_code = null }) => {
   const userCode = getLoginUserCode();
-  if (!userCode) {
-    alert("로그인 상태가 아닙니다.");
-    return false;
-  }
+  if (!userCode) return alert("로그인 상태가 아닙니다.");
 
   const res = await axios.post("/api/event/apply", {
     apply_type: event.value.event_type,
@@ -197,122 +238,171 @@ const applyEvent = async ({ sub_event_code = null }) => {
   }
 };
 
-// 신청제: 단순 신청하기
+// 신청 버튼
 const applySimple = async () => {
-  if (isApplied.value) {
-    alert("이미 신청한 일정입니다.");
-    return; // 이미 신청했으면 그냥 종료
-  }
-
+  if (isApplied.value) return alert("이미 신청한 일정입니다.");
   const ok = await applyEvent({});
-  if (!ok) return;
-
-  // 신청 성공 시 바로 버튼 상태 변경
-  isApplied.value = true;
+  if (ok) isApplied.value = true;
 };
 
-// 예약제: 캘린더 일정 클릭
+// 캘린더 클릭 예약
 const onEventClick = async (info) => {
-  if (info.event.extendedProps.isApplied) {
-    alert("이미 신청한 일정입니다.");
-    return;
-  }
+  if (info.event.extendedProps.isApplied)
+    return alert("이미 신청한 일정입니다.");
 
-  const formatDateTime = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    const yyyy = d.getFullYear();
-    const MM = d.getMonth() + 1;
-    const dd = d.getDate();
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${yyyy}년 ${MM}월 ${dd}일 ${hh}:${mm}`;
-  };
-
-  const startStr = formatDateTime(info.event.start);
-  const endStr = formatDateTime(info.event.end);
-
-  const ok = confirm(
-    `[일정: ${startStr} - ${endStr}, 제목: ${info.event.title}] 예약하시겠습니까?`
-  );
-  if (!ok) return;
+  const confirmApply = confirm(`일정 "${info.event.title}" 예약하시겠습니까?`);
+  if (!confirmApply) return;
 
   const success = await applyEvent({
     sub_event_code: info.event.extendedProps.code,
   });
-
   if (!success) return;
 
-  // ★ 1) FullCalendar UI 즉시 반영
+  // UI 업데이트
   info.event.setProp("color", "gray");
   info.event.setExtendedProp("isApplied", true);
 
-  // ★ 2) Vue 데이터에도 반영해줘야 화면 새로고침 없이 동일하게 유지됨
   const idx = event.value.sub_events.findIndex(
     (s) => s.sub_event_code === info.event.extendedProps.code
   );
+  if (idx !== -1) event.value.sub_events[idx].applied = true;
 
-  if (idx !== -1) {
-    event.value.sub_events[idx].applied = true;
-  }
-
-  // ★ 3) 캘린더 다시 렌더링 (진짜 중요)
   calendarRef.value.getApi().render();
 };
+
+// 승인/반려 (관리자)
+const handleApprove = async () => {
+  try {
+    const res = await axios.post(`/api/event/${eventCode}/approve`);
+    if (res.data.success) {
+      alert("승인되었습니다.");
+      await fetchEvent();
+    } else {
+      alert(res.data.message || "승인 실패");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("서버 오류: " + (err.message || ""));
+  }
+};
+
+const handleReject = async () => {
+  const reason = prompt("반려 사유를 입력해주세요:");
+  if (!reason) return;
+  try {
+    const res = await axios.post(`/api/event/${eventCode}/reject`, { reason });
+    if (res.data.success) {
+      alert("반려 처리되었습니다.");
+      await fetchEvent();
+    } else {
+      alert(res.data.message || "반려 실패");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("서버 오류: " + (err.message || ""));
+  }
+};
+
+// 화면 이동
+const goBack = () => router.push({ name: "EventList" });
+const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
+
+// FullCalendar 옵션
+const calendarOptions = ref({
+  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+  initialView: "dayGridMonth",
+  events: [],
+  eventClick: onEventClick,
+});
 
 onMounted(fetchEvent);
 </script>
 
 <style scoped>
-.event-info {
-  max-width: 900px;
-  margin: 20px auto;
-  font-family: Arial;
+/* 카드 공통 스타일 */
+.detail-card,
+.block-card,
+.meta-card {
+  background: #fff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+.block-card {
+  padding: 1rem;
+}
+.meta-card .meta-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.meta-card .meta-row span:first-child {
+  color: #6b7280;
+}
+.meta-card .meta-row span:last-child {
+  color: #111827;
 }
 
-.event-image {
-  width: 100%;
-  height: 250px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #eee;
-  margin-bottom: 20px;
+/* 상태 Pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
 }
-.main-img {
+.status-pill--before {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+.status-pill--done {
+  background: #111827;
+  color: #f9fafb;
+  border-color: #111827;
+}
+.status-pill--rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.status-pill--resubmit {
+  background: #fefce8;
+  color: #854d0e;
+  border-color: #fef3c7;
+}
+
+/* 이미지 영역 */
+.event-main-image {
   width: 100%;
-  height: 100%;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  margin-bottom: 1rem;
+}
+.event-main-image img {
+  max-width: 100%;
+  max-height: 100%;
   object-fit: cover;
 }
 
-.card {
-  background: #fff;
-  padding: 20px;
-  margin-bottom: 25px;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+/* 첨부파일 리스트 */
+.file-list {
+  margin-top: 0.5rem;
+  color: #374151;
+  font-size: 0.875rem;
+  list-style: none;
+  padding: 0;
 }
-
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 20px;
+.file-list li + li {
+  margin-top: 0.25rem;
 }
-
-.apply-button-wrap {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.apply-btn {
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 14px 26px;
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-}
-.apply-btn:hover {
-  background: #125ea8;
+.file-list a {
+  color: #2563eb;
+  text-decoration: underline;
 }
 </style>

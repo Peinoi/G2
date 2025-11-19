@@ -270,8 +270,8 @@ function changePage(nextPage) {
 // 각 행 클릭 시 이벤트 계획 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "event-plan-detail",
-    params: { planCode: item.event_code }, // SQL에서 e.event_code 로 내려줌
+    name: "EventInfo",
+    params: { eventCode: item.event_code }, // SQL에서 e.event_code 로 내려줌
     query: {
       role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },

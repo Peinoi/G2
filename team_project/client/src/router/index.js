@@ -400,7 +400,7 @@ const router = createRouter({
     },
     // 이벤트 상세 및 수정
     {
-      path: "/event/info",
+      path: "/event/info/:eventCode",
       name: "EventInfo",
       component: EventInfo,
     },

@@ -208,6 +208,26 @@ async function removeSubEvent(sub_event_code) {
   }
 }
 
+//승인
+async function approveEventPlan(eventCode) {
+  return await eventMapper.approveEventPlan(eventCode);
+}
+
+//반려
+async function rejectEventPlan(eventCode, reason) {
+  return await eventMapper.rejectEventPlan(eventCode, reason);
+}
+
+// 반려사유 조회
+async function getRejectionReason(eventCode) {
+  return await eventMapper.getRejectionReason(eventCode);
+}
+
+//재승인요청
+async function resubmitPlan(eventCode, requesterCode) {
+  return await eventMapper.resubmitPlan(eventCode, requesterCode);
+}
+
 module.exports = {
   getEventMainpage,
   getEventList,
@@ -225,4 +245,8 @@ module.exports = {
   getMyEventApplyList,
   cancelApply,
   getEventApplyResult,
+  approveEventPlan,
+  rejectEventPlan,
+  getRejectionReason,
+  resubmitPlan,
 };
