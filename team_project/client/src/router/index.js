@@ -21,11 +21,13 @@ import { sponsorMenu } from "@/config/menus";
 import { eventMenu } from "@/config/menus";
 import { surveyMenu } from "@/config/menus";
 import { spportMenu } from "@/config/menus";
+import { counselMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
 import { historyMenu } from "@/config/menus";
 import { infoMenu } from "@/config/menus";
 import SponsorDetail from "@/components/Sponsor/Common/SponsorDetail.vue";
 import PaymentPage from "@/components/Sponsor/User/PaymentPage.vue";
+import { appStatusMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
 import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
 import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
@@ -485,6 +487,15 @@ router.beforeEach((to, from, next) => {
   // 히스토리 그룹
   const historyPages = ["HistoryList"];
 
+  // 신청현황 그룹
+  const appStatusPages = ["ApplicationStatus"];
+
+  // 신청현황 그룹 라우트일 경우 자동 메뉴 설정
+  if (appStatusPages.includes(to.name)) {
+    menu.setPageTitle("신청현황");
+    menu.setMenu(appStatusMenu);
+  }
+
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
     menu.setPageTitle("후원 관리자 페이지");
@@ -498,7 +509,16 @@ router.beforeEach((to, from, next) => {
   }
 
   // 조사지 그룹
-  const serveyPages = ["surveyVersion", "surveyList"];
+  const serveyPages = [
+    "surveyVersion",
+    "survey-new",
+    "survey-write",
+    "survey-edit",
+    "surveyList",
+    "surveySubmissionDetail",
+    "surveySubmissionEdit",
+    "survey-detail-by-ver",
+  ];
 
   // 조사지 그룹 라우트일 경우 자동 메뉴 설정
   if (serveyPages.includes(to.name)) {
@@ -506,8 +526,31 @@ router.beforeEach((to, from, next) => {
     menu.setMenu(surveyMenu);
   }
 
+  // 상담 그룹
+  const counselPages = [
+    "counselList",
+    "counsel-new",
+    "counsel-edit",
+    "counsel-detail",
+  ];
+
+  // 상담 그룹 라우트일 경우 자동 메뉴 설정
+  if (counselPages.includes(to.name)) {
+    menu.setPageTitle("상담 페이지");
+    menu.setMenu(counselMenu);
+  }
+
   // 지원 그룹
-  const spportPages = ["planList", "resultList"];
+  const spportPages = [
+    "planList",
+    "plan-write",
+    "plan-edit",
+    "planDetail",
+    "resultList",
+    "result-write",
+    "result-edit",
+    "resultDetail",
+  ];
 
   // 지원 그룹 라우트일 경우 자동 메뉴 설정
   if (spportPages.includes(to.name)) {

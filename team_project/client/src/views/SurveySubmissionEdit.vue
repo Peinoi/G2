@@ -4,12 +4,6 @@
     <header class="mb-4 flex items-center justify-between header-row">
       <div>
         <h2 class="text-2xl font-semibold">제출본 수정</h2>
-        <p class="text-gray-500 text-sm mt-1">
-          제출번호 {{ submitCode }} • 템플릿 {{ submission?.template_code }} ({{
-            submission?.version_no
-          }}
-          / {{ submission?.version_detail_no }})
-        </p>
       </div>
       <MaterialButton color="dark" size="sm" @click="goBack">
         ← 상세로
@@ -167,6 +161,9 @@ const route = useRoute();
 const router = useRouter();
 const submitCode = route.params.submitCode;
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 // 쿼리로 넘어온 현재 사용자/역할 (로그인 없이 테스트용)
 const role = computed(() => Number(route.query.role || 1));
 const userId = computed(() => Number(route.query.userId || 1));
@@ -269,7 +266,10 @@ async function save() {
       return;
     }
 
-    const payload = { answers: answers.value, updated_by: userId.value };
+    const payload = {
+      answers: answers.value,
+      modifier,
+    };
     const res = await axios.put(
       `/api/survey/submission/${submitCode}`,
       payload

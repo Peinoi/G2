@@ -1,3 +1,5 @@
+// team_project/server/mappers/approvalMapper.js
+
 const pool = require("../configs/db.js");
 const approvalSQL = require("../sql/approvalSQL");
 
@@ -46,7 +48,9 @@ async function managerApprovalList({ state, keyword, page, size }) {
   }
 }
 
-/** ✅ 승인/반려 공통 업데이트 + 승인 시 사용자 활성화(is_active=1) */
+/** ✅ 승인/반려 공통 업데이트 + 승인 시 사용자 활성화(is_active=1)
+ *  + 회원가입 반려 시 히스토리 복사 후 users 삭제
+ */
 async function updateApprovalState({ approvalCode, nextState }) {
   const conn = await pool.getConnection();
   try {
@@ -69,15 +73,68 @@ async function updateApprovalState({ approvalCode, nextState }) {
       result.affectedRows
     );
 
-    // ✅ 승인(BA2)일 때만 사용자 계정 활성화
-    if (nextState === "BA2" && result.affectedRows > 0) {
-      console.log(
-        "[approvalMapper] activateUserByApproval SQL:",
-        approvalSQL.activateUserByApproval,
-        "params:",
-        [approvalCode]
-      );
-      await conn.query(approvalSQL.activateUserByApproval, [approvalCode]);
+    // 변경된 행이 없으면 추가 작업 없이 커밋만
+    if (result.affectedRows > 0) {
+      // ✅ 승인(BA2)일 때만 사용자 계정 활성화
+      if (nextState === "BA2") {
+        console.log(
+          "[approvalMapper] activateUserByApproval SQL:",
+          approvalSQL.activateUserByApproval,
+          "params:",
+          [approvalCode]
+        );
+        await conn.query(approvalSQL.activateUserByApproval, [approvalCode]);
+      }
+
+      // ✅ 반려(BA3)일 때: 회원가입(AE1/AE2)인 경우 히스토리 + FK 끊고 + user 삭제
+      if (nextState === "BA3") {
+        // 1) 히스토리 복사
+        console.log(
+          "[approvalMapper] insertSignupRejectHistory SQL:",
+          approvalSQL.insertSignupRejectHistory,
+          "params:",
+          [approvalCode]
+        );
+        await conn.query(approvalSQL.insertSignupRejectHistory, [approvalCode]);
+
+        // 2) approvalCode로 user_code 조회
+        const retUser = await conn.query(approvalSQL.findUserCodeByApproval, [
+          approvalCode,
+        ]);
+        const userRows = rowsFrom(retUser);
+        const userCode = userRows[0]?.user_code;
+
+        console.log(
+          "[approvalMapper] findUserCodeByApproval result userCode:",
+          userCode
+        );
+
+        if (userCode) {
+          // 3) FK 끊기: request_approval.requester_code = NULL
+          console.log(
+            "[approvalMapper] clearRequesterCodeByApproval SQL:",
+            approvalSQL.clearRequesterCodeByApproval,
+            "params:",
+            [approvalCode]
+          );
+          await conn.query(approvalSQL.clearRequesterCodeByApproval, [
+            approvalCode,
+          ]);
+
+          // 4) users 삭제
+          console.log(
+            "[approvalMapper] deleteUserByApproval SQL:",
+            approvalSQL.deleteUserByApproval,
+            "params:",
+            [userCode]
+          );
+          await conn.query(approvalSQL.deleteUserByApproval, [userCode]);
+        } else {
+          console.log(
+            "[approvalMapper] findUserCodeByApproval: no user_code found, skip delete"
+          );
+        }
+      }
     }
 
     await conn.commit();
@@ -167,38 +224,55 @@ async function staffApprovalList({
   }
 }
 
-/** ✅ 기관 담당자 승인/반려 공통 업데이트 (BA2 / BA3) + 승인 시 사용자 활성화 */
+/** AE2 (기관 담당자 승인/반려) 업데이트 */
 async function updateApprovalStateForStaff({ approvalCode, nextState }) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const params = [nextState, approvalCode];
-
-    console.log(
-      "[approvalMapper] updateApprovalStateForStaff SQL:",
-      approvalSQL.updateApprovalState,
-      "params:",
-      params
-    );
-
-    const ret = await conn.query(approvalSQL.updateApprovalState, params);
+    const ret = await conn.query(approvalSQL.updateApprovalState, [
+      nextState,
+      approvalCode,
+    ]);
     const result = ret[0] || ret;
 
-    console.log(
-      "[approvalMapper] updateApprovalStateForStaff result:",
-      result.affectedRows
-    );
+    if (result.affectedRows > 0) {
+      // 승인 → 활성화
+      if (nextState === "BA2") {
+        await conn.query(approvalSQL.activateUserByApproval, [approvalCode]);
+      }
 
-    // ✅ 승인(BA2)일 때만 사용자 계정 활성화
-    if (nextState === "BA2" && result.affectedRows > 0) {
-      console.log(
-        "[approvalMapper] activateUserByApproval SQL:",
-        approvalSQL.activateUserByApproval,
-        "params:",
-        [approvalCode]
-      );
-      await conn.query(approvalSQL.activateUserByApproval, [approvalCode]);
+      // 반려 → AE1/AE2 (회원가입/기관담당자 가입) 이면 히스토리 + FK 끊고 + 유저 삭제
+      if (nextState === "BA3") {
+        // 1) 히스토리 복사
+        await conn.query(approvalSQL.insertSignupRejectHistory, [approvalCode]);
+
+        // 2) approvalCode 로 user_code 조회
+        const retUser = await conn.query(approvalSQL.findUserCodeByApproval, [
+          approvalCode,
+        ]);
+        const userRows = rowsFrom(retUser);
+        const userCode = userRows[0]?.user_code;
+
+        console.log(
+          "[approvalMapper][staff] findUserCodeByApproval userCode:",
+          userCode
+        );
+
+        if (userCode) {
+          // 3) FK 끊기
+          await conn.query(approvalSQL.clearRequesterCodeByApproval, [
+            approvalCode,
+          ]);
+
+          // 4) users 삭제
+          await conn.query(approvalSQL.deleteUserByApproval, [userCode]);
+        } else {
+          console.log(
+            "[approvalMapper][staff] no user_code found, skip delete"
+          );
+        }
+      }
     }
 
     await conn.commit();

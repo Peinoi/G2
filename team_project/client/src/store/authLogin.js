@@ -6,8 +6,9 @@ import { login as loginApi } from "../api/user";
 export const useAuthStore = defineStore("authLogin", {
   state: () => ({
     userId: "",
-    role: "",
+    role: "AA0",
     userCode: "",
+    orgCode: "",
     isLogin: false,
   }),
   getters: {
@@ -26,6 +27,10 @@ export const useAuthStore = defineStore("authLogin", {
       // -> 새로고침해도 로그인 유지됨
       const loginCheck = localStorage.getItem("user");
       if (!loginCheck) {
+        this.userId = "";
+        this.userCode = "";
+        this.role = "AA0";
+        this.isLogin = false;
         return;
       }
 
@@ -34,16 +39,21 @@ export const useAuthStore = defineStore("authLogin", {
         this.userId = loginData.user_id;
         this.role = loginData.role;
         this.userCode = loginData.user_code;
+        this.orgCode = loginData.org_code;
         this.isLogin = true;
       } catch (err) {
         console.error("[ pinia reload 오류 ] : ", err);
+        // 오류나도 게스트로
+        this.userId = "";
+        this.userCode = "";
+        this.role = "AA0";
+        this.isLogin = false;
       }
     },
 
     // 로그인
     async login({ userId, userPw }) {
       const result = await loginApi({ userId, userPw });
-
       // 아이디, 패스워드 오기입 시 false가 되어 SignIn.vue에서 에러 발생시킴
       if (!result.ok) {
         throw new Error(result.message);
@@ -52,6 +62,7 @@ export const useAuthStore = defineStore("authLogin", {
       this.userId = result.user_id;
       this.role = result.role;
       this.userCode = result.user_code;
+      this.orgCode = result.org_code;
       this.isLogin = true;
 
       localStorage.setItem(
@@ -60,6 +71,7 @@ export const useAuthStore = defineStore("authLogin", {
           userId: result.user_id,
           role: result.role,
           userCode: result.user_code,
+          orgCode: result.org_code,
         })
       );
       return result;
@@ -68,8 +80,9 @@ export const useAuthStore = defineStore("authLogin", {
     // 로그아웃
     logout() {
       this.userId = "";
-      this.role = "";
+      this.role = "AA0";
       this.userCode = "";
+      this.orgCode = "";
       this.isLogin = false;
       localStorage.removeItem("user");
     },

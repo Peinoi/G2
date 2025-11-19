@@ -24,43 +24,67 @@
       </p>
       <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-      <!-- 기본정보 카드 -->
-      <div class="meta-card space-y-3">
-        <div class="grid grid-cols-2 text-sm gap-2">
-          <div>
-            이름: <strong>{{ submitInfo.name || "-" }}</strong>
-          </div>
-          <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
-        </div>
-
-        <div class="meta-bottom">
-          <!-- 계획서 제출일 버튼 -->
-          <MaterialButton color="dark" size="sm" @click="openPlanDetail">
-            계획서 제출일: {{ formattedPlanWrittenAt }}
-          </MaterialButton>
-
-          <!-- 결과 작성일 (오늘 날짜 표시) -->
-          <label class="flex items-center gap-2 text-sm">
-            결과 작성일:
-            <span class="px-2 py-1 border rounded bg-white">
-              {{ mainForm.resultDate }}
+      <!-- ✅ 기본정보 카드 (그리드) -->
+      <div class="meta-card">
+        <div class="meta-grid">
+          <!-- 1. 지원자 -->
+          <div class="meta-item">
+            <span class="meta-label">지원자</span>
+            <span class="meta-value">
+              {{ submitInfo.childName || "본인" }}
             </span>
-          </label>
+          </div>
 
-          <!-- 실제 진행기간: YYYY-MM ~ YYYY-MM -->
-          <div class="flex items-center gap-2 text-sm">
-            <span>실제 진행기간:</span>
-            <input
-              type="month"
-              v-model="mainForm.actualStart"
-              class="input h-8"
-            />
-            <span>~</span>
-            <input
-              type="month"
-              v-model="mainForm.actualEnd"
-              class="input h-8"
-            />
+          <!-- 2. 보호자 -->
+          <div class="meta-item">
+            <span class="meta-label">보호자</span>
+            <span class="meta-value">
+              {{ submitInfo.guardianName || "-" }}
+            </span>
+          </div>
+
+          <!-- 3. 담당자 -->
+          <div class="meta-item">
+            <span class="meta-label">담당자</span>
+            <span class="meta-value">
+              {{ submitInfo.assigneeName || "-" }}
+            </span>
+          </div>
+
+          <!-- 4. 장애유형 -->
+          <div class="meta-item">
+            <span class="meta-label">장애유형</span>
+            <span class="meta-value">
+              {{ submitInfo.disabilityType || "-" }}
+            </span>
+          </div>
+
+          <!-- 5. 계획작성일 (계획서 작성/제출일) -->
+          <div class="meta-item">
+            <span class="meta-label">계획작성일</span>
+            <span class="meta-value">
+              <MaterialButton color="dark" size="sm" @click="openPlanDetail">
+                {{ formattedPlanWrittenAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <!-- 6. 실제 진행기간 -->
+          <div class="meta-item">
+            <span class="meta-label">실제 진행기간</span>
+            <span class="meta-value period-value">
+              <input
+                type="month"
+                v-model="mainForm.actualStart"
+                class="input input-month"
+              />
+              <span class="mx-1">~</span>
+              <input
+                type="month"
+                v-model="mainForm.actualEnd"
+                class="input input-month"
+              />
+            </span>
           </div>
         </div>
       </div>
@@ -277,10 +301,12 @@ const router = useRouter();
 
 const submitCode = Number(route.params.submitcode || 0);
 
-// 기본 정보
+// ✅ 기본 정보 (상세 화면과 동일한 필드 구조)
 const submitInfo = ref({
-  name: "",
-  ssnFront: "",
+  childName: "",
+  guardianName: "",
+  assigneeName: "",
+  disabilityType: "",
   planSubmitAt: "",
 });
 
@@ -320,7 +346,7 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
-// 기본정보 로딩 (이름/생년월일/계획서 제출일 등)
+// ✅ 기본정보 로딩 (지원자/보호자/담당자/장애유형/계획작성일)
 async function loadData() {
   loading.value = true;
   error.value = "";
@@ -336,8 +362,10 @@ async function loadData() {
     const res = data.result;
 
     submitInfo.value = {
-      name: res.name || "",
-      ssnFront: (res.ssnFront || "").slice(0, 6),
+      childName: res.childName || "",
+      guardianName: res.guardianName || "",
+      assigneeName: res.assigneeName || "",
+      disabilityType: res.disabilityType || "",
       planSubmitAt: res.planSubmitAt || "",
     };
 
@@ -610,12 +638,37 @@ section {
   font-size: 0.85rem;
 }
 
+/* 결과 작성일 줄 */
 .meta-bottom {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 1.1rem;
-  margin-top: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+/* ===== 기본정보 그리드 ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
 }
 
 /* 메인 카드 (지원결과 내용) */
@@ -666,16 +719,15 @@ section {
   flex: 0 1 auto;
   min-width: 0;
   font-size: 0.8rem;
-  color: #374151; /* 무채색 회색 */
-  text-decoration: none; /* 기본 밑줄 제거 */
+  color: #374151;
+  text-decoration: none;
   text-underline-offset: 2px;
   word-break: break-all;
 }
 
-/* 호버 시 티 나게 */
 .file-link:hover {
   text-decoration: underline;
-  color: #111827; /* 조금 더 진한 회색 */
+  color: #111827;
 }
 
 /* 작은 칩 버튼 */
@@ -740,5 +792,18 @@ textarea {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+/* 기간 인풋 정렬 */
+.period-value {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.input-month {
+  width: 95px;
+  min-width: 80px;
+  max-width: 110px;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.75rem;
 }
 </style>

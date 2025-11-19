@@ -23,27 +23,65 @@
       <!-- 본문 -->
       <template v-else>
         <!-- 기본정보 카드 -->
-        <div class="meta-card space-y-3">
-          <div class="grid grid-cols-2 text-sm gap-2">
-            <div>
-              이름: <strong>{{ submitInfo.name }}</strong>
+        <div class="meta-card">
+          <div class="meta-grid">
+            <!-- 1. 지원자 -->
+            <div class="meta-item">
+              <span class="meta-label">지원자</span>
+              <span class="meta-value">
+                {{ submitInfo.childName || "본인" }}
+              </span>
             </div>
-            <div>생년월일: {{ submitInfo.ssnFront }}</div>
-          </div>
 
-          <div class="meta-bottom">
-            <MaterialButton
-              color="dark"
-              size="sm"
-              @click="openSubmissionDetail"
-            >
-              조사지 제출일: {{ formattedSubmitAt }}
-            </MaterialButton>
+            <!-- 2. 보호자 -->
+            <div class="meta-item">
+              <span class="meta-label">보호자</span>
+              <span class="meta-value">
+                {{ submitInfo.guardianName || "-" }}
+              </span>
+            </div>
 
-            <label class="flex items-center gap-2 text-sm">
-              상담일:
-              <input type="date" v-model="mainForm.counselDate" class="input" />
-            </label>
+            <!-- 3. 담당자 -->
+            <div class="meta-item">
+              <span class="meta-label">담당자</span>
+              <span class="meta-value">
+                {{ submitInfo.assigneeName || "-" }}
+              </span>
+            </div>
+
+            <!-- 4. 장애유형 -->
+            <div class="meta-item">
+              <span class="meta-label">장애유형</span>
+              <span class="meta-value">
+                {{ submitInfo.disabilityType || "-" }}
+              </span>
+            </div>
+
+            <!-- 5. 조사지 제출일 -->
+            <div class="meta-item">
+              <span class="meta-label">조사지 제출일</span>
+              <span class="meta-value">
+                <MaterialButton
+                  color="dark"
+                  size="sm"
+                  @click="openSubmissionDetail"
+                >
+                  {{ formattedSubmitAt }}
+                </MaterialButton>
+              </span>
+            </div>
+
+            <!-- 6. 상담일 -->
+            <div class="meta-item">
+              <span class="meta-label">상담일</span>
+              <span class="meta-value">
+                <input
+                  type="date"
+                  v-model="mainForm.counselDate"
+                  class="input"
+                />
+              </span>
+            </div>
           </div>
         </div>
 
@@ -259,6 +297,9 @@ const route = useRoute();
 const router = useRouter();
 const submitCode = Number(route.params.submitCode);
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 const loading = ref(false);
 const error = ref("");
 
@@ -428,6 +469,7 @@ async function submitAll() {
       mainForm: mainForm.value,
       records: records.value,
       removeAttachmentCodes: removedAttachmentCodes.value,
+      modifier,
     };
 
     const formData = new FormData();
@@ -575,5 +617,29 @@ section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* ===== 기본정보 그리드 ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
 }
 </style>

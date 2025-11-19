@@ -53,7 +53,7 @@
           <div class="org-sub">
             {{ org.address }} · {{ org.phone }} ·
             {{ fmtDate(org.startDate) }} 시작 ·
-            {{ org.endDate ? fmtDate(org.endDate) : '-' }} 종료
+            {{ org.endDate ? fmtDate(org.endDate) : "-" }} 종료
           </div>
         </div>
 
@@ -90,17 +90,27 @@
             />
 
             <label>주소</label>
-            <input
-              class="org-input"
-              v-model.trim="form.address"
-              placeholder="주소"
-            />
+            <div style="display: flex; gap: 6px">
+              <input
+                class="org-input"
+                v-model="form.address"
+                placeholder="주소"
+                style="flex: 1"
+              />
+              <button
+                class="org-btn org-btn-primary"
+                @click="openPostcode('edit')"
+              >
+                찾기
+              </button>
+            </div>
 
             <label>연락처</label>
             <input
               class="org-input"
-              v-model.trim="form.phone"
+              v-model="form.phone"
               placeholder="연락처"
+              @input="onEditPhoneInput"
             />
 
             <label>시작일자</label>
@@ -142,17 +152,27 @@
             />
 
             <label>주소</label>
-            <input
-              class="org-input"
-              v-model.trim="addForm.address"
-              placeholder="주소"
-            />
+            <div style="display: flex; gap: 6px">
+              <input
+                class="org-input"
+                v-model="addForm.address"
+                placeholder="주소"
+                style="flex: 1"
+              />
+              <button
+                class="org-btn org-btn-primary"
+                @click="openPostcode('add')"
+              >
+                찾기
+              </button>
+            </div>
 
             <label>연락처</label>
             <input
               class="org-input"
-              v-model.trim="addForm.phone"
+              v-model="addForm.phone"
               placeholder="연락처"
+              @input="onAddPhoneInput"
             />
 
             <label>시작일자</label>
@@ -202,65 +222,129 @@ onMounted(() => {
 
 // DB/서버에서 온 어떤 날짜든 input[type=date]에 맞게 'YYYY-MM-DD'로 변환
 function toDateInput(val) {
-  if (!val) return '';
-  if (typeof val === 'string') {
-    const s = val.replace(/\./g, '-');
+  if (!val) return "";
+  if (typeof val === "string") {
+    const s = val.replace(/\./g, "-");
     if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   }
   const d = new Date(val);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) return "";
   const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
 
 /* ===== 상태 ===== */
-const searchType = ref('name');
-const keyword = ref('');
-const sortType = ref('recent');
-const statusType = ref('ALL');
+const searchType = ref("name");
+const keyword = ref("");
+const sortType = ref("recent");
+const statusType = ref("ALL");
 const list = ref([]);
 
 /* 상태 메타 정보 */
 const STATUS_META = {
-  AB1: { label: '운영중', class: 'org-badge-green' },
-  AB2: { label: '임시중단', class: 'org-badge-yellow' }, // 새로 하나 만들자
-  AB3: { label: '종료', class: 'org-badge-gray' },
+  AB1: { label: "운영중", class: "org-badge-green" },
+  AB2: { label: "임시중단", class: "org-badge-yellow" }, // 새로 하나 만들자
+  AB3: { label: "종료", class: "org-badge-gray" },
 };
 
 function getStatusMeta(code) {
-  return STATUS_META[code] || { label: '-', class: 'org-badge-gray' };
+  return STATUS_META[code] || { label: "-", class: "org-badge-gray" };
 }
 
 /* 모달 상태 */
 const isModalOpen = ref(false);
 const form = ref({
-  code: '',
-  name: '',
-  address: '',
-  phone: '',
-  startDate: '',
-  endDate: '',
-  status: 'AB1',
+  code: "",
+  name: "",
+  address: "",
+  phone: "",
+  startDate: "",
+  endDate: "",
+  status: "AB1",
 });
 
-let editingCode = '';
+let editingCode = "";
+
+function openPostcode(target) {
+  // 혹시 스크립트 안 불려왔을 때 방어 코드
+  if (!window.daum || !window.daum.Postcode) {
+    alert("주소 검색 서비스를 불러오지 못했습니다.");
+    return;
+  }
+
+  new window.daum.Postcode({
+    oncomplete: (data) => {
+      const fullAddress = data.address; // 기본 주소
+      // const zonecode = data.zonecode; // 필요하면 사용
+
+      if (target === "add") {
+        addForm.value.address = fullAddress;
+      } else if (target === "edit") {
+        form.value.address = fullAddress;
+      }
+    },
+  }).open();
+}
+
+// ★ 프론트용 전화번호 포맷 (입력창에 보여줄 용도)
+function formatPhoneForView(raw) {
+  if (!raw) return "";
+  const digits = String(raw).replace(/\D/g, ""); // 숫자만 남기기
+  if (!digits) return "";
+
+  // 1) 02로 시작하는 경우 (서울)
+  if (digits.startsWith("02")) {
+    if (digits.length <= 2) return digits; // "02"
+    if (digits.length <= 5)
+      // 02-XXX
+      return digits.replace(/(\d{2})(\d{0,3})/, "$1-$2");
+    if (digits.length <= 9)
+      // 02-XXX-XXXX
+      return digits.replace(/(\d{2})(\d{3})(\d{0,4})/, "$1-$2-$3");
+    // 그 이상은 잘려서 들어왔다고 보고
+    return digits.slice(0, 10).replace(/(\d{2})(\d{4})(\d{4})/, "$1-$2-$3");
+  }
+
+  // 2) 그 외 (010, 053, 031 등)
+  if (digits.length <= 3) return digits; // 010, 053 ...
+  if (digits.length <= 7)
+    // 000-XXXX
+    return digits.replace(/(\d{3})(\d{0,4})/, "$1-$2");
+  if (digits.length <= 11)
+    // 000-XXXX-XXXX 또는 000-XXX-XXXX
+    return digits.replace(/(\d{3})(\d{3,4})(\d{0,4})/, "$1-$2-$3");
+
+  // 너무 길면 잘라서
+  const cut = digits.slice(0, 11);
+  return cut.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+}
+
+// ★ 수정 모달: 전화번호 입력 이벤트 핸들러
+function onEditPhoneInput(e) {
+  form.value.phone = formatPhoneForView(e.target.value);
+}
+
+// ★ 추가 모달: 전화번호 입력 이벤트 핸들러
+function onAddPhoneInput(e) {
+  addForm.value.phone = formatPhoneForView(e.target.value);
+}
 
 /* ===== 유틸 ===== */
 function fmtDate(d) {
-  if (!d) return '-';
+  if (!d) return "-";
   const date = new Date(d);
-  if (isNaN(date.getTime())) return '-';
+  if (isNaN(date.getTime())) return "-";
   const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 }
 
 /* ===== 데이터 로드 ===== */
 async function load() {
-  const res = await axios.get('/api/organization');
+  const res = await axios.get("/api/organization");
   const rows = Array.isArray(res.data?.data) ? res.data.data : [];
   list.value = rows.map((r) => ({
     id: r.org_code,
@@ -279,12 +363,12 @@ function openEdit(org) {
   editingCode = org.code;
   form.value = {
     code: org.code,
-    name: org.name ?? '',
-    address: org.address ?? '',
-    phone: org.phone ?? '',
-    startDate: org.startDate ?? '',
-    endDate: org.endDate ?? '',
-    status: org.status ?? 'RUNNING',
+    name: org.name ?? "",
+    address: org.address ?? "",
+    phone: org.phone ?? "",
+    startDate: org.startDate ?? "",
+    endDate: org.endDate ?? "",
+    status: org.status ?? "RUNNING",
   };
   isModalOpen.value = true;
 }
@@ -295,9 +379,9 @@ function closeModal() {
 
 // 저장(업데이트) 시 날짜 포함해서 전달
 async function onModalSave() {
-  if (!form.value.name.trim()) return alert('기관명을 입력하세요.');
-  if (!['AB1', 'AB2', 'AB3'].includes(form.value.status))
-    return alert('운영여부가 올바르지 않습니다.');
+  if (!form.value.name.trim()) return alert("기관명을 입력하세요.");
+  if (!["AB1", "AB2", "AB3"].includes(form.value.status))
+    return alert("운영여부가 올바르지 않습니다.");
 
   const payload = {
     org_name: form.value.name,
@@ -338,22 +422,22 @@ async function remove(org) {
 /* 추가 모달 상태 */
 const isAddOpen = ref(false);
 const addForm = ref({
-  name: '',
-  address: '',
-  phone: '',
-  startDate: '',
-  endDate: '',
-  status: 'AB1',
+  name: "",
+  address: "",
+  phone: "",
+  startDate: "",
+  endDate: "",
+  status: "AB1",
 });
 
 function openAdd() {
   addForm.value = {
-    name: '',
-    address: '',
-    phone: '',
-    startDate: '',
-    endDate: '',
-    status: 'AB1',
+    name: "",
+    address: "",
+    phone: "",
+    startDate: "",
+    endDate: "",
+    status: "AB1",
   };
   isAddOpen.value = true;
 }
@@ -363,9 +447,9 @@ function closeAdd() {
 
 // 추가 저장
 async function onAddSave() {
-  if (!addForm.value.name.trim()) return alert('기관명을 입력하세요.');
-  if (!['AB1', 'AB2', 'AB3'].includes(addForm.value.status))
-    return alert('운영여부가 올바르지 않습니다.');
+  if (!addForm.value.name.trim()) return alert("기관명을 입력하세요.");
+  if (!["AB1", "AB2", "AB3"].includes(addForm.value.status))
+    return alert("운영여부가 올바르지 않습니다.");
 
   const payload = {
     org_name: addForm.value.name,
@@ -376,7 +460,7 @@ async function onAddSave() {
     status: addForm.value.status,
   };
 
-  await axios.post('/api/organization', payload);
+  await axios.post("/api/organization", payload);
   await load();
   closeAdd();
 }
@@ -388,7 +472,7 @@ function onSearch() {}
 const filtered = computed(() => {
   let data = [...list.value];
 
-  if (statusType.value !== 'ALL') {
+  if (statusType.value !== "ALL") {
     data = data.filter((d) => d.status === statusType.value);
   }
 
@@ -396,27 +480,27 @@ const filtered = computed(() => {
   if (kw) {
     data = data.filter((d) => {
       const map = {
-        name: d.name ?? '',
-        code: d.code ?? '',
-        address: d.address ?? '',
-        phone: d.phone ?? '',
+        name: d.name ?? "",
+        code: d.code ?? "",
+        address: d.address ?? "",
+        phone: d.phone ?? "",
       };
-      return String(map[searchType.value] || '')
+      return String(map[searchType.value] || "")
         .toLowerCase()
         .includes(kw);
     });
   }
 
   switch (sortType.value) {
-    case 'nameAsc':
-      data.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'ko'));
+    case "nameAsc":
+      data.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "ko"));
       break;
-    case 'startDesc':
+    case "startDesc":
       data.sort(
         (a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0)
       );
       break;
-    case 'endDesc':
+    case "endDesc":
       data.sort((a, b) => new Date(b.endDate || 0) - new Date(a.endDate || 0));
       break;
   }
@@ -428,11 +512,11 @@ const paged = computed(() => filtered.value);
 
 /* 모달 열릴 때 스크롤 잠금 */
 watch(isModalOpen, (v) => {
-  document.documentElement.style.overflow = v ? 'hidden' : '';
+  document.documentElement.style.overflow = v ? "hidden" : "";
 });
 watch(isAddOpen, (v) => {
   // 추가 모달도 잠금
-  document.documentElement.style.overflow = v ? 'hidden' : '';
+  document.documentElement.style.overflow = v ? "hidden" : "";
 });
 
 onMounted(load);
@@ -569,7 +653,7 @@ onMounted(load);
 
 .org-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+    "Liberation Mono", "Courier New", monospace;
 }
 
 .org-sep {

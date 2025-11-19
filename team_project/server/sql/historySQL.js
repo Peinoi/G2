@@ -46,9 +46,25 @@ const historyOrderByOldest = `
   LIMIT ?, ?
 `;
 
+const insertHistory = `
+    INSERT INTO history (
+      table_name,
+      change_item,
+      before_change,
+      after_change,
+      revision_date,
+      modifier,
+      table_pk,
+      history_type
+    ) VALUES (
+      ?, ?, ?, ?, NOW(), ?, ?, ?
+    )
+  `;
+
 module.exports = {
   historyListBase,
   historyCountBase,
   historyOrderByLatest,
   historyOrderByOldest,
+  insertHistory,
 };

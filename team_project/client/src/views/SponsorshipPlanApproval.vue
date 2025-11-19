@@ -8,7 +8,7 @@
       <input
         v-model="keyword"
         class="priority-input"
-        :placeholder="searchPlaceholder"
+        placeholder="프로그램명/후원유형/기관 검색"
         @keyup.enter="searchList"
       />
 
@@ -37,8 +37,7 @@
           <tr>
             <th>승인코드</th>
             <th>프로그램</th>
-            <!-- 기관: 시스템 관리자만 -->
-            <th v-if="isAA4">기관</th>
+            <th v-if="isOrgVisible">기관</th>
             <th>작성일</th>
             <th>후원유형</th>
             <th>목표기간</th>
@@ -59,11 +58,11 @@
             <!-- [프로그램코드]프로그램명 -->
             <td>[{{ item.program_code }}] {{ item.program_name }}</td>
 
-            <!-- 기관 (AA4만) -->
-            <td v-if="isAA4">{{ item.org_name }}</td>
+            <!-- 기관 (기관 관리자면 숨김, 시스템 관리자만 보임) -->
+            <td v-if="isOrgVisible">{{ item.org_name }}</td>
 
-            <!-- 작성일(프로그램 생성일) -->
-            <td>{{ formatDate(item.create_date) }}</td>
+            <!-- 작성일(프로그램 생성일 / written_at) -->
+            <td>{{ formatDate(item.written_at || item.create_date) }}</td>
 
             <!-- 후원유형(EB1/EB2 공통코드) -->
             <td>{{ codeLabel(item.sponsor_type) }}</td>
@@ -81,12 +80,18 @@
               </span>
             </td>
 
-            <!-- 처리일 -->
-            <td>{{ formatDate(item.approval_date) }}</td>
+            <!-- 처리일: 요청이거나 없으면 '-' -->
+            <td>
+              {{
+                item.state === "BA1" || !item.approval_date
+                  ? "-"
+                  : formatDate(item.approval_date)
+              }}
+            </td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <td class="priority-empty" :colspan="isAA4 ? 9 : 8">
+            <td class="priority-empty" :colspan="isOrgVisible ? 9 : 8">
               데이터가 없습니다.
             </td>
           </tr>
@@ -123,7 +128,7 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/store/authLogin"; // 경로는 프로젝트 구조에 맞게
+import { useAuthStore } from "@/store/authLogin.js";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -146,16 +151,45 @@ const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest");
 
-// 역할 플래그
-const isAA3 = computed(() => auth.role === "AA3"); // 기관 관리자
-const isAA4 = computed(() => auth.role === "AA4"); // 시스템 관리자
+// ==== 역할 / 권한 ====
 
-// 검색 placeholder: AA4만 기관 포함
-const searchPlaceholder = computed(() =>
-  isAA4.value ? "프로그램명/후원유형/기관 검색" : "프로그램명/후원유형 검색"
+const userRole = computed(() => {
+  return (
+    auth.role || // 'AA3', 'AA4'
+    (auth.user && auth.user.roleCode) ||
+    ""
+  );
+});
+
+const loginId = computed(() => {
+  return (
+    auth.userId ||
+    auth.loginId ||
+    auth.id ||
+    (auth.user && auth.user.userId) ||
+    ""
+  );
+});
+
+// 기관 관리자 여부 (AA3)
+const isOrgManager = computed(() => userRole.value === "AA3");
+
+// 시스템 관리자 여부 (AA4)
+const isSystemAdmin = computed(() => userRole.value === "AA4");
+
+// 이 페이지 접근 가능 여부
+const canViewSponsorshipPlanPage = computed(
+  () => isOrgManager.value || isSystemAdmin.value
 );
 
-// 공통코드 라벨 매핑
+// 기관 컬럼 표시 여부 (기관 관리자면 숨김)
+const isOrgVisible = computed(() => !isOrgManager.value);
+
+// 상세화면 role 값 (AA3 → 3, AA4 → 4)
+const detailRole = computed(() => (isSystemAdmin.value ? 4 : 3));
+
+// ==== 공통코드 라벨 ====
+
 const CODE_LABEL_MAP = {
   // 요청 상태(BA)
   BA1: "요청",
@@ -216,11 +250,6 @@ function searchList() {
 
 // 목록 조회
 async function loadList() {
-  // 권한 체크
-  if (!auth.isLogin || (!isAA3.value && !isAA4.value)) {
-    return;
-  }
-
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/sponsorship-plan", {
@@ -231,8 +260,8 @@ async function loadList() {
         state: state.value,
         orderBy: orderBy.value,
         // 기관 필터용
-        loginId: auth.userId,
-        role: auth.role,
+        loginId: loginId.value,
+        role: userRole.value,
       },
     });
 
@@ -263,30 +292,21 @@ function changePage(nextPage) {
 // 행 클릭 시 후원 프로그램(계획) 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "sponsorship-plan-detail", // 라우터에 이 이름으로 등록
+    name: "sponsorship-plan-detail",
     params: {
-      programCode: item.program_code, // support_program.program_code
+      programCode: item.program_code,
     },
     query: {
-      role: 3, // 관리자 화면 표시용
+      role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },
   });
 }
 
+// 처음 들어올 때 권한 체크 + 목록 로딩
 onMounted(() => {
-  auth.reload();
-
-  if (!auth.isLogin) {
-    alert("로그인이 필요합니다.");
-    router.push({ name: "SignIn" }); // 실제 로그인 라우트 이름에 맞게 수정
-    return;
-  }
-
-  if (auth.role !== "AA3" && auth.role !== "AA4") {
-    alert(
-      "접근 권한이 없습니다. (기관 관리자/시스템 관리자만 이용 가능합니다)"
-    );
-    router.push({ name: "Home" }); // 메인 라우트 이름에 맞게 수정
+  if (!canViewSponsorshipPlanPage.value) {
+    alert("기관 관리자 및 시스템 관리자만 접근할 수 있습니다.");
+    router.push("/");
     return;
   }
 

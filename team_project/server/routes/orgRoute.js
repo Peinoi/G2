@@ -3,12 +3,51 @@ const express = require("express");
 const router = express.Router();
 const orgService = require("../services/orgService");
 
-// 공통코드: 기관 상태
-const VALID_STATUS = ["AB1", "AB2", "AB3"]; // AB1:운영중, AB2:임시중단, AB3:종료
-
 // 유틸: '' → null, 날짜 포맷 검증
 const toNull = (v) => (v === "" || v === undefined ? null : v);
 const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+// ★ 전화번호 정규화: 숫자만 남기고, 한국식 하이픈 붙이기
+const normalizePhone = (raw) => {
+  if (!raw) return null;
+
+  const digits = String(raw).replace(/\D/g, ""); // 숫자만
+  if (!digits) return null;
+
+  // 1) 02로 시작하는 경우 (서울)
+  if (digits.startsWith("02")) {
+    if (digits.length === 9) {
+      // 02-000-0000
+      return digits.replace(/(\d{2})(\d{3})(\d{4})/, "$1-$2-$3");
+    }
+    if (digits.length === 10) {
+      // 02-0000-0000
+      return digits.replace(/(\d{2})(\d{4})(\d{4})/, "$1-$2-$3");
+    }
+  }
+
+  // 2) 그 외 (010, 053, 031 등)
+  if (digits.length === 10) {
+    // 000-000-0000 (지역번호/대표번호)
+    return digits.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
+  }
+  if (digits.length === 11) {
+    // 000-0000-0000 (휴대폰 010-....)
+    return digits.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+  }
+
+  // 3) 그 외 애매한 길이들 fallback
+  if (digits.length > 7) {
+    return digits.replace(/(\d{3})(\d{3,4})(\d+)/, "$1-$2-$3");
+  }
+  if (digits.length > 3) {
+    return digits.replace(/(\d{3})(\d+)/, "$1-$2");
+  }
+  return digits;
+};
+
+// 공통코드: 기관 상태
+const VALID_STATUS = ["AB1", "AB2", "AB3"]; // AB1:운영중, AB2:임시중단, AB3:종료
 
 // 목록
 router.get("/", async (req, res) => {
@@ -43,11 +82,13 @@ router.put("/:code", async (req, res) => {
         .json({ status: "error", message: "status 값 오류(AB1/AB2/AB3)" });
     }
 
+    const fixedPhone = normalizePhone(org_phone);
+
     const result = await orgService.organizationUpdate({
       org_code,
       org_name,
       address,
-      org_phone,
+      org_phone: fixedPhone,
       start_date,
       end_date,
       status,
@@ -95,7 +136,7 @@ router.post("/", async (req, res) => {
     const raw = req.body ?? {};
     const org_name = (raw.org_name || "").trim();
     const address = toNull(raw.address);
-    const org_phone = toNull(raw.org_phone);
+    const org_phone = normalizePhone(raw.org_phone);
     const start_date = toNull(raw.start_date);
     const end_date = toNull(raw.end_date);
     const status = raw.status;

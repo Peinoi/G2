@@ -24,42 +24,66 @@
       <p v-if="error" class="text-sm text-red-500">{{ error }}</p>
 
       <!-- 기본정보 카드 -->
-      <div class="meta-card space-y-3">
-        <div class="grid grid-cols-2 text-sm gap-2">
-          <div>
-            이름: <strong>{{ submitInfo.name || "-" }}</strong>
-          </div>
-          <div>생년월일: {{ submitInfo.ssnFront || "-" }}</div>
-        </div>
-
-        <div class="meta-bottom">
-          <!-- 상담지 제출일 버튼 -->
-          <MaterialButton color="dark" size="sm" @click="openCounselDetail">
-            상담지 제출일: {{ formattedCounselSubmitAt }}
-          </MaterialButton>
-
-          <!-- 계획 작성일 (오늘 날짜 표시) -->
-          <label class="flex items-center gap-2 text-sm">
-            계획 작성일:
-            <span class="px-2 py-1 border rounded bg-white">
-              {{ mainForm.planDate }}
+      <div class="meta-card">
+        <div class="meta-grid">
+          <!-- 1. 지원자 -->
+          <div class="meta-item">
+            <span class="meta-label">지원자</span>
+            <span class="meta-value">
+              {{ submitInfo.childName || "본인" }}
             </span>
-          </label>
+          </div>
 
-          <!-- 예상 진행기간: YYYY-MM ~ YYYY-MM -->
-          <div class="flex items-center gap-2 text-sm">
-            <span>예상 진행기간:</span>
-            <input
-              type="month"
-              v-model="mainForm.expectedStart"
-              class="input h-8"
-            />
-            <span>~</span>
-            <input
-              type="month"
-              v-model="mainForm.expectedEnd"
-              class="input h-8"
-            />
+          <!-- 2. 보호자 -->
+          <div class="meta-item">
+            <span class="meta-label">보호자</span>
+            <span class="meta-value">
+              {{ submitInfo.guardianName || "-" }}
+            </span>
+          </div>
+
+          <!-- 3. 담당자 -->
+          <div class="meta-item">
+            <span class="meta-label">담당자</span>
+            <span class="meta-value">
+              {{ submitInfo.assigneeName || "-" }}
+            </span>
+          </div>
+
+          <!-- ⭐ 4. 장애유형 -->
+          <div class="meta-item">
+            <span class="meta-label">장애유형</span>
+            <span class="meta-value">
+              {{ submitInfo.disabilityType || "-" }}
+            </span>
+          </div>
+
+          <!-- 5. 상담지 제출일 -->
+          <div class="meta-item">
+            <span class="meta-label">상담지 제출일</span>
+            <span class="meta-value">
+              <MaterialButton color="dark" size="sm" @click="openCounselDetail">
+                {{ formattedCounselSubmitAt }}
+              </MaterialButton>
+            </span>
+          </div>
+
+          <!-- 6. 예상 진행기간 -->
+          <div class="meta-item">
+            <span class="meta-label">예상 진행기간</span>
+            <span class="meta-value period-value">
+              <input
+                type="month"
+                v-model="mainForm.expectedStart"
+                class="input input-month"
+              />
+              <span class="mx-1">~</span>
+              <input
+                type="month"
+                v-model="mainForm.expectedEnd"
+                class="input input-month"
+              />
+            </span>
           </div>
         </div>
       </div>
@@ -277,9 +301,12 @@ const submitCode = Number(route.params.submitcode || 0);
 
 // 기본 정보
 const submitInfo = ref({
-  name: "",
-  ssnFront: "",
-  counselSubmitAt: "", // 상담지 제출일
+  childName: "",
+  name: "", // 보호자
+  guardianName: "",
+  assigneeName: "",
+  disabilityType: "",
+  counselSubmitAt: "",
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -318,13 +345,12 @@ function getTodayStr() {
   return d.toISOString().slice(0, 10);
 }
 
-// 기본정보 로딩 (이름/생년월일/상담지 제출일 등)
+// 기본정보 로딩 (지원자/보호자/담당자/장애유형/상담지 제출일)
 async function loadData() {
   loading.value = true;
   error.value = "";
 
   try {
-    // 백엔드: GET /api/plans/:submitCode
     const { data } = await axios.get(`/api/plans/${submitCode}`);
 
     if (!data?.success || !data.result) {
@@ -334,12 +360,15 @@ async function loadData() {
     const res = data.result;
 
     submitInfo.value = {
+      childName: res.childName || "본인",
       name: res.name || "",
-      ssnFront: (res.ssnFront || "").slice(0, 6),
+      guardianName: res.guardianName || res.name || "",
+      assigneeName: res.assigneeName || "-",
+      disabilityType: res.disabilityType || "-",
       counselSubmitAt: res.counselSubmitAt || "",
     };
 
-    // 계획 작성일 기본값이 없으면 오늘 날짜
+    // 계획 작성일은 오늘 날짜로 기본 세팅
     if (!mainForm.value.planDate) {
       mainForm.value.planDate = getTodayStr();
     }
@@ -740,5 +769,52 @@ textarea {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+
+/* ===== 기본정보 그리드 (상세/작성/수정 통일 스타일) ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+/* 날짜 박스 */
+.date-box {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  font-size: 0.875rem;
+}
+
+/* 기간 인풋 정렬 */
+.period-value {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.input-month {
+  width: 95px;
+  min-width: 80px;
+  max-width: 110px;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.75rem;
 }
 </style>

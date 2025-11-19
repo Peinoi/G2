@@ -7,7 +7,7 @@ module.exports = {
   `,
 
   insertCounselNote: `
-    INSERT INTO counsel_note (submit_code, status, written_at)
-    VALUES (?, ?, ?)
+    INSERT INTO counsel_note (submit_code, status)
+    VALUES (?, ?)
   `,
 };

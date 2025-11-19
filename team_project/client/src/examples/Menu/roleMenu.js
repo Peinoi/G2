@@ -1,4 +1,8 @@
 export const roleMenu = {
+  AA0: [
+    { name: "후원", path: "/sponsorprogramlist", color: "success" },
+    { name: "이벤트", path: "/event", color: "success" },
+  ],
   AA1: [
     { name: "신청현황", path: "/applicationStatus", color: "primary" },
     { name: "조사지", path: "/survey-list", color: "success" },
@@ -13,7 +17,6 @@ export const roleMenu = {
     { name: "상담", path: "/counsel-list", color: "success" },
     { name: "지원", path: "/plan-list", color: "success" },
     { name: "후원", path: "/sponsorprogramlist", color: "success" },
-    { name: "승인 요청 관리", path: "/test", color: "info" },
     { name: "이벤트", path: "/event", color: "success" },
   ],
 

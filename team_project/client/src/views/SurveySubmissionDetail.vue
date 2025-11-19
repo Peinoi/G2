@@ -32,32 +32,51 @@
       <!-- 본문 -->
       <div v-else class="detail-body">
         <!-- 상단 메타 정보 -->
-        <!-- 상단 메타 정보 -->
         <div class="meta-card">
-          <div class="meta-row">
-            <span class="meta-label">제출일</span>
-            <span class="meta-value">{{ fmt(submission.submit_at) }}</span>
-          </div>
+          <div class="meta-grid">
+            <!-- 지원자 -->
+            <div class="meta-item">
+              <span class="meta-label">지원자</span>
+              <span class="meta-value">{{
+                submission.child_name || "본인"
+              }}</span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">수정일</span>
-            <span class="meta-value">{{ fmt(submission.updated_at) }}</span>
-          </div>
+            <!-- 보호자 -->
+            <div class="meta-item">
+              <span class="meta-label">보호자</span>
+              <span class="meta-value">{{
+                submission.written_by_name || "-"
+              }}</span>
+            </div>
 
-          <!-- 👇 여기부터 수정 -->
-          <div class="meta-row">
-            <span class="meta-label">작성자</span>
-            <span class="meta-value">
-              <!-- written_by_name이 오면 이름 우선, 없으면 코드, 그것도 없으면 '-' -->
-              {{ submission.written_by_name || "-" }}
-            </span>
-          </div>
+            <!-- 담당자 -->
+            <div class="meta-item">
+              <span class="meta-label">담당자</span>
+              <span class="meta-value">{{
+                submission.assignee_name || "-"
+              }}</span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">담당자</span>
-            <span class="meta-value">
-              {{ submission.assignee_name || "-" }}
-            </span>
+            <!-- 장애유형 -->
+            <div class="meta-item">
+              <span class="meta-label">장애유형</span>
+              <span class="meta-value">{{
+                submission.disability_type || "-"
+              }}</span>
+            </div>
+
+            <!-- 제출일 -->
+            <div class="meta-item">
+              <span class="meta-label">제출일</span>
+              <span class="meta-value">{{ fmt(submission.submit_at) }}</span>
+            </div>
+
+            <!-- 수정일 -->
+            <div class="meta-item">
+              <span class="meta-label">수정일</span>
+              <span class="meta-value">{{ fmt(submission.updated_at) }}</span>
+            </div>
           </div>
         </div>
 
@@ -484,5 +503,28 @@ section {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
 }
 </style>

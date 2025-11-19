@@ -47,6 +47,25 @@ export const sponsorMenu = [
   //   collapseRef: 'sign-in',
   //   role: ['AA1', 'AA2', 'AA3'],
   // },
+  {
+    label: "담당자 관리",
+    path: "/manager",
+    collapseRef: "tables",
+    role: ["AA2"],
+  },
+
+  {
+    label: "활동 보고서",
+    path: "/activity",
+    collapseRef: "rtl-page",
+    role: ["AA1", "AA2", "AA3"],
+  },
+  {
+    label: "총괄표 관리",
+    path: "/summary",
+    collapseRef: "notifications",
+    role: ["AA3"],
+  },
 ];
 
 export const eventMenu = [
@@ -199,6 +218,15 @@ export const spportMenu = [
   },
 ];
 
+export const counselMenu = [
+  {
+    label: "상담 목록",
+    path: "/counsel-list",
+    collapseRef: "Counsel",
+    role: ["AA2", "AA3", "AA4"],
+  },
+];
+
 export const infoMenu = [
   {
     label: "회원 정보 관리",
@@ -214,5 +242,14 @@ export const historyMenu = [
     path: "/historyList",
     collapseRef: "HistoryList",
     role: ["AA3", "AA4"],
+  },
+];
+
+export const appStatusMenu = [
+  {
+    label: "신청현황",
+    path: "/applicationStatus",
+    collapseRef: "ApplicationStatus",
+    role: ["AA1"],
   },
 ];

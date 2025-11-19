@@ -178,6 +178,10 @@ const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
 
+const detailRole = computed(() => {
+  return isSystemAdmin.value ? 4 : 3;
+});
+
 // 공통코드 매핑 (PriorityApproval과 동일)
 const CODE_LABEL_MAP = {
   // 요청 상태(BA)
@@ -275,10 +279,10 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 지원계획 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "planDetail", // 실제 등록된 라우트 이름에 맞게만 수정
-    params: { planCode: item.plan_code }, // 상세에서 어떤 파라미터 쓰는지에 맞춰서
+    name: "counsel-detail",
+    params: { submitCode: item.submit_code },
     query: {
-      role: 3, // 관리자 화면에서 열면 3
+      role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },
   });
 }
