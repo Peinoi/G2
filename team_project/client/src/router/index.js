@@ -25,8 +25,14 @@ import { counselMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
 import { historyMenu } from "@/config/menus";
 import { infoMenu } from "@/config/menus";
+import SponsorDetail from "@/components/Sponsor/Common/SponsorDetail.vue";
+import PaymentPage from "@/components/Sponsor/User/PaymentPage.vue";
 import { appStatusMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
+import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
+import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
+import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
+import MyGiving from "../views/Sponsor/MyGiving.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -66,6 +72,38 @@ const router = createRouter({
         approvalMode: true,
         role: Number(route.query.role || 0),
       }),
+    },
+    {
+      path: "/sponsordetail/:programCode",
+      name: "SponsorDetail",
+      component: SponsorDetail,
+      props: true,
+    },
+    {
+      path: "/paymentpage/:programCode",
+      name: "PaymentPage",
+      component: PaymentPage,
+      props: true,
+    },
+    {
+      path: "/kakaopayapprove",
+      name: "KakaoPayApprove",
+      component: KakaoPayApprove,
+    },
+    {
+      path: "/activity",
+      name: "SponsorActivity",
+      component: SponsorActivity,
+    },
+    {
+      path: "/summary",
+      name: "BudgetSummary",
+      component: BudgetSummary,
+    },
+    {
+      path: "/mygiving",
+      name: "MyGiving",
+      component: MyGiving,
     },
 
     {
@@ -409,7 +447,15 @@ router.beforeEach((to, from, next) => {
   const menu = useMenuStore();
 
   // 후원 페이지 그룹
-  const sponsorPages = ["Sponsor", "SponsorProgramList"];
+  const sponsorPages = [
+    "Sponsor",
+    "SponsorProgramList",
+    "SponsorDetail",
+    "PaymentPage",
+    "SponsorActivity",
+    "BudgetSummary",
+    "MyGiving",
+  ];
 
   // event 그룹
   const eventPages = [

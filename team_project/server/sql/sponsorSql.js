@@ -196,6 +196,52 @@ const updateSupportResultStatus = `
     WHERE program_code = ?
   `;
 
+// 후원 결제
+const payments = `
+    insert into support_transaction (
+    transaction_type,
+    userID, 
+    transaction_amount, 
+    payment_method,
+    donation_datetime, 
+    deposit_date,
+    status, 
+    program_code )
+    values ('단기',?,?,'카카오페이',now(),CURDATE(),'완료',?
+    );
+  
+  `;
+const mygiving = `
+  SELECT
+    p.program_name,
+    p.sponsor_type,
+    p.status,
+    p.start_date,
+    p.end_date,
+    p.goal_amount,
+    t.transaction_amount,
+    t.program_code,
+    p.writer,
+    t.deposit_date
+FROM
+    support_transaction t
+INNER JOIN
+    support_program p ON t.program_code = p.program_code;
+    `;
+
+const activity = `
+insert into 
+	support_activity(
+		    writer,
+        title,
+        content,
+        create_date,
+        used_amount,
+        program_code
+    )
+    values(?,?,?,CURDATE(),?,?);
+`;
+
 module.exports = {
   sponsor_all,
   sponsor_program,
@@ -210,4 +256,7 @@ module.exports = {
   updateApprovalRejectForResult,
   getRejectReasonByResult,
   updateSupportResultStatus,
+  payments,
+  mygiving,
+  activity,
 };
