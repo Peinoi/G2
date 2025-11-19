@@ -228,6 +228,51 @@ async function resubmitPlan(eventCode, requesterCode) {
   return await eventMapper.resubmitPlan(eventCode, requesterCode);
 }
 
+// 결과보고서 + 첨부파일 등록
+async function createEventResultFull(data) {
+  try {
+    const result = await eventMapper.addEventResultFull(data);
+    return result;
+  } catch (err) {
+    console.error("[eventService.js || 결과보고서 등록 실패]", err.message);
+    throw err;
+  }
+}
+
+// 결과보고서 단건 조회
+async function getResult(event_result_code, user_code) {
+  try {
+    const result = await eventMapper.selectResultOneFull(
+      event_result_code,
+      user_code
+    );
+    return result;
+  } catch (err) {
+    console.error("[eventService.js || 결과보고서 단건조회 실패]", err.message);
+    throw err;
+  }
+}
+
+//결과 승인
+async function approveEventResult(resultCode) {
+  return await eventMapper.approveEventResult(resultCode);
+}
+
+//결과 반려
+async function rejectEventResult(resultCode, reason) {
+  return await eventMapper.rejectEventResult(resultCode, reason);
+}
+
+//결과 반려사유 조회
+async function getResultRejectionReason(resultCode) {
+  return await eventMapper.getResultRejectionReason(resultCode);
+}
+
+//결과 재승인요청
+async function resubmitResult(resultCode, requesterCode) {
+  return await eventMapper.resubmitResult(resultCode, requesterCode);
+}
+
 module.exports = {
   getEventMainpage,
   getEventList,
@@ -249,4 +294,10 @@ module.exports = {
   rejectEventPlan,
   getRejectionReason,
   resubmitPlan,
+  createEventResultFull,
+  getResult,
+  approveEventResult,
+  rejectEventResult,
+  getResultRejectionReason,
+  resubmitResult,
 };

@@ -392,7 +392,7 @@ router.get("/:event_code", async (req, res) => {
     const user_code = req.query.user_code; // 여기서 로그인 유저 코드 받기
 
     const event = await eventService.getEvent(event_code, user_code);
-
+    console.log("API returned event:", event);
     res.status(200).json({
       status: "success",
       data: event,
@@ -474,6 +474,144 @@ router.get("/:eventCode/rejection-reason", async (req, res) => {
     });
   } catch (e) {
     console.error("[GET /api/event/:eventCode/rejection-reason]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+// ==========================
+// 결과보고서 + 첨부파일 등록
+// POST /event/result
+// ==========================
+router.post("/result", upload.array("attachments"), async (req, res) => {
+  try {
+    // JSON 문자열을 객체로 변환
+    const resultInfo = JSON.parse(req.body.resultInfo);
+
+    // 첨부파일 정보
+    const attachments = req.files.map((file) => ({
+      original_filename: Buffer.from(file.originalname, "latin1").toString(
+        "utf8"
+      ),
+      server_filename: file.filename,
+      file_path: `/uploads/${file.filename}`,
+    }));
+
+    // DB에 저장할 통합 객체
+    const newResult = {
+      ...resultInfo,
+      attachments,
+    };
+
+    // DB 서비스 호출
+    const savedResult = await eventService.createEventResultFull(newResult);
+
+    res.status(201).json({ status: "success", data: savedResult });
+  } catch (err) {
+    console.error("[eventRoute.js || 결과보고서 등록 실패]", err.message);
+    res
+      .status(500)
+      .json({ status: "error", message: "결과보고서 등록 중 에러 발생" });
+  }
+});
+
+// ==========================
+// 결과보고서 단건 조회
+// GET /event/result/:event_result_code
+// ==========================
+router.get("/result/:event_result_code", async (req, res) => {
+  try {
+    const event_result_code = req.params.event_result_code;
+    const user_code = req.query.user_code; // 여기서 로그인 유저 코드 받기
+
+    const result = await eventService.getResult(event_result_code, user_code);
+    console.log("API returned event:", result);
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || 결과보고서 단건조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "결과보고서 단건조회 중 에러 발생",
+    });
+  }
+});
+
+// ==========================
+// 결과보고서 승인
+// GET /event/:resultCode/approve
+// ==========================
+router.post("/:resultCode/approve", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode);
+    const result = await eventService.approveEventResult(resultCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/:resultCode/approve]", e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ==========================
+// 결과보고서 반려
+// POST /event/:resultCode/reject
+// ==========================
+router.post("/:resultCode/reject", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode);
+    const { reason } = req.body;
+
+    const result = await eventService.rejectEventResult(
+      resultCode,
+      reason || ""
+    );
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/:resultCode/reject]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
+
+//반려사유 조회
+router.get("/:resultCode/rejection-reason", async (req, res) => {
+  try {
+    const resultCode = Number(req.params.resultCode);
+
+    if (!resultCode) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 결과보고서 코드가 아닙니다.",
+      });
+    }
+
+    const result = await eventService.getResultRejectionReason(resultCode);
+
+    if (!result) {
+      // 반려 이력이 없는 경우
+      return res.status(404).json({
+        success: false,
+        message: "반려 사유를 찾을 수 없습니다.",
+      });
+    }
+
+    // { rejection_reason, rejection_date } 그대로 넘겨줌
+    return res.json({
+      success: true,
+      result,
+      rejection_reason: result.rejection_reason,
+      rejection_date: result.rejection_date,
+    });
+  } catch (e) {
+    console.error("[GET /api/event/:resultCode/rejection-reason]", e);
     res.status(500).json({
       success: false,
       message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",

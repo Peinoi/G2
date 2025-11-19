@@ -679,6 +679,59 @@ async function deleteSubEvent(sub_event_code) {
   }
 }
 
+// 이벤트 + 세부 이벤트 등록
+async function addEventWithSub(data) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    // 1️⃣ 이벤트 등록
+    const params = [
+      data.org_code,
+      data.user_code,
+      data.event_name,
+      data.event_type,
+      data.event_content,
+      data.event_location,
+      data.target_audience,
+      data.max_participants,
+      moment(data.recruit_start_date).format("YYYY-MM-DD"),
+      moment(data.recruit_end_date).format("YYYY-MM-DD"),
+      moment(data.event_start_date).format("YYYY-MM-DD"),
+      moment(data.event_end_date).format("YYYY-MM-DD"),
+      data.recruit_status,
+      moment(data.event_register_date).format("YYYY-MM-DD HH:mm:ss"),
+      data.register_status,
+    ];
+
+    const result = await conn.query(eventSQL.insertEvent, params);
+    const event_code = result.insertId; // 새로 생성된 이벤트 코드
+
+    // 2️⃣ sub_events 등록 (예약제)
+    if (data.sub_events && data.sub_events.length > 0) {
+      for (const sub of data.sub_events) {
+        const subParams = [
+          sub.sub_event_name,
+          sub.sub_event_start_date,
+          sub.sub_event_end_date,
+          sub.sub_recruit_count,
+          event_code,
+        ];
+        await conn.query(eventSQL.insertSubEvent, subParams);
+      }
+    }
+
+    return { event_code, ...data };
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트+세부 이벤트 등록 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 // 🔹 이벤트계획 승인
 async function approveEventPlan(eventCode) {
   const conn = await pool.getConnection();
@@ -788,6 +841,217 @@ async function resubmitPlan(eventCode, requesterCode) {
   }
 }
 
+// 결과보고서 + 첨부파일 등록
+async function addEventResultFull(data) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    // 1️⃣ 결과보고서 등록
+    const resultParams = [
+      data.result_status,
+      data.result_subject,
+      data.result_content,
+      moment(data.report_register_date).format("YYYY-MM-DD"),
+      data.event_code,
+    ];
+    const reportResult = await conn.query(
+      eventSQL.insertEventResult,
+      resultParams
+    );
+    const event_result_code = reportResult.insertId;
+
+    // 2️⃣ 첨부파일 등록
+    if (data.attachments && data.attachments.length > 0) {
+      for (const file of data.attachments) {
+        const attachParams = [
+          file.original_filename,
+          file.server_filename,
+          file.file_path,
+          "event_result", // linked_table_name
+          event_result_code, // linked_record_pk
+        ];
+        await conn.query(eventSQL.insertAttachment, attachParams);
+      }
+    }
+
+    // 3️⃣ 🔥 결과보고서 승인요청 중복 여부 체크
+    const [existReq] = await conn.query(eventSQL.getApprovalForResult, [
+      event_result_code,
+    ]);
+
+    // 4️⃣ 🔥 결과보고서 승인요청 등록
+    if (!existReq) {
+      await conn.query(eventSQL.insertRequestApprovalForResult, [
+        data.user_code, // requester_code
+        1, // processor_code (관리자)
+        "AE7", // approval_type (이벤트 결과)
+        "BA1", // state (요청)
+        "event_result", // linked_table_name
+        event_result_code, // linked_record_pk
+      ]);
+    }
+
+    await conn.commit();
+    return { event_result_code, ...data };
+  } catch (err) {
+    if (conn) await conn.rollback();
+    console.error("[eventMapper.js || 결과보고서 등록 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// 결과보고서 + 첨부파일 단건조회
+async function selectResultOneFull(event_result_code, user_code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // 1️⃣ 결과보고서 단건조회
+    const rows = await conn.query(eventSQL.selectResultOne, [
+      event_result_code,
+    ]);
+    const result = rows[0];
+    if (!result) return null;
+
+    // 2️⃣ 코드명 매핑 (공통코드 있는 컬럼만)
+    result.result_status_name = await commonCodeService.getCodeName(
+      "BA",
+      result.result_status
+    );
+
+    // 3️⃣ 첨부파일 조회 (코드명 없음)
+    const attachments = await conn.query(eventSQL.selectResultAttachList, [
+      event_result_code,
+    ]);
+
+    return {
+      ...result,
+      attachments,
+    };
+    // 반환
+  } catch (err) {
+    console.error("[eventMapper.js || selectEventOneFull 실패]", err);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// 🔹 결과보고서 승인
+async function approveEventResult(resultCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const resultId = Number(resultCode);
+    if (!resultId) {
+      throw new Error("유효한 resultCode가 아닙니다.");
+    }
+
+    // 1) result 상태 BA2(승인)로 변경
+    await conn.query(eventSQL.updateEventResultStatus, ["BA2", resultId]);
+
+    // 2) request_approval 상태 BA2(승인)로 변경
+    const result = await conn.query(eventSQL.updateApprovalApproveForResult, [
+      resultId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 결과보고서 반려
+async function rejectEventResult(resultCode, reason) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const resultId = Number(resultCode);
+    if (!resultId) {
+      throw new Error("유효한 resultCode가 아닙니다.");
+    }
+
+    const result = await conn.query(eventSQL.updateApprovalRejectForResult, [
+      reason || "",
+      resultId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 결과보고서에 대한 반려 사유,일자 조회
+async function getResultRejectionReason(resultCode) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(eventSQL.getRejectReasonByResult, [
+      resultCode,
+    ]);
+
+    if (!rows || rows.length === 0) {
+      // 반려 이력이 없으면 null
+      return null;
+    }
+
+    // { rejection_reason, rejection_date } 형태
+    return safeJSON(rows[0]);
+  } finally {
+    conn.release();
+  }
+}
+
+//결과보고서 재승인 신청
+async function resubmitResult(resultCode, requesterCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) result 상태를 BA1(요청)으로 변경
+    await conn.query(eventSQL.updateEventResultStatus, ["BA1", resultCode]);
+
+    // 2) request_approval에 새 승인요청 INSERT
+    await conn.query(eventSQL.insertRequestApprovalForResult, [
+      requesterCode, // requester_code (담당자)
+      1, // processor_code (관리자, 임시)
+      "AE7", // approval_type
+      "BA1", // state: 요청
+      "event_result",
+      resultCode, // linked_record_pk = plan_code
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      resultCode,
+      result_status: "BA3",
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
@@ -811,4 +1075,10 @@ module.exports = {
   rejectEventPlan,
   getRejectionReason,
   resubmitPlan,
+  addEventResultFull,
+  selectResultOneFull,
+  approveEventResult,
+  rejectEventResult,
+  getResultRejectionReason,
+  resubmitResult,
 };
