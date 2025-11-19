@@ -13,7 +13,6 @@ export const roleMenu = {
     { name: "상담", path: "/counsel-list", color: "success" },
     { name: "지원", path: "/plan-list", color: "success" },
     { name: "후원", path: "/sponsorprogramlist", color: "success" },
-    { name: "승인 요청 관리", path: "/test", color: "info" },
     { name: "이벤트", path: "/event", color: "success" },
   ],
 
