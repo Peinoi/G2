@@ -37,9 +37,7 @@ import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
 import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
 import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
 import MyGiving from "../views/Sponsor/MyGiving.vue";
-import PendingUserList from '../views/PendingUserList.vue';
-import PendingList from '../components/PendingList.vue';
-import PendingApproval from '../components/PendingApproval.vue';
+
 
 const router = createRouter({
   history: createWebHistory(),
