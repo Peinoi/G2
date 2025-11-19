@@ -137,7 +137,9 @@
             <material-button color="secondary" @click="toggleIdModal">
               닫기
             </material-button>
-            <material-button color="success"> 확인 </material-button>
+            <material-button color="success" @click="findId">
+              확인
+            </material-button>
           </div>
         </div>
       </div>
@@ -167,14 +169,14 @@
               label="연락처"
               class="mb-4"
               v-model="findPwPhone"
-              @input="formatFindPwPhone"
+              @input="formatPhoneInput('findPwPhone')"
             />
 
             <div class="d-flex justify-content-end gap-2">
               <material-button color="secondary" @click="togglePwModal">
                 닫기
               </material-button>
-              <material-button color="success" @click="checkUserForPwReset">
+              <material-button color="success" @click="findPw">
                 본인 확인
               </material-button>
             </div>
@@ -195,7 +197,7 @@
               type="password"
               label="새 비밀번호 확인"
               class="mb-4"
-              v-model="findPwNewPwConfirm"
+              v-model="findPwNewPwCheck"
             />
 
             <div class="d-flex justify-content-end gap-2">
@@ -278,6 +280,7 @@ import MaterialButton from '@/components/MaterialButton.vue';
 import { mapMutations } from 'vuex';
 import { useAuthStore } from '../store/authLogin';
 import { useMenuStore } from '@/store/sidebar';
+import { findIdPw } from '../api/user';
 
 export default {
   name: 'sign-in',
@@ -300,7 +303,7 @@ export default {
       findPwName: '',
       findPwPhone: '',
       findPwNewPw: '',
-      findPwNewPwConfirm: '',
+      findPwNewPwCheck: '',
       findPwStep: 1, // 1: 본인 확인, 2: 재설정
     };
   },
@@ -367,36 +370,59 @@ export default {
       this[targetVariable] = formatted;
     },
 
-    async checkUserForPwReset() {
-      if (!this.findPwUserId || !this.findPwName || !this.findPwPhone) {
-        return alert('모두 입력해주세요.');
+    async findId() {
+      if (!this.findIdName || !this.findIdPhone) {
+        alert('모든 항목을 입력해주세요');
+        return;
       }
+      const result = await findIdPw('findId', {
+        name: this.findIdName,
+        phone: this.findIdPhone,
+      });
+      if (!result.ok) {
+        alert('조건에 맞는 값이 없습니다');
+        return;
+      }
+      alert(`아이디는 ${result.user_id} 입니다.`);
+    },
 
-      // *** 여기에서 실제 서버 API (본인 확인) 호출 로직이 들어갑니다. ***
-      // 성공했다고 가정하고 Step 2로 전환:
-
-      // 예시: API 호출 성공 후
-      alert('본인 확인 성공');
+    async findPw() {
+      if (!this.findPwUserId || !this.findPwName || !this.findPwPhone) {
+        return alert('모든 항목을 입력해주세요');
+      }
+      const result = await findIdPw('findPw', {
+        user_id: this.findPwUserId,
+        name: this.findPwName,
+        phone: this.findPwPhone,
+      });
+      if (!result.ok) {
+        alert('조건에 맞는 값이 없습니다');
+        return;
+      }
+      alert('다음 페이지로 이동');
       this.findPwStep = 2;
-
-      // 실패했을 경우:
-      // alert('입력 정보와 일치하는 사용자가 없습니다.');
     },
 
     async resetPassword() {
-      if (!this.findPwNewPw || !this.findPwNewPwConfirm) {
+      if (!this.findPwNewPw || !this.findPwNewPwCheck) {
         return alert('모두 입력해주세요');
       }
-      if (this.findPwNewPw !== this.findPwNewPwConfirm) {
+      if (this.findPwNewPw !== this.findPwNewPwCheck) {
         return alert('비밀번호 틀림');
       }
-
-      // *** 여기에서 실제 서버 API (비밀번호 재설정) 호출 로직이 들어갑니다. ***
-
-      // 예시: API 호출 성공 후
+      const result = await findIdPw('findResetPw', {
+        user_id: this.findPwUserId,
+        name: this.findPwName,
+        phone: this.findPwPhone,
+        newPw: this.findPwNewPw,
+      });
+      if (!result.ok) {
+        alert('PW 변경 실패');
+        return;
+      }
       alert('비밀번호 변경 성공');
-      this.togglePwModal(); // 모달 닫기
-      this.findPwStep = 1; // 상태 초기화
+      this.togglePwModal();
+      this.findPwStep = 1;
     },
 
     toggleIdModal() {

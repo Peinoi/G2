@@ -42,7 +42,7 @@ router.post('/addOrg', async (req, res) => {
   }
 });
 
-// 회원가입
+// 로그인
 router.post('/login', async (req, res) => {
   try {
     const result = await userService.login(req.body);
@@ -50,6 +50,32 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, message: '[ signUser.js 로그인 실패 ]' });
+  }
+});
+
+// id, pw 찾기
+router.post('/findIdPw', async (req, res) => {
+  try {
+    const { type, data } = req.body;
+    const result = await userService.findIdPw(type, data);
+    res.json(result);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ ok: false, message: '[ signUser.js ID / PW 찾기 실패 ]' });
+  }
+});
+
+// pw 변경
+router.put('/findIdPw', async (req, res) => {
+  try {
+    const { type, data } = req.body;
+    const result = await userService.findIdPw(type, data);
+    res.json(result);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ ok: false, message: '[ signUser.js PW 변경 실패 ]' });
   }
 });
 module.exports = router;

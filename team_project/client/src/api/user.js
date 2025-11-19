@@ -44,6 +44,26 @@ export async function login(userData) {
   }
 }
 
+// id, pw 찾기
+export async function findIdPw(type, findData) {
+  try {
+    if (!type == 'findResetPw') {
+      const result = await axios.post('/api/user/findIdPw', {
+        type,
+        data: findData,
+      });
+      return result.data;
+    }
+    const result = await axios.put('/api/user/findIdPw', {
+      type,
+      data: findData,
+    });
+    return result.data;
+  } catch (err) {
+    console.log('[ user.js ID/PW 찾기 실패 ]', err);
+  }
+}
+
 // 회원정보
 export async function findUserInfo(userData) {
   try {
@@ -56,11 +76,10 @@ export async function findUserInfo(userData) {
 }
 
 // 사용자, 기관, 자녀 정보 수정
-export async function updateInfo(type, role, updateData) {
+export async function updateInfo(type, updateData) {
   try {
     const result = await axios.put('/api/userinfo/updateInfo', {
       type,
-      role,
       data: updateData,
     });
     return result.data;

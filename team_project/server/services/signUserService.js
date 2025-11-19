@@ -49,4 +49,18 @@ async function login(data) {
   }
 }
 
-module.exports = { checkId, addUser, addOrg, login };
+// id, pw 찾기
+async function findIdPw(type, data) {
+  switch (type) {
+    case 'findId':
+      return await signUserMapper.findId(data);
+    case 'findPw':
+      return await signUserMapper.findPw(data);
+    case 'findResetPw':
+      return await signUserMapper.updatePw(data);
+    default:
+      return { ok: false, message: 'service findIdPw type 오류' };
+  }
+}
+
+module.exports = { checkId, addUser, addOrg, login, findIdPw };

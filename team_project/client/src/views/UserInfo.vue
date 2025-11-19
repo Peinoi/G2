@@ -155,7 +155,7 @@ export default {
       this.orgEditMode = false;
     },
     async saveUserInfo(updated) {
-      const result = await updateInfo('user', this.auth.role, updated);
+      const result = await updateInfo('user', updated);
       if (!result.ok) {
         alert(result.message);
         return;
@@ -170,12 +170,13 @@ export default {
         org_name: updated.orgName,
         department: updated.deptName,
       };
-      const result = await updateInfo('org', this.auth.role, updateData);
+      const result = await updateInfo('org', updateData);
       if (!result.ok) {
         alert(result.message);
         return;
       }
       await this.userFullInfo();
+      this.orgEditMode = false;
       alert('수정 완료');
     },
 
