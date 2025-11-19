@@ -36,18 +36,7 @@
         </div>
       </div>
 
-      <div class="at-row">
-        <div class="at-field-group at-field-grow">
-          <label for="content" class="at-label">내용</label>
-          <textarea
-            id="content"
-            placeholder="내용을 입력해주세요"
-            class="at-textarea"
-            v-model="content"
-          />
-        </div>
-      </div>
-
+      <!-- 후원금 사용 용도 -->
       <div class="at-row at-expenditure-header">
         <div class="at-field-group at-field-grow">
           <label class="at-label">후원금 사용 용도</label>
@@ -59,6 +48,7 @@
         </div>
       </div>
 
+      <!-- 동적 항목 -->
       <div
         v-for="item in expenditureList"
         :key="item.id"
@@ -89,16 +79,17 @@
         </div>
 
         <div class="at-row at-expenditure-row">
+          <!-- 금액 입력 (자동 콤마 적용) -->
           <div class="at-field-group at-field-half">
             <label :for="`amount-${item.id}`" class="at-label"
               >지급 금액 (원)</label
             >
             <material-input
               :id="`amount-${item.id}`"
-              placeholder="숫자만 입력"
+              placeholder="금액을 입력해주세요 "
               class="at-input"
-              type="number"
-              v-model.number="item.amount"
+              v-model="item.amountFormatted"
+              @input="formatAmount(item)"
             />
           </div>
 
@@ -131,33 +122,35 @@
       <material-button class="at-btn" @click="goList()">닫기</material-button>
     </div>
   </div>
+
+
 </template>
 
 <script setup>
 import axios from "axios";
 import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
+import numberFormat from "../../../utils/numberFormat.js";
 import { ref, onBeforeMount, defineEmits } from "vue";
-
 // --- [데이터 정의] ---
 let sponsorList = ref([]); // 프로그램 목록
 const programCode = ref("");
 const title = ref("");
 const content = ref("");
 
-// 후원금 사용 내역을 담을 배열 (동적 항목)
+// 후원금 사용 내역 (동적)
 const expenditureList = ref([
-  // 초기 1개 항목
   {
     id: Date.now(),
     usageItem: "",
     recipient: "",
-    amount: null,
+    amount: null, // 실제 숫자
+    amountFormatted: "", // 콤마 포함 문자열
     usedAt: "",
   },
 ]);
 
-// --- [로직 함수] ---
+// emit 선언
 const emit = defineEmits(["goToList"]);
 
 /**
@@ -171,12 +164,25 @@ const getSponsorList = async () => {
     return;
   }
   const res = result.data.serviceSponsor;
-  let list = JSON.parse(JSON.stringify(res));
-  sponsorList.value = list;
+  sponsorList.value = JSON.parse(JSON.stringify(res));
 };
 
 /**
- * 새로운 후원금 사용 내역 항목을 추가합니다.
+ * 입력값을 콤마 포함 문자열로 변환
+ */
+const formatAmount = (item) => {
+  // 숫자만 남기기
+  let raw = item.amountFormatted.replace(/[^0-9]/g, "");
+
+  // 실제 숫자 저장
+  item.amount = raw ? Number(raw) : null;
+
+  // 화면 표시용 문자열 포맷
+  item.amountFormatted = raw ? numberFormat(raw) : "";
+};
+
+/**
+ * 항목 추가
  */
 const addExpenditure = () => {
   expenditureList.value.push({
@@ -184,15 +190,15 @@ const addExpenditure = () => {
     usageItem: "",
     recipient: "",
     amount: null,
+    amountFormatted: "",
     usedAt: "",
   });
 };
 
 /**
- * 특정 ID를 가진 후원금 사용 내역 항목을 삭제합니다.
+ * 항목 삭제
  */
 const removeExpenditure = (id) => {
-  // 항목이 하나만 남았을 때는 삭제를 방지합니다.
   if (expenditureList.value.length === 1) {
     alert("최소 하나의 사용 용도 항목은 유지해야 합니다.");
     return;
@@ -204,28 +210,28 @@ const removeExpenditure = (id) => {
 };
 
 /**
- * 목록 페이지로 이동합니다.
+ * 목록 이동
  */
 const goList = () => {
   emit("goToList");
 };
 
 /**
- * 활동 보고서를 제출합니다.
+ * 제출
  */
 const activityAdd = () => {
   console.log("--- 등록 데이터 확인 ---");
   console.log("프로그램 코드:", programCode.value);
   console.log("제목:", title.value);
   console.log("내용:", content.value);
-  console.log(
-    "후원금 사용 내역:",
-    JSON.parse(JSON.stringify(expenditureList.value))
-  );
-  // TODO: 여기에 등록 API 호출 로직을 구현합니다.
+
+  // 실제 amount 값이 숫자로 들어가 있음
+  console.log("후원금 사용 내역:", JSON.parse(JSON.stringify(expenditureList.value)));
+
+  // TODO: 등록 API 호출
 };
 
-// --- [생명 주기 훅] ---
+// mount
 onBeforeMount(() => {
   getSponsorList();
 });
@@ -234,6 +240,9 @@ defineExpose({
   getSponsorList,
 });
 </script>
+
+
+
 
 <style scoped>
 /* AuthorityTransfer.vue의 스타일 테마를 기반으로 재구성 */
@@ -448,5 +457,8 @@ defineExpose({
   .at-btn-delete {
     width: 100%;
   }
+}:deep(.ck-editor__editable) {
+  min-height: 200px;
 }
+
 </style>

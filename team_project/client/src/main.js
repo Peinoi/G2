@@ -7,7 +7,6 @@ import './assets/css/nucleo-icons.css';
 import './assets/css/nucleo-svg.css';
 import MaterialDashboard from './material-dashboard';
 import { useAuthStore } from './store/authLogin';
-
 const appInstance = createApp(App);
 const pinia = createPinia();
 

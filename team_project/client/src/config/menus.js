@@ -54,18 +54,18 @@ export const sponsorMenu = [
     role: ["AA2"],
   },
 
-  {
-    label: "활동 보고서",
-    path: "/activity",
-    collapseRef: "rtl-page",
-    role: ["AA1", "AA2", "AA3"],
-  },
-  {
-    label: "총괄표 관리",
-    path: "/summary",
-    collapseRef: "notifications",
-    role: ["AA3"],
-  },
+  // {
+  //   label: "활동 보고서",
+  //   path: "/activity",
+  //   collapseRef: "rtl-page",
+  //   role: ["AA1", "AA2", "AA3"],
+  // },
+  // {
+  //   label: "총괄표 관리",
+  //   path: "/summary",
+  //   collapseRef: "notifications",
+  //   role: ["AA3"],
+  // },
 ];
 
 export const eventMenu = [
