@@ -127,6 +127,29 @@ async function mygivingList() {
   console.log("asdassfaeebhsrenfd");
   return sponsorFindDB;
 }
+
+// 프로그램 등록
+async function activityAdd(clientData) {
+  console.log("클라이언트 데이터");
+  console.log(clientData);
+
+  const programDataArray = [
+    clientData.writer,
+    clientData.title,
+    clientData.status,
+    clientData.content,
+    clientData.used_amount,
+    clientData.program_code,
+  ];
+
+  // 배열화된 데이터를 매퍼로 전달하여 쿼리 실행
+  const sponsorInsertResult = await sponsorMapper.activityAddSQL(
+    programDataArray
+  );
+
+  return sponsorInsertResult;
+}
+
 module.exports = {
   sponsorUsersList,
   sponsorProgramAdd,
@@ -139,4 +162,5 @@ module.exports = {
   resubmitResult,
   payments,
   mygivingList,
+  activityAdd,
 };

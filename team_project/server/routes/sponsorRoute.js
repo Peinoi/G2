@@ -48,6 +48,7 @@ const {
   resubmitResult,
   payments,
   mygivingList,
+  activityAdd,
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -340,6 +341,7 @@ router.post("/:resultCode/resubmit", async (req, res) => {
     });
   }
 });
+//후원 결제
 router.post("/:programCode/:user_id/payments", async (req, res) => {
   try {
     const data = req.body;
@@ -352,5 +354,19 @@ router.post("/:programCode/:user_id/payments", async (req, res) => {
     res.status(500).json({ success: false, message: "승인 요청 처리 중 오류" });
   }
 });
+// 활동 보고서 등록
+router.post("/:programCode/:user_id/activity", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log("활동 보고서 데이터", data);
+    const result = await activityAdd(data);
 
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("활동 보고서 에러", e);
+    res
+      .status(500)
+      .json({ success: false, message: "활동 보고서 등록 중 오류" });
+  }
+});
 module.exports = router;

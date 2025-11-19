@@ -362,6 +362,31 @@ async function mygivingSQL() {
     if (sponsorConn) sponsorConn.release();
   }
 }
+
+async function activityAddSQL(programDataArray) {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+
+    // 구조분해 제거
+    const result = await sponsorConn.query(
+      sponsorSql.activity,
+      programDataArray
+    );
+
+    const program_code = result.insertId;
+    console.log("프로그램 코드:", program_code);
+    console.log("[ sponsorConn.js || 프로그램 등록 쿼리 성공 ]");
+
+    await sponsorConn.commit();
+    return { programResult: result };
+  } catch (err) {
+    console.error("[ sponsorConn.js || 프로그램 등록 쿼리 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
 module.exports = {
   sponsorSQL,
   programAddSQL,
@@ -375,4 +400,5 @@ module.exports = {
   resubmitPlan,
   payments,
   mygivingSQL,
+  activityAddSQL,
 };

@@ -229,6 +229,19 @@ INNER JOIN
     support_program p ON t.program_code = p.program_code;
     `;
 
+const activity = `
+insert into 
+	support_activity(
+		    writer,
+        title,
+        content,
+        create_date,
+        used_amount,
+        program_code
+    )
+    values(?,?,?,CURDATE(),?,?);
+`;
+
 module.exports = {
   sponsor_all,
   sponsor_program,
@@ -245,4 +258,5 @@ module.exports = {
   updateSupportResultStatus,
   payments,
   mygiving,
+  activity,
 };
