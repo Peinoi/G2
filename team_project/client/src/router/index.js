@@ -30,6 +30,7 @@ import UserInfo from "../views/UserInfo.vue";
 import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
 import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
 import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
+import MyGiving from "../views/Sponsor/MyGiving.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -96,6 +97,11 @@ const router = createRouter({
       path: "/summary",
       name: "BudgetSummary",
       component: BudgetSummary,
+    },
+    {
+      path: "/mygiving",
+      name: "MyGiving",
+      component: MyGiving,
     },
 
     {
@@ -446,6 +452,7 @@ router.beforeEach((to, from, next) => {
     "PaymentPage",
     "SponsorActivity",
     "BudgetSummary",
+    "MyGiving",
   ];
 
   // event 그룹

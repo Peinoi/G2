@@ -47,6 +47,7 @@ const {
   getRejectionReason,
   resubmitResult,
   payments,
+  mygivingList,
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -71,7 +72,25 @@ router.get("/", async (req, res) => {
     });
   }
 });
-
+// 전체 후원 내역 조회
+router.get("/mygiving", async (req, res) => {
+  try {
+    //조회 서비스 호출
+    const serviceSponsor = await mygivingList();
+    console.log(serviceSponsor);
+    console.log(`[ mygiving.js || 후원 조회  성공]`);
+    res.status(200).json({
+      status: "success",
+      serviceSponsor,
+    });
+  } catch (err) {
+    console.error("[ mygiving.js || 후원 내역 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "에러 발생",
+    });
+  }
+});
 // [수정] 단건 조회 처리
 router.get("/:no", async (req, res) => {
   try {
@@ -333,4 +352,5 @@ router.post("/:programCode/:user_id/payments", async (req, res) => {
     res.status(500).json({ success: false, message: "승인 요청 처리 중 오류" });
   }
 });
+
 module.exports = router;

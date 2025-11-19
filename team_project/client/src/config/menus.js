@@ -11,12 +11,12 @@ export const sponsorMenu = [
     collapseRef: "sponsor",
     role: ["AA2", "AA3"],
   },
-  // {
-  //   label: "담당자 관리",
-  //   path: "/manager",
-  //   collapseRef: "tables",
-  //   role: ["AA2"],
-  // },
+  {
+    label: "전체 후원 내역",
+    path: "/mygiving",
+    collapseRef: "mygiving",
+    role: ["AA1", "AA2", "AA3"],
+  },
   // {
   //   label: "전체 후원 거래 내역서",
   //   path: "/report",

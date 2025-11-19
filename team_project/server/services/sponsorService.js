@@ -120,7 +120,13 @@ async function payments(payData) {
 
   return sponsorInsertResult;
 }
-
+// 나의 후원 내역 조회
+async function mygivingList() {
+  //  programCode를 인수로 받습니다.
+  const sponsorFindDB = await sponsorMapper.mygivingSQL();
+  console.log("asdassfaeebhsrenfd");
+  return sponsorFindDB;
+}
 module.exports = {
   sponsorUsersList,
   sponsorProgramAdd,
@@ -132,4 +138,5 @@ module.exports = {
   getRejectionReason,
   resubmitResult,
   payments,
+  mygivingList,
 };

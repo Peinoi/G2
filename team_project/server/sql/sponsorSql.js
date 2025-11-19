@@ -211,6 +211,23 @@ const payments = `
     );
   
   `;
+const mygiving = `
+  SELECT
+    p.program_name,
+    p.sponsor_type,
+    p.status,
+    p.start_date,
+    p.end_date,
+    p.goal_amount,
+    t.transaction_amount,
+    t.program_code,
+    p.writer,
+    t.deposit_date
+FROM
+    support_transaction t
+INNER JOIN
+    support_program p ON t.program_code = p.program_code;
+    `;
 
 module.exports = {
   sponsor_all,
@@ -227,4 +244,5 @@ module.exports = {
   getRejectReasonByResult,
   updateSupportResultStatus,
   payments,
+  mygiving,
 };

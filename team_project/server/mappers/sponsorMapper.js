@@ -345,7 +345,23 @@ async function payments(programDataArray) {
     if (conn) conn.release();
   }
 }
-
+//나의 후원 내역 조회
+async function mygivingSQL() {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+    const sponsorRows = await sponsorConn.query(sponsorSql.mygiving);
+    console.log(sponsorRows);
+    console.log("[ mygiving.js || 성공 ]");
+    //  console.log(sponsorRows);
+    return sponsorRows;
+  } catch (err) {
+    console.error("[ mygiving.js || 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
 module.exports = {
   sponsorSQL,
   programAddSQL,
@@ -358,4 +374,5 @@ module.exports = {
   getRejectionReason,
   resubmitPlan,
   payments,
+  mygivingSQL,
 };
