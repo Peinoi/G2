@@ -5,6 +5,7 @@ SELECT
    u.phone,
    u.address AS user_address,
    u.email,
+   o.org_code,
    o.org_name,
    u.manager_code,
    o.org_phone,
@@ -39,9 +40,22 @@ LEFT JOIN organization o
 	   ON u.org_code = o.org_code
 	WHERE u.user_id = ?`;
 
-const USER_UPDATE = ``;
+const USER_UPDATE = `
+UPDATE users
+SET 
+	name = ?
+   , phone = ?
+   , address = ?
+   , email = ?
+WHERE user_id = ?`;
 
-const ORG_UPDATE = ``;
+const ORG_UPDATE = `
+UPDATE users u
+INNER JOIN organization o ON o.org_name = ?
+SET
+	u.org_code = o.org_code
+	, u.department = ?
+WHERE u.user_id = ?`;
 
 const CHILD_UPDATE = `
 UPDATE child

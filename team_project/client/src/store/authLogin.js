@@ -1,9 +1,9 @@
 // src/store/authLogin.js
 
-import { defineStore } from "pinia";
-import { login as loginApi } from "../api/user";
+import { defineStore } from 'pinia';
+import { login as loginApi } from '../api/user';
 
-export const useAuthStore = defineStore("authLogin", {
+export const useAuthStore = defineStore('authLogin', {
   state: () => ({
     userId: "",
     role: "AA0",
@@ -12,9 +12,9 @@ export const useAuthStore = defineStore("authLogin", {
     isLogin: false,
   }),
   getters: {
-    isAA1: (state) => state.role == "AA1",
-    isAA2: (state) => state.role == "AA2",
-    isAA3: (state) => state.role == "AA3",
+    isAA1: (state) => state.role == 'AA1',
+    isAA2: (state) => state.role == 'AA2',
+    isAA3: (state) => state.role == 'AA3',
   },
   actions: {
     reload() {
@@ -25,7 +25,7 @@ export const useAuthStore = defineStore("authLogin", {
       // loginData를 기반으로 pinia 객체에 값을 저장
       // 로그인 상태가 아닐 경우 생략
       // -> 새로고침해도 로그인 유지됨
-      const loginCheck = localStorage.getItem("user");
+      const loginCheck = localStorage.getItem('user');
       if (!loginCheck) {
         this.userId = "";
         this.userCode = "";
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore("authLogin", {
       this.isLogin = true;
 
       localStorage.setItem(
-        "user",
+        'user',
         JSON.stringify({
           userId: result.user_id,
           role: result.role,
@@ -84,7 +84,7 @@ export const useAuthStore = defineStore("authLogin", {
       this.userCode = "";
       this.orgCode = "";
       this.isLogin = false;
-      localStorage.removeItem("user");
+      localStorage.removeItem('user');
     },
   },
 });

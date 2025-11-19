@@ -13,28 +13,21 @@
             <!-- 첫 번째 배너 -->
             <div class="carousel-item active">
               <div class="banner-ratio">
-                <img src="@/assets/img/banner/1.jpg" alt="이벤트 배너" />
+                <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
               </div>
             </div>
 
             <!-- 두 번째 배너 -->
             <div class="carousel-item">
               <div class="banner-ratio">
-                <img src="@/assets/img/banner/2.jpg" alt="후원 배너" />
+                <img src="@/assets/img/banner/2.png" alt="후원 배너" />
               </div>
             </div>
 
             <!-- 세 번째 배너 -->
             <div class="carousel-item">
               <div class="banner-ratio">
-                <img src="@/assets/img/banner/3.jpg" alt="공지 배너" />
-              </div>
-            </div>
-
-            <!-- 네 번째 배너 -->
-            <div class="carousel-item">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/4.jpg" alt="네 번째 배너" />
+                <img src="@/assets/img/banner/3.png" alt="공지 배너" />
               </div>
             </div>
           </div>

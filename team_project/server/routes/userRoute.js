@@ -16,9 +16,9 @@ router.post('/findInfo', async (req, res) => {
 
 // 사용자, 기관, 자녀 정보 수정
 router.put('/updateInfo', async (req, res) => {
-  const { type, role, data } = req.body;
+  const { type, data } = req.body;
   try {
-    const result = await userInfoService.infoUpdate(type, role, data);
+    const result = await userInfoService.infoUpdate(type, data);
     res.json(result);
   } catch (err) {
     console.error('[ updateInfo 라우터 오류 ]', err);
