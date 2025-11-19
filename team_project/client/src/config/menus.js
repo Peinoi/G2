@@ -162,10 +162,10 @@ export const appReqMenu = [
     role: ['AA3', 'AA4'],
   },
   {
-    label: "권한 이전",
-    path: "/authorityTransfer",
-    collapseRef: "AuthorityTransfer",
-    role: ["AA3"],
+    label: '권한 이전',
+    path: '/authorityTransfer',
+    collapseRef: 'AuthorityTransfer',
+    role: ['AA3'],
   },
 ];
 
@@ -210,9 +210,24 @@ export const infoMenu = [
 
 export const historyMenu = [
   {
-    label: "히스토리",
-    path: "/historyList",
-    collapseRef: "HistoryList",
-    role: ["AA3", "AA4"],
+    label: '히스토리',
+    path: '/historyList',
+    collapseRef: 'HistoryList',
+    role: ['AA3', 'AA4'],
+  },
+];
+
+export const pendingMenu = [
+  {
+    label: '대기자 목록',
+    path: '/pendinglist',
+    collapseRef: 'PendingList',
+    role: ['AA2', 'AA3', 'AA4'],
+  },
+  {
+    label: '담당자 배정 목록',
+    path: '/pendinguserlist',
+    collapseRef: 'PendingUserList',
+    role: ['AA2', 'AA3', 'AA4'],
   },
 ];
