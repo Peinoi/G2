@@ -23,12 +23,17 @@
           <span class="edit-label">{{ item.label }}</span>
         </div>
 
-        <div class="edit-input-box">
-          <MaterialInput
-            v-model="localOrg[item.key]"
-            :label="item.label"
-            class="w-100"
-          />
+        <div
+          v-if="['roleName', 'phone', 'address'].includes(item.key)"
+          class="edit-input-box"
+        >
+          <p class="view-value" style="font-size: 14px; padding-top: 5px">
+            {{ localOrg[item.key] }}
+          </p>
+        </div>
+
+        <div v-else class="edit-input-box">
+          <MaterialInput v-model="localOrg[item.key]" class="w-100" />
         </div>
       </div>
 

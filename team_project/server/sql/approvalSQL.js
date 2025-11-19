@@ -4,30 +4,33 @@
 const managerApprovalList = `
 SELECT
     ra.approval_code,           
-    u.name        AS user_name, 
-    u.user_id     AS login_id,  
-    o.org_name    AS organization_name, 
-    u.phone,
-    u.email,
-    ra.state,                   
+    COALESCE(u.name, ush.name)           AS user_name,
+    COALESCE(u.user_id, ush.user_id)     AS login_id,
+    o.org_name                           AS organization_name,
+    COALESCE(u.phone, ush.phone)         AS phone,
+    COALESCE(u.email, ush.email)         AS email,
+    ra.state,                    -- BA1/BA2/BA3
     ra.request_date,
     ra.approval_date
 FROM request_approval ra
-JOIN users u
+  -- 가입 승인요청은 AE1
+LEFT JOIN users u
   ON u.user_code = ra.requester_code
+LEFT JOIN user_signup_reject_history ush
+  ON ush.approval_code = ra.approval_code
 LEFT JOIN organization o
-  ON o.org_code = u.org_code    
+  ON o.org_code = COALESCE(u.org_code, ush.org_code)
 WHERE ra.approval_type = 'AE1'
   -- 상태 필터 (전체면 무시)
   AND (? = '' OR ra.state = ?)
   -- 검색어 필터 (전체면 무시)
   AND (
     ? = '' OR
-    u.name        LIKE CONCAT('%', ?, '%') OR
-    u.user_id     LIKE CONCAT('%', ?, '%') OR
-    o.org_name    LIKE CONCAT('%', ?, '%') OR
-    u.phone       LIKE CONCAT('%', ?, '%') OR
-    u.email       LIKE CONCAT('%', ?, '%')
+    COALESCE(u.name,    ush.name)    LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.user_id, ush.user_id) LIKE CONCAT('%', ?, '%') OR
+    o.org_name                        LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.phone,   ush.phone)   LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.email,   ush.email)   LIKE CONCAT('%', ?, '%')
   )
 ORDER BY ra.request_date DESC, ra.approval_code DESC
 LIMIT ?, ?
@@ -59,43 +62,56 @@ const findApprovalWithUser = `
 const staffApprovalList = `
 SELECT
     ra.approval_code,
-    u.name        AS user_name,
-    u.user_id     AS login_id,
-    o.org_name    AS organization_name,
-    u.phone,
-    u.email,
+
+    /* 🔥 반려면 ush, 아니면 users */
+    COALESCE(u.name, ush.name)       AS user_name,
+    COALESCE(u.user_id, ush.user_id) AS login_id,
+    COALESCE(o.org_name, ush.org_name) AS organization_name,
+    COALESCE(u.phone, ush.phone)     AS phone,
+    COALESCE(u.email, ush.email)     AS email,
+
     ra.state,
     ra.request_date,
     ra.approval_date
+
 FROM request_approval ra
-JOIN users u
-  ON u.user_code = ra.requester_code
+
+/* 🔥 승인/요청 (BA1/BA2) 은 users 테이블 */
+LEFT JOIN users u
+    ON u.user_code = ra.requester_code
+
+/* 🔥 반려된 경우 users 삭제되므로 reject history 테이블 */
+LEFT JOIN user_signup_reject_history ush
+    ON ush.approval_code = ra.approval_code
+
+/* 기관명 (users / reject_history 중 하나 선택) */
 LEFT JOIN organization o
-  ON o.org_code = u.org_code
+    ON o.org_code = u.org_code
+
 WHERE ra.approval_type = 'AE2'
-  -- 상태 필터 (전체면 무시)
+
+-- 상태 필터
   AND (? = '' OR ra.state = ?)
-  -- 검색어 필터 (전체면 무시)
+
+-- 검색어 필터
   AND (
     ? = '' OR
-    u.name        LIKE CONCAT('%', ?, '%') OR
-    u.user_id     LIKE CONCAT('%', ?, '%') OR
-    o.org_name    LIKE CONCAT('%', ?, '%') OR
-    u.phone       LIKE CONCAT('%', ?, '%') OR
-    u.email       LIKE CONCAT('%', ?, '%')
+    COALESCE(u.name, ush.name) LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.user_id, ush.user_id) LIKE CONCAT('%', ?, '%') OR
+    COALESCE(o.org_name, ush.org_name) LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.phone, ush.phone) LIKE CONCAT('%', ?, '%') OR
+    COALESCE(u.email, ush.email) LIKE CONCAT('%', ?, '%')
   )
-  -- 🔹 AA3: 자기 기관만, AA4: 전체 (orgFilterLoginId === '' 이면 필터 해제)
+
+-- 기관 필터 (AA3 용)
   AND (
     ? = '' OR
-    o.org_code = (
-      SELECT u2.org_code
-      FROM users u2
-      WHERE u2.user_id = ?
-      LIMIT 1
-    )
+    COALESCE(o.org_code, ush.org_code) =
+    (SELECT org_code FROM users WHERE user_id = ? LIMIT 1)
   )
+
 ORDER BY ra.request_date DESC, ra.approval_code DESC
-LIMIT ?, ?
+LIMIT ?, ?;
 `;
 
 /** ✅ 승인 시, 요청자 계정 활성화 (is_active = 1) */
@@ -105,6 +121,63 @@ const activateUserByApproval = `
     ON ra.requester_code = u.user_code
    SET u.is_active = 1
  WHERE ra.approval_code = ?
+`;
+
+// ✅ 회원가입(일반회원/기관담당자) 반려 시 이력 저장
+const insertSignupRejectHistory = `
+INSERT INTO user_signup_reject_history (
+    approval_code,
+    user_code,
+    user_id,
+    name,
+    phone,
+    email,
+    org_code,
+    org_name,
+    created_at
+)
+SELECT
+    ra.approval_code,
+    u.user_code,
+    u.user_id,
+    u.name,
+    u.phone,
+    u.email,
+    u.org_code,
+    o.org_name,
+    NOW()
+FROM request_approval ra
+JOIN users u
+  ON u.user_code = ra.requester_code      -- ★ FK: request_approval.requester_code
+LEFT JOIN organization o
+  ON o.org_code = u.org_code
+WHERE ra.approval_code = ?
+  AND ra.approval_type IN ('AE1','AE2');  -- ★ 일반회원/기관담당자 가입요청만 대상
+`;
+
+// ✅ approvalCode로 가입 요청자의 user_code 조회 (AE1/AE2 전용)
+const findUserCodeByApproval = `
+  SELECT u.user_code
+  FROM request_approval ra
+  JOIN users u
+    ON u.user_code = ra.requester_code
+  WHERE ra.approval_code = ?
+    AND ra.approval_type IN ('AE1','AE2')
+  LIMIT 1
+`;
+
+// ✅ FK 끊기: request_approval.requester_code 를 NULL 로 변경
+const clearRequesterCodeByApproval = `
+  UPDATE request_approval
+     SET requester_code = NULL
+   WHERE approval_code = ?
+     AND approval_type IN ('AE1','AE2')
+`;
+
+// ✅ 실제 유저 삭제 (인자로 user_code 받음)
+const deleteUserByApproval = `
+  DELETE FROM users
+   WHERE user_code = ?
 `;
 
 // 우선순위 승인 요청 목록 (페이징용)
@@ -1105,4 +1178,8 @@ module.exports = {
   sponsorshipPlanApprovalTotalCount,
   sponsorshipResultApprovalList,
   sponsorshipResultApprovalTotalCount,
+  insertSignupRejectHistory,
+  findUserCodeByApproval,
+  clearRequesterCodeByApproval,
+  deleteUserByApproval,
 };

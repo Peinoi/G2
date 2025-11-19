@@ -18,12 +18,10 @@ router.get("/", async (req, res) => {
     res.json({ success: true, result: toSafeJson(rows) });
   } catch (e) {
     console.error("[GET /survey]", e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: e.message || "조사지 목록 조회 중 오류",
-      });
+    res.status(500).json({
+      success: false,
+      message: e.message || "조사지 목록 조회 중 오류",
+    });
   }
 });
 
@@ -36,12 +34,10 @@ router.get("/latest", async (req, res) => {
     res.json({ success: true, result: toSafeJson(data) });
   } catch (e) {
     console.error("[GET /survey/latest]", e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: e.message || "최신 조사지 조회 중 오류",
-      });
+    res.status(500).json({
+      success: false,
+      message: e.message || "최신 조사지 조회 중 오류",
+    });
   }
 });
 
@@ -93,9 +89,7 @@ router.post("/update/:templateCode", async (req, res) => {
   }
 });
 
-/* -------------------------------
-  역할별 제출 목록
---------------------------------*/
+//제출본 목록
 router.get("/submissions", async (req, res) => {
   try {
     const role = Number(req.query.role || 1);
@@ -104,18 +98,14 @@ router.get("/submissions", async (req, res) => {
     res.json({ success: true, result: toSafeJson(rows) });
   } catch (e) {
     console.error("[GET /survey/submissions]", e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: e.message || "제출본 목록 조회 중 오류",
-      });
+    res.status(500).json({
+      success: false,
+      message: e.message || "제출본 목록 조회 중 오류",
+    });
   }
 });
 
-/* -------------------------------
-  제출본 상세
---------------------------------*/
+// 제출본 상세
 router.get("/submission/:submitCode", async (req, res) => {
   try {
     const data = await surveyService.getSubmissionDetail(req.params.submitCode);
@@ -127,12 +117,10 @@ router.get("/submission/:submitCode", async (req, res) => {
     res.json({ success: true, result: toSafeJson(data) });
   } catch (e) {
     console.error("[GET /survey/submission/:submitCode]", e);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: e.message || "제출본 상세 조회 중 오류",
-      });
+    res.status(500).json({
+      success: false,
+      message: e.message || "제출본 상세 조회 중 오류",
+    });
   }
 });
 
@@ -154,13 +142,14 @@ router.put("/submission/:submitCode", async (req, res) => {
   }
 });
 
-
 /* -------------------------------
   조사지 버전 상세 (세부버전 코드로 고정 조회)
 --------------------------------*/
 router.get("/detail/ver/:templateVerCode", async (req, res) => {
   try {
-    const data = await surveyService.getSurveyDetailByVer(req.params.templateVerCode);
+    const data = await surveyService.getSurveyDetailByVer(
+      req.params.templateVerCode
+    );
     if (!data) {
       return res
         .status(404)
@@ -175,4 +164,90 @@ router.get("/detail/ver/:templateVerCode", async (req, res) => {
   }
 });
 
+// 자녀 불러오기
+router.get("/children", async (req, res) => {
+  try {
+    const userId = Number(req.query.userId);
+    if (!userId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "userId가 필요합니다." });
+    }
+
+    const rows = await surveyService.listChildrenByUser(userId);
+    res.json({ success: true, result: toSafeJson(rows) });
+  } catch (e) {
+    console.error("[GET /survey/children]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "자녀(지원자) 목록 조회 중 오류",
+    });
+  }
+});
+
+// 장애 유형 저장, 수정
+router.put("/disability-type", async (req, res) => {
+  try {
+    const { user_code, disability_type } = req.body;
+
+    if (!user_code) {
+      return res
+        .status(400)
+        .json({ success: false, message: "user_code가 필요합니다." });
+    }
+
+    const result = await surveyService.updateUserDisabilityType(
+      Number(user_code),
+      disability_type ?? null
+    );
+
+    // result.affectedRows가 0이면 없는 사용자일 수 있음
+    if (result && result.affectedRows === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "해당 user를 찾을 수 없습니다." });
+    }
+
+    res.json({
+      success: true,
+      result,
+      message: "disability_type이 업데이트되었습니다.",
+    });
+  } catch (e) {
+    console.error("[PUT /survey/disability-type]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "장애 유형 저장 중 오류",
+    });
+  }
+});
+
+// 장애 유형 조회
+router.get("/disability-type", async (req, res) => {
+  try {
+    const userCode = Number(req.query.user_code);
+
+    if (!userCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "user_code가 필요합니다." });
+    }
+
+    const row = await surveyService.getUserDisabilityType(userCode);
+
+    if (!row) {
+      return res
+        .status(404)
+        .json({ success: false, message: "해당 user를 찾을 수 없습니다." });
+    }
+
+    res.json({ success: true, result: row });
+  } catch (e) {
+    console.error("[GET /survey/disability-type]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "장애 유형 조회 중 오류",
+    });
+  }
+});
 module.exports = router;

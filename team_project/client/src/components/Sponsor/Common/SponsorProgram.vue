@@ -34,15 +34,17 @@
     </div>
 
     <!-- --------------------- -->
-    <!-- 📌 카드형 리스트 -->
+    <!-- 카드형 리스트 -->
     <!-- --------------------- -->
     <div class="card-list">
+      
       <div
         class="card-item"
         v-for="item in finalList"
         :key="item.program_code"
         @click="selectCampaign(item)"
       >
+
         <!-- 이미지 -->
         <img class="thumbnail" :src="getThumbnail(item)" alt="thumbnail" />
 
@@ -56,6 +58,7 @@
             {{ formatDate(item.end_date, "yyyy-MM-dd") }}
           </div>
         </div>
+   
       </div>
     </div>
   </div>
@@ -64,7 +67,8 @@
 import axios from "axios";
 import { ref, computed, onMounted } from "vue";
 import dateFormat from "@/utils/dateFormat";
-
+import { useRouter } from "vue-router";
+const router = useRouter();
 // -------------------------------
 // 상태값
 // -------------------------------
@@ -79,7 +83,19 @@ const thumbnailMap = ref({});
 
 // 이미지 없을 때 대체 이미지
 const NO_IMAGE = "/img/noimage.png";
+// -------------------------------
+// 단건 조회 → 상세 페이지로 이동
+// -------------------------------
+const selectCampaign = (program) => {
+    // 1. 라우트 이름('SponsorDetail' 등)과 params를 이용한 이동 (권장)
+    router.push({ 
+        name: 'SponsorDetail', // 라우터에 정의한 name
+        params: { programCode: program.program_code }
+    });
 
+    // 2. 경로 문자열을 이용한 이동 (간단하지만 name 사용이 더 유연함)
+    // router.push(`/sponsordetail/${program.program_code}`);
+};
 // -------------------------------
 // 대표 이미지 로딩
 // -------------------------------
@@ -157,23 +173,23 @@ const finalList = computed(() => {
 // -------------------------------
 // 단건 조회 → 상위 컴포넌트 전달
 // -------------------------------
-const emit = defineEmits(["select-program"]);
+// const emit = defineEmits(["select-program"]);
 
-const selectCampaign = async (program) => {
-  try {
-    const res = await axios.get(`/api/sponsor/${program.program_code}`);
+// const selectCampaign = async (program) => {
+//   try {
+//     const res = await axios.get(`/api/sponsor/${program.program_code}`);
 
-    const programDetail = res.data.serviceSponsor.sponsorRows[0];
-    const attachments = res.data.serviceSponsor.attachments;
+//     const programDetail = res.data.serviceSponsor.sponsorRows[0];
+//     const attachments = res.data.serviceSponsor.attachments;
 
-    emit("select-program", {
-      ...programDetail,
-      attachments,
-    });
-  } catch (e) {
-    console.error("단건 조회 실패:", e);
-  }
-};
+//     emit("select-program", {
+//       ...programDetail,
+//       attachments,
+//     });
+//   } catch (e) {
+//     console.error("단건 조회 실패:", e);
+//   }
+// };
 
 // -------------------------------
 // 날짜 포맷

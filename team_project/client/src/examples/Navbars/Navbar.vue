@@ -14,41 +14,24 @@
       <div
         class="header-button-group d-flex justify-content-center align-items-center gap-3 flex-grow-1"
       >
-        <!-- <router-link to="/test" class="btn btn-outline-primary btn-sm"
-          >대기자</router-link
-        >
-        <router-link to="/survey-list" class="btn btn-outline-info btn-sm"
-          >조사지</router-link
-        >
-        <router-link to="/counsel-list" class="btn btn-outline-success btn-sm"
-          >상담</router-link
-        >
-        <router-link to="/plan-list" class="btn btn-outline-success btn-sm"
-          >지원계획</router-link
-        >
-        <router-link to="/result-list" class="btn btn-outline-success btn-sm"
-          >지원결과</router-link
-        >
-        <router-link to="/sponsor" class="btn btn-outline-success btn-sm"
-          >후원</router-link
-        >
-        <router-link to="/event" class="btn btn-outline-success btn-sm"
-          >이벤트</router-link
-        > -->
         <router-link
           v-for="(item, index) in menuList"
           :key="index"
           :to="item.path"
-          class="btn btn-sm"
-          :class="'btn-outline-' + item.color"
+          class="badge-link"
         >
-          {{ item.name }}
+          <span
+            class="badge badge-sm"
+            :class="['bg-gradient-' + item.color, { 'rounded-pill': true }]"
+          >
+            {{ item.name }}
+          </span>
         </router-link>
       </div>
 
       <!-- 오른쪽 영역 -->
       <div
-        class="mt-2 collapse navbar-collapse mt-sm-0 me-md-0 me-sm-4"
+        class="mt-2 collapse navbar-collapse mt-sm-0 me-0 ms-auto flex-grow-0"
         :class="isRTL ? 'px-0' : 'me-sm-4'"
         id="navbar"
       >
@@ -257,24 +240,24 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from "../Breadcrumbs.vue";
-import { mapMutations, mapState } from "vuex";
-import { useAuthStore } from "@/store/authLogin";
-import { roleMenu } from "@/examples/Menu/roleMenu";
+import Breadcrumbs from '../Breadcrumbs.vue';
+import { mapMutations, mapState } from 'vuex';
+import { useAuthStore } from '@/store/authLogin';
+import { roleMenu } from '@/examples/Menu/roleMenu';
 
 export default {
-  name: "navbar",
+  name: 'navbar',
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ["minNav", "color"],
+  props: ['minNav', 'color'],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
+    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
 
     toggleSidebar() {
       this.navbarMinimize();
@@ -284,7 +267,7 @@ export default {
       // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
       if (this.piniaLogin.isLogin) {
         this.piniaLogin.logout();
-        alert("로그아웃 완료");
+        alert('로그아웃 완료');
       }
 
       this.$router.push({ name: 'SignIn' });
@@ -294,7 +277,7 @@ export default {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(["isRTL", "isAbsolute"]),
+    ...mapState(['isRTL', 'isAbsolute']),
 
     currentRouteName() {
       return this.$route.name;
@@ -319,15 +302,20 @@ export default {
 </script>
 
 <style scoped>
-.header-button-group .btn {
-  border-radius: 8px;
-  padding: 5px 14px;
-  font-weight: 500;
-  transition: 0.2s ease-in-out;
-  margin: 0; /* ✅ 불필요한 외부 여백 제거 */
+.badge-link {
+  text-decoration: none !important;
+  cursor: pointer;
 }
 
-.header-button-group .btn:hover {
-  opacity: 0.85;
+.badge-link .badge {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.badge-link .badge:hover {
+  opacity: 0.8;
 }
 </style>

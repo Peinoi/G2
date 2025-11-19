@@ -8,6 +8,7 @@ const organizationList = `
     ,end_date
     ,status
   FROM organization
+  ORDER BY org_code DESC
 `;
 
 const organizationUpdate = `

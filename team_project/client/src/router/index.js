@@ -21,10 +21,25 @@ import { sponsorMenu } from "@/config/menus";
 import { eventMenu } from "@/config/menus";
 import { surveyMenu } from "@/config/menus";
 import { spportMenu } from "@/config/menus";
+import { counselMenu } from "@/config/menus";
 import { appReqMenu } from "@/config/menus";
 import { historyMenu } from "@/config/menus";
 import { infoMenu } from "@/config/menus";
+import { pendingMenu } from '@/config/menus';
+import PendingUserList from '../views/PendingUserList.vue';
+import PendingList from '../components/PendingList.vue';
+import PendingApproval from '../components/PendingApproval.vue';
+import SponsorDetail from "@/components/Sponsor/Common/SponsorDetail.vue";
+import PaymentPage from "@/components/Sponsor/User/PaymentPage.vue";
+import { appStatusMenu } from "@/config/menus";
 import UserInfo from "../views/UserInfo.vue";
+import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
+import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
+import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
+import MyGiving from "../views/Sponsor/MyGiving.vue";
+import PendingUserList from '../views/PendingUserList.vue';
+import PendingList from '../components/PendingList.vue';
+import PendingApproval from '../components/PendingApproval.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,6 +60,24 @@ const router = createRouter({
       name: "UserInfo",
       component: UserInfo,
     },
+    // 대기자 목록
+    {
+      path: '/pendinglist',
+      name: 'PendingList',
+      component: PendingList,
+    },
+    // 담당자 배정 목록
+    {
+      path: '/pendingapproval',
+      name: 'PendingApproval',
+      component: PendingApproval,
+    },
+    // nav 대기자 목록
+    {
+      path: '/pendinguserlist',
+      name: 'PendingUserList',
+      component: PendingUserList,
+    },
     {
       path: "/sponsor",
       name: "Sponsor",
@@ -56,19 +89,51 @@ const router = createRouter({
       component: SponsorProgramList,
     },
     {
-      path: "/sponsor/:programCode/plan-detail",
-      name: "sponsorship-plan-detail",
-      component: () => import("@/components/Sponsor/Common/ProgramAdd.vue"),
+      path: '/sponsor/:programCode/plan-detail',
+      name: 'sponsorship-plan-detail',
+      component: () => import('@/components/Sponsor/Common/ProgramAdd.vue'),
       props: (route) => ({
         programCode: Number(route.params.programCode),
         approvalMode: true,
         role: Number(route.query.role || 0),
       }),
     },
+    {
+      path: "/sponsordetail/:programCode",
+      name: "SponsorDetail",
+      component: SponsorDetail,
+      props: true,
+    },
+    {
+      path: "/paymentpage/:programCode",
+      name: "PaymentPage",
+      component: PaymentPage,
+      props: true,
+    },
+    {
+      path: "/kakaopayapprove",
+      name: "KakaoPayApprove",
+      component: KakaoPayApprove,
+    },
+    {
+      path: "/activity",
+      name: "SponsorActivity",
+      component: SponsorActivity,
+    },
+    {
+      path: "/summary",
+      name: "BudgetSummary",
+      component: BudgetSummary,
+    },
+    {
+      path: "/mygiving",
+      name: "MyGiving",
+      component: MyGiving,
+    },
 
     {
-      path: "/organization",
-      name: "Organization",
+      path: '/organization',
+      name: 'Organization',
       component: Organization,
     },
     {
@@ -117,23 +182,23 @@ const router = createRouter({
       component: () => import("../views/SponsorshipResultApproval.vue"),
     },
     {
-      path: "/historyList",
-      name: "HistoryList",
-      component: () => import("../views/HistoryList.vue"),
+      path: '/historyList',
+      name: 'HistoryList',
+      component: () => import('../views/HistoryList.vue'),
     },
     {
-      path: "/authorityTransfer",
-      name: "AuthorityTransfer",
-      component: () => import("../views/AuthorityTransfer.vue"),
+      path: '/authorityTransfer',
+      name: 'AuthorityTransfer',
+      component: () => import('../views/AuthorityTransfer.vue'),
     },
     {
-      path: "/applicationStatus",
-      name: "ApplicationStatus",
-      component: () => import("../views/ApplicationStatus.vue"),
+      path: '/applicationStatus',
+      name: 'ApplicationStatus',
+      component: () => import('../views/ApplicationStatus.vue'),
     },
     {
-      path: "/dashboard",
-      name: "Dashboard",
+      path: '/dashboard',
+      name: 'Dashboard',
       component: Dashboard,
     },
     {
@@ -407,7 +472,15 @@ router.beforeEach((to, from, next) => {
   const menu = useMenuStore();
 
   // 후원 페이지 그룹
-  const sponsorPages = ["Sponsor", "SponsorProgramList"];
+  const sponsorPages = [
+    "Sponsor",
+    "SponsorProgramList",
+    "SponsorDetail",
+    "PaymentPage",
+    "SponsorActivity",
+    "BudgetSummary",
+    "MyGiving",
+  ];
 
   // event 그룹
   const eventPages = [
@@ -423,21 +496,33 @@ router.beforeEach((to, from, next) => {
 
   // 승인 요청 그룹
   const appReqPages = [
-    "Organization",
-    "ManagerApprovals",
-    "StaffApprovals",
-    "PriorityApprovals",
-    "SupportPlanApprovals",
-    "SupportResultApprovals",
-    "EventPlanApprovals",
-    "EventResultApprovals",
-    "SponsorshipPlanApprovals",
-    "SponsorshipResultApprovals",
-    "AuthorityTransfer",
+    'Organization',
+    'ManagerApprovals',
+    'StaffApprovals',
+    'PriorityApprovals',
+    'SupportPlanApprovals',
+    'SupportResultApprovals',
+    'EventPlanApprovals',
+    'EventResultApprovals',
+    'SponsorshipPlanApprovals',
+    'SponsorshipResultApprovals',
+    'AuthorityTransfer',
   ];
 
   // 히스토리 그룹
-  const historyPages = ["HistoryList"];
+  const historyPages = ['HistoryList'];
+
+  // 대기자 목록 그룹
+  const pendingPages = ['PendingList', 'PendingUserList'];
+
+  // 신청현황 그룹
+  const appStatusPages = ["ApplicationStatus"];
+
+  // 신청현황 그룹 라우트일 경우 자동 메뉴 설정
+  if (appStatusPages.includes(to.name)) {
+    menu.setPageTitle("신청현황");
+    menu.setMenu(appStatusMenu);
+  }
 
   // 후원 그룹 라우트일 경우 자동 메뉴 설정
   if (sponsorPages.includes(to.name)) {
@@ -452,7 +537,16 @@ router.beforeEach((to, from, next) => {
   }
 
   // 조사지 그룹
-  const serveyPages = ["surveyVersion", "surveyList"];
+  const serveyPages = [
+    "surveyVersion",
+    "survey-new",
+    "survey-write",
+    "survey-edit",
+    "surveyList",
+    "surveySubmissionDetail",
+    "surveySubmissionEdit",
+    "survey-detail-by-ver",
+  ];
 
   // 조사지 그룹 라우트일 경우 자동 메뉴 설정
   if (serveyPages.includes(to.name)) {
@@ -460,8 +554,31 @@ router.beforeEach((to, from, next) => {
     menu.setMenu(surveyMenu);
   }
 
+  // 상담 그룹
+  const counselPages = [
+    "counselList",
+    "counsel-new",
+    "counsel-edit",
+    "counsel-detail",
+  ];
+
+  // 상담 그룹 라우트일 경우 자동 메뉴 설정
+  if (counselPages.includes(to.name)) {
+    menu.setPageTitle("상담 페이지");
+    menu.setMenu(counselMenu);
+  }
+
   // 지원 그룹
-  const spportPages = ["planList", "resultList"];
+  const spportPages = [
+    "planList",
+    "plan-write",
+    "plan-edit",
+    "planDetail",
+    "resultList",
+    "result-write",
+    "result-edit",
+    "resultDetail",
+  ];
 
   // 지원 그룹 라우트일 경우 자동 메뉴 설정
   if (spportPages.includes(to.name)) {
@@ -484,8 +601,14 @@ router.beforeEach((to, from, next) => {
 
   // 히스토리 그룹 라우트일 경우 자동 메뉴 설정
   if (historyPages.includes(to.name)) {
-    menu.setPageTitle("히스토리");
+    menu.setPageTitle('히스토리');
     menu.setMenu(historyMenu);
+  }
+
+  // 대기자 그룹
+  if (pendingPages.includes(to.name)) {
+    menu.setPageTitle('대기자 목록');
+    menu.setMenu(pendingMenu);
   }
 
   next();

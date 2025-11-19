@@ -1,10 +1,9 @@
 // server/mappers/surveyMapper.js
 const pool = require("../configs/db");
 const sql = require("../sql/surveySql");
+const { logHistoryDiff } = require("../utils/historyUtil");
 
-/* -------------------------------------------------
- * 공통 유틸
- * ------------------------------------------------- */
+// 공통
 function safeParseJSON(s) {
   try {
     return JSON.parse(s);
@@ -236,6 +235,7 @@ async function insertAnswers(body) {
     if (!written_by) {
       throw new Error("written_by(작성자)가 없습니다.");
     }
+    const child_code = body.target_person_code || null;
 
     const submission = await conn.query(sql.insertSubmission, [
       template_ver_code,
@@ -244,6 +244,7 @@ async function insertAnswers(body) {
       written_by,
       "CA1",
       null, // app_at
+      child_code,
     ]);
     const submit_code = submission.insertId;
 
@@ -457,35 +458,95 @@ async function getSubmissionDetail(submitCode) {
   }
 }
 
-/* -------------------------------
-  9) 제출본 수정 (답변 재저장)
---------------------------------*/
+//제출본 수정
 async function updateSubmissionAnswers(submitCode, body) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    await conn.query(sql.deleteAnswersBySubmit, [submitCode]);
+    const id = Number(submitCode);
+    if (!id) {
+      throw new Error("유효한 submitCode가 아닙니다.");
+    }
 
+    const modifier = body?.modifier ?? null;
+
+    // 1) 수정 전 답변 조회
+    const prevAnswerRows = await conn.query(sql.getAnswersBySubmit, [id]);
+
+    const beforeAnswers = {};
+    for (const row of prevAnswerRows) {
+      let v = row.answer_text;
+
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (
+          (s.startsWith("[") && s.endsWith("]")) ||
+          (s.startsWith("{") && s.endsWith("}"))
+        ) {
+          try {
+            v = JSON.parse(s);
+          } catch {
+            // 파싱 실패 시 그냥 문자열 유지
+          }
+        }
+      }
+      beforeAnswers[row.item_code] = v;
+    }
+
+    // 🔥 여기: 문자열로 감싸서 넘기기
+    const beforeRow = {
+      answers: JSON.stringify(beforeAnswers),
+    };
+
+    // 2) 기존 답안 삭제
+    await conn.query(sql.deleteAnswersBySubmit, [id]);
+
+    // 3) 새 답안 저장 + afterAnswers 구성
     const now = new Date();
+    const afterAnswers = {};
+
     for (const [item_code, value] of Object.entries(body.answers || {})) {
       let answer_text = null;
-      if (Array.isArray(value)) answer_text = JSON.stringify(value);
-      else if (value !== undefined && value !== null)
+
+      if (Array.isArray(value)) {
+        answer_text = JSON.stringify(value);
+        afterAnswers[Number(item_code)] = value;
+      } else if (value !== undefined && value !== null) {
         answer_text = String(value);
+        afterAnswers[Number(item_code)] = value;
+      } else {
+        afterAnswers[Number(item_code)] = null;
+      }
 
       await conn.query(sql.insertAnswer, [
         Number(item_code),
-        submitCode,
+        id,
         answer_text,
         now,
       ]);
     }
 
-    await conn.query(sql.updateSubmissionUpdatedAt, [now, submitCode]);
+    await conn.query(sql.updateSubmissionUpdatedAt, [now, id]);
+
+    const afterRow = {
+      answers: JSON.stringify(afterAnswers), // 🔥 여기도 문자열
+    };
+
+    if (modifier !== null) {
+      await logHistoryDiff(conn, {
+        tableName: "survey_submission",
+        tablePk: id,
+        modifier,
+        historyType: "BD1",
+        beforeRow,
+        afterRow,
+        fields: ["answers"],
+      });
+    }
 
     await conn.commit();
-    return safeJSON({ submit_code: Number(submitCode) });
+    return safeJSON({ submit_code: id });
   } catch (e) {
     await conn.rollback();
     throw e;
@@ -494,7 +555,7 @@ async function updateSubmissionAnswers(submitCode, body) {
   }
 }
 
-// 수정으로 원본 안바뀌게 하려구
+// 버전 수정으로 원본 안바뀌게 하려구
 async function getSurveyDetailByVer(templateVerCode) {
   const conn = await pool.getConnection();
   try {
@@ -549,6 +610,44 @@ async function getSurveyDetailByVer(templateVerCode) {
   }
 }
 
+// 현재 로그인 사용자의 자녀 목록
+async function listChildrenByUser(userId) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.listChildrenByUser, [userId]);
+    return safeJSON(rows);
+  } finally {
+    conn.release();
+  }
+}
+
+// 장애 유형 업데이트
+async function updateUserDisabilityType(userId, disabilityType) {
+  const conn = await pool.getConnection();
+  try {
+    const result = await conn.query(sql.updateUserDisabilityType, [
+      disabilityType,
+      userId,
+    ]);
+    return safeJSON(result);
+  } finally {
+    conn.release();
+  }
+}
+
+// 장애 유형 조회
+async function getUserDisabilityType(userId) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.getUserDisabilityType, [userId]);
+    // rows가 배열 형태일 가능성 있어서 0번째만 꺼내서 반환
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row ? safeJSON(row) : null;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   listTemplates,
   insertSurvey,
@@ -559,4 +658,7 @@ module.exports = {
   getSubmissionDetail,
   updateSubmissionAnswers,
   getSurveyDetailByVer,
+  listChildrenByUser,
+  updateUserDisabilityType,
+  getUserDisabilityType,
 };

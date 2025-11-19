@@ -30,8 +30,9 @@
         <div v-else class="edit-input-box">
           <MaterialInput
             v-model="localUser[item.key]"
-            :label="item.label"
             class="w-100"
+            :type="item.key === 'phone' ? 'tel' : 'text'"
+            @input="item.key === 'phone' ? formatPhone() : null"
           />
         </div>
       </div>
@@ -81,6 +82,43 @@ export default {
       handler(val) {
         this.localUser = { ...val };
       },
+    },
+  },
+  methods: {
+    formatPhone() {
+      let phone = this.localUser.phone;
+      if (!phone) return;
+
+      // 1. 숫자만 남기기 (하이픈 등 비숫자 문자 제거)
+      const cleaned = phone.replace(/[^0-9]/g, '');
+      let formatted = '';
+
+      // 2. 길이에 따라 하이픈 포맷 적용
+      if (cleaned.length < 4) {
+        formatted = cleaned;
+      } else if (cleaned.length < 7) {
+        // 010-123
+        formatted = cleaned.slice(0, 3) + '-' + cleaned.slice(3);
+      } else if (cleaned.length < 11) {
+        // 010-1234-567 (10자리)
+        formatted =
+          cleaned.slice(0, 3) +
+          '-' +
+          cleaned.slice(3, 7) +
+          '-' +
+          cleaned.slice(7);
+      } else {
+        // 010-1234-5678 (11자리, 최대)
+        formatted =
+          cleaned.slice(0, 3) +
+          '-' +
+          cleaned.slice(3, 7) +
+          '-' +
+          cleaned.slice(7, 11);
+      }
+
+      // 3. localUser.phone에 포맷된 값 반영
+      this.localUser.phone = formatted;
     },
   },
 };

@@ -188,7 +188,7 @@
                   </MaterialSwitch>
                 </div>
 
-                <!-- 옵션 -->
+                <!-- 옵션 (라벨만) -->
                 <div v-if="isChoiceType(it.type)" class="mt-4 border-t pt-3">
                   <div class="flex items-center justify-between mb-2">
                     <div class="text-xs font-medium text-gray-700">
@@ -215,23 +215,12 @@
                         #{{ oIndex + 1 }}
                       </div>
 
-                      <!-- 라벨 -->
+                      <!-- 라벨만 사용 -->
                       <div>
                         <MaterialInput
                           v-model="op.label"
                           :id="`label-${op.id}`"
                           label="옵션 라벨"
-                          variant="static"
-                          size="default"
-                        />
-                      </div>
-
-                      <!-- 값 -->
-                      <div>
-                        <MaterialInput
-                          v-model="op.value"
-                          :id="`value-${op.id}`"
-                          label="옵션 값"
                           variant="static"
                           size="default"
                         />
@@ -282,6 +271,7 @@
         </MaterialButton>
       </div>
     </div>
+
     <!-- =======================
         PREVIEW MODAL
     ======================= -->
@@ -335,7 +325,7 @@
                   <div class="text-xs text-gray-600 mb-1">옵션</div>
                   <ul class="list-disc pl-6 text-sm">
                     <li v-for="op in it.options" :key="op.id">
-                      {{ op.label || "라벨 없음" }} ({{ op.value || "-" }})
+                      {{ op.label || "라벨 없음" }}
                     </li>
                   </ul>
                 </div>
@@ -424,7 +414,7 @@ function onChangeType(item) {
   if (isChoiceType(item.type)) {
     if (!Array.isArray(item.options)) item.options = [];
     if (item.options.length === 0)
-      item.options.push({ id: newId(), label: "", value: "", order: 1 });
+      item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
   } else {
     item.options = [];
   }
@@ -433,13 +423,11 @@ function onChangeType(item) {
 // 옵션 추가/삭제
 function addOption(i, j, k) {
   const item = sections.value[i].subsections[j].items[k];
-  const nextOrder = (item.options?.length || 0) + 1;
-  item.options.push({ id: newId(), label: "", value: "", order: nextOrder });
+  item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
 }
 function removeOption(i, j, k, o) {
   const item = sections.value[i].subsections[j].items[k];
-  item.options.splice(o, 1);
-  item.options.forEach((op, idx) => (op.order = idx + 1));
+  item.options.splice(o, 1); // 🔥 order 재정렬 필요 없음
 }
 
 // 저장할 데이터 구조 (백엔드 insertSurvey에 맞춤)
@@ -463,12 +451,16 @@ const payload = computed(() => ({
         question_type: it.type,
         question_text: it.text,
         is_required: it.required ? "Y" : "N",
+        // 🔥 선택형일 때만 option_values 채움
         option_values: isChoiceType(it.type)
-          ? it.options.map((op, k) => ({
-              label: op.label ?? "",
-              value: op.value ?? "",
-              order: op.order ?? k + 1,
-            }))
+          ? it.options.map((op, k) => {
+              const base = op.label || ""; // 라벨만 사용
+              return {
+                label: base,
+                value: base, // value는 label과 동일하게 자동 세팅
+                order: k + 1, // 순서는 여기서 자동 생성
+              };
+            })
           : null,
       })),
     })),
@@ -604,10 +596,10 @@ section {
   margin-bottom: 0.75rem;
 }
 
-/* 옵션 행 (번호 + 라벨 + 값 + 삭제 버튼 한 줄) */
+/* 옵션 행 (번호 + 라벨 + 삭제 버튼) */
 .option-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1.5fr) minmax(0, 2fr) 80px;
+  grid-template-columns: 40px minmax(0, 1fr) 80px; /* 🔥 3컬럼으로 변경 */
   gap: 0.5rem;
   align-items: center;
 }
