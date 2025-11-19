@@ -325,6 +325,27 @@ async function resubmitPlan(planCode, requesterCode) {
     conn.release();
   }
 }
+
+async function payments(programDataArray) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+    console.log("데이터", programDataArray);
+    const result = await conn.query(sponsorSql.payments, programDataArray);
+
+    console.log("[ sponsorConn.js || 프로그램 등록 쿼리 성공 ]");
+
+    await conn.commit();
+    return { programResult: result };
+  } catch (err) {
+    console.error("[ sponsorConn.js || 프로그램 등록 쿼리 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
 module.exports = {
   sponsorSQL,
   programAddSQL,
@@ -336,4 +357,5 @@ module.exports = {
   rejectSupportPlan,
   getRejectionReason,
   resubmitPlan,
+  payments,
 };

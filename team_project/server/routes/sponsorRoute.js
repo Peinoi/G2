@@ -46,6 +46,7 @@ const {
   rejectSupportResult,
   getRejectionReason,
   resubmitResult,
+  payments,
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -320,5 +321,16 @@ router.post("/:resultCode/resubmit", async (req, res) => {
     });
   }
 });
+router.post("/:programCode/:user_id/payments", async (req, res) => {
+  try {
+    const data = req.body;
+    console.log("결제 데이터", data);
+    const result = await payments(data);
 
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /:programCode/request-approval]", e);
+    res.status(500).json({ success: false, message: "승인 요청 처리 중 오류" });
+  }
+});
 module.exports = router;

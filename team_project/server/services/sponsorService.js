@@ -108,6 +108,19 @@ async function getRejectionReason(resultCode) {
 async function resubmitResult(resultCode, requesterCode) {
   return sponsorMapper.resubmitResult(resultCode, requesterCode);
 }
+
+async function payments(payData) {
+  const programDataArray = [
+    payData.userID,
+    payData.transaction_amount,
+    payData.program_code,
+  ];
+  console.log("서비스", programDataArray);
+  const sponsorInsertResult = await sponsorMapper.payments(programDataArray);
+
+  return sponsorInsertResult;
+}
+
 module.exports = {
   sponsorUsersList,
   sponsorProgramAdd,
@@ -118,4 +131,5 @@ module.exports = {
   rejectSupportResult,
   getRejectionReason,
   resubmitResult,
+  payments,
 };

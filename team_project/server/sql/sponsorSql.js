@@ -196,6 +196,22 @@ const updateSupportResultStatus = `
     WHERE program_code = ?
   `;
 
+// 후원 결제
+const payments = `
+    insert into support_transaction (
+    transaction_type,
+    userID, 
+    transaction_amount, 
+    payment_method,
+    donation_datetime, 
+    deposit_date,
+    status, 
+    program_code )
+    values ('단기',?,?,'카카오페이',now(),CURDATE(),'완료',?
+    );
+  
+  `;
+
 module.exports = {
   sponsor_all,
   sponsor_program,
@@ -210,4 +226,5 @@ module.exports = {
   updateApprovalRejectForResult,
   getRejectReasonByResult,
   updateSupportResultStatus,
+  payments,
 };
