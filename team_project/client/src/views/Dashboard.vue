@@ -10,21 +10,16 @@
           data-bs-interval="2000"
         >
           <div class="carousel-inner">
-            <!-- 첫 번째 배너 -->
             <div class="carousel-item active">
               <div class="banner-ratio">
                 <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
               </div>
             </div>
-
-            <!-- 두 번째 배너 -->
             <div class="carousel-item">
               <div class="banner-ratio">
                 <img src="@/assets/img/banner/2.png" alt="후원 배너" />
               </div>
             </div>
-
-            <!-- 세 번째 배너 -->
             <div class="carousel-item">
               <div class="banner-ratio">
                 <img src="@/assets/img/banner/3.png" alt="공지 배너" />
@@ -32,7 +27,6 @@
             </div>
           </div>
 
-          <!-- 좌우 버튼 -->
           <button
             class="carousel-control-prev"
             type="button"
@@ -57,18 +51,24 @@
 
     <!-- 📊 하단 2x2 그리드 -->
     <div class="summary-grid">
-      <!-- (1,1) 신청 현황 -->
+      <!-- (1,1) 나의 신청 현황 -->
       <div class="summary-item summary-item--apply">
-        <mini-statistics-card
-          title="신청 현황"
-          value="7억건"
+        <dashboard-table-card
+          title="나의 신청 현황"
           icon="assignment"
           color="success"
-          description="이번 주 기준 신청 현황"
+          :columns="[
+            { label: '지원자', field: 'child_name', align: 'left' },
+            { label: '기관', field: 'org_name', align: 'left' },
+            { label: '신청일', field: 'survey_date', align: 'left' },
+            { label: '상태', field: 'status_label', align: 'right' },
+          ]"
+          :rows="applyRows"
+          :maxRows="4"
         />
       </div>
 
-      <!-- (1,2) 이벤트 -->
+      <!-- (1,2) 이벤트 카드 -->
       <div class="summary-item summary-item--event">
         <mini-statistics-card
           title="이벤트 참여"
@@ -79,12 +79,12 @@
         />
       </div>
 
-      <!-- (2,1) 동글동글 버튼들 -->
+      <!-- (2,1) 동글동글 퀵 버튼 -->
       <div class="summary-item summary-item--actions">
         <div class="quick-actions-inline">
-          <button class="quick-action-btn" @click="goSurvey">
-            <span class="quick-action-label">조사지</span>
-            <span class="quick-action-sub">작성하기</span>
+          <button class="quick-action-btn" @click="handleSurveyClick">
+            <span class="quick-action-label">{{ surveyMainText }}</span>
+            <span class="quick-action-sub">{{ surveySubText }}</span>
           </button>
           <button class="quick-action-btn" @click="goEvent">
             <span class="quick-action-label">이벤트</span>
@@ -97,7 +97,7 @@
         </div>
       </div>
 
-      <!-- (2,2) 후원 -->
+      <!-- (2,2) 후원 카드 -->
       <div class="summary-item summary-item--donation">
         <mini-statistics-card
           title="후원 금액"
@@ -113,20 +113,148 @@
 
 <script>
 import MiniStatisticsCard from "@/components/MiniStatisticsCard.vue";
+import DashboardTableCard from "@/components/DashboardTableCard.vue";
+import axios from "axios";
 
 export default {
   name: "Dashboard",
-  components: { MiniStatisticsCard },
+  components: { MiniStatisticsCard, DashboardTableCard },
+  data() {
+    return {
+      userRole: null,
+      applyRows: [],
+      loadingApply: false,
+    };
+  },
+  created() {
+    // 로그인 정보에서 role 세팅
+    const userStr = localStorage.getItem("user");
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        this.userRole = user.role || null;
+      } catch (e) {
+        console.error("[Dashboard] user 파싱 실패:", e);
+        this.userRole = null;
+      }
+    }
+
+    // 일반 사용자(AA1)일 때만 "나의 신청 현황" 조회
+    if (this.userRole === "AA1") {
+      this.fetchApplyStats();
+    }
+  },
+  computed: {
+    surveyMainText() {
+      if (this.userRole === "AA0" || !this.userRole) return "로그인";
+      return "조사지";
+    },
+    surveySubText() {
+      if (this.userRole === "AA0" || !this.userRole) return "로그인 하러가기";
+      if (this.userRole === "AA1") return "작성하기";
+      if (["AA2", "AA3", "AA4"].includes(this.userRole)) return "목록 바로가기";
+      return "";
+    },
+  },
   methods: {
-    // 👉 실제 라우트 경로에 맞게 바꿔 쓰면 됨
-    goSurvey() {
-      this.$router.push("/survey");
+    handleSurveyClick() {
+      const role = this.userRole;
+
+      if (role === "AA1") {
+        this.$router.push("/survey/write");
+      } else if (["AA2", "AA3", "AA4"].includes(role)) {
+        this.$router.push("/survey/list");
+      } else {
+        this.$router.push("/sign-in");
+      }
     },
     goEvent() {
-      this.$router.push("/event");
+      this.$router.push("/event/list");
     },
     goSupport() {
       this.$router.push("/support");
+    },
+
+    async fetchApplyStats() {
+      const userStr = localStorage.getItem("user");
+
+      if (!userStr) {
+        this.applyRows = [];
+        return;
+      }
+
+      let loginId = null;
+      try {
+        const user = JSON.parse(userStr);
+        // 🔥 백엔드 WHERE parent.user_id = ? 이면 user_id 사용
+        loginId = user.user_id;
+      } catch (e) {
+        console.error("[Dashboard] user 파싱 실패:", e);
+        this.applyRows = [];
+        return;
+      }
+
+      if (!loginId) {
+        this.applyRows = [];
+        return;
+      }
+
+      this.loadingApply = true;
+
+      try {
+        const res = await axios.get("/api/applications/mine", {
+          params: { loginId },
+        });
+
+        const raw = res.data?.data ?? [];
+        let list = [];
+
+        if (Array.isArray(raw)) {
+          list = raw;
+        } else if (raw && typeof raw === "object") {
+          list = [raw];
+        }
+
+        // submit_code 있는 것만 필터 + 최신순 정렬 + 앞에서 4개만 사용
+        const sorted = list
+          .filter((row) => row && row.submit_code)
+          .sort((a, b) => {
+            const da = new Date(a.survey_date || a.submit_at || 0);
+            const db = new Date(b.survey_date || b.submit_at || 0);
+            return db - da; // 최신 먼저
+          })
+          .slice(0, 4);
+
+        this.applyRows = sorted.map((row) => {
+          // 상태 문자열 만들기 (계획/결과 상황에 따라)
+          let status = "-";
+
+          if (row.result_status) {
+            status = `결과중`;
+          } else if (row.plan_status) {
+            status = `계획중`;
+          } else {
+            status = "검토중";
+          }
+
+          const dateStr = row.survey_date
+            ? String(row.survey_date).substring(0, 10)
+            : "";
+
+          return {
+            child_name: row.child_name || row.name,
+            org_name: row.org_name || "-",
+            survey_date: dateStr,
+            status_label: status,
+          };
+        });
+      } catch (err) {
+        console.error("[Dashboard] 신청 현황 조회 실패:", err);
+        this.applyRows = [];
+      } finally {
+        this.loadingApply = false;
+      }
     },
   },
 };
@@ -145,7 +273,7 @@ export default {
   }
 }
 
-/* ✅ 배너 비율 고정 (aspect-ratio 사용) */
+/* 배너 비율 유지 */
 .banner-ratio {
   width: 100%;
   aspect-ratio: 21 / 9;
@@ -159,55 +287,56 @@ export default {
   object-fit: cover;
 }
 
-/* 카드와 배너 간격 (row + row 구조용) */
+/* 카드와 배너 간격 */
 .row + .row {
   margin-top: 2rem;
 }
 
-/* 📊 2x2 느낌 카드 그리드 */
+/* 📊 그리드 기본(모바일): 1열 + 순서 지정 */
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 모바일: 한 줄 */
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   margin-top: 0.5rem;
+  grid-template-areas:
+    "apply"
+    "event"
+    "donation"
+    "actions";
 }
 
-/* 화면 좀 넓어지면 2열 그리드 + 2x2 고정 위치 */
+/* 영역 매핑 */
+.summary-item--apply {
+  grid-area: apply;
+}
+.summary-item--event {
+  grid-area: event;
+}
+.summary-item--donation {
+  grid-area: donation;
+}
+.summary-item--actions {
+  grid-area: actions;
+}
+
+/* 큰 화면(>=768px): 2x2 레이아웃 */
 @media (min-width: 768px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(0, auto);
-  }
-
-  .summary-item--apply {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .summary-item--event {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .summary-item--actions {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .summary-item--donation {
-    grid-column: 2;
-    grid-row: 2;
+    grid-template-areas:
+      "apply event"
+      "actions donation";
   }
 }
 
-/* 🔘 퀵 액션 동그라미 버튼 (가로로 3개) */
+/* 🔘 퀵액션 버튼 */
 .quick-actions-inline {
   display: flex;
   justify-content: space-evenly;
   gap: 1rem;
 }
 
-/* 동그란 버튼 자체 스타일 */
 .quick-action-btn {
   width: 90px;
   height: 90px;

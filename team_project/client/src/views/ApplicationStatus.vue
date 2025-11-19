@@ -45,9 +45,9 @@
             >
               <td>{{ idx + 1 }}</td>
 
-              <td>{{ row.child_name }}</td>
-              <td>{{ row.parent_name }}</td>
-              <td>{{ row.manager_name || "-" }}</td>
+              <td>{{ row.child_name || "본인" }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.assi_name || "-" }}</td>
               <td>{{ row.org_name || "-" }}</td>
 
               <!-- 지원 신청일 (조사지 상세 이동) -->
@@ -116,7 +116,7 @@ const convertPriority = (code) => {
 const convertPlanStatus = (code) => {
   switch (code) {
     case "CC1":
-      return "임시저장";
+      return "작성 전";
     case "CC2":
       return "작성 전";
     case "CC3":
@@ -134,7 +134,7 @@ const convertPlanStatus = (code) => {
 const convertResultStatus = (code) => {
   switch (code) {
     case "CD1":
-      return "임시저장";
+      return "작성 전";
     case "CD2":
       return "작성 전";
     case "CD3":
