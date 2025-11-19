@@ -1,6 +1,7 @@
 // server/mappers/supportResultMapper.js
 const pool = require("../configs/db");
 const sql = require("../sql/supportResultSql");
+const { logHistoryDiff } = require("../utils/historyUtil");
 
 function safeJSON(v) {
   return JSON.parse(
@@ -79,7 +80,14 @@ async function getResultBasic(submitCode) {
 
     return safeJSON({
       submitCode: row.submit_code,
-      name: row.writer_name,
+
+      // ✅ 기본정보 카드에서 사용하는 필드들
+      childName: row.child_name || "", // 지원자 이름
+      guardianName: row.guardian_name || "", // 보호자 이름
+      assigneeName: row.assignee_name || "", // 담당자 이름
+      disabilityType: row.disability_type || "", // 장애유형
+
+      // 필요하면 나머지도 그대로 유지 가능
       ssnFront: row.ssn,
       counselSubmitAt: row.counsel_submit_at,
       planSubmitAt: row.plan_submit_at,
@@ -89,6 +97,7 @@ async function getResultBasic(submitCode) {
     conn.release();
   }
 }
+
 /**
  * 🔹 결과 최종 저장
  *  - 상태: CD4(검토중) 로 저장 (임시: CD1, 초기 자동생성: CD3)
@@ -492,22 +501,38 @@ async function getResultDetail(resultCode) {
   }
 }
 
-/**
- * 🔹 지원결과 수정 + 항목 + 첨부 업데이트
- *  - ResultEdit.vue 에서 넘어오는 formJson 구조 기준:
- *    { resultCode, planCode, submitCode, mainForm, resultItems, removedAttachCodes }
- */
+// 결과 수정
 async function updateResultWithItems(formJson, files) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const { resultCode, mainForm, resultItems, removedAttachCodes } = formJson;
+    const { resultCode, mainForm, resultItems, removedAttachCodes, modifier } =
+      formJson;
 
     const resultId = Number(resultCode);
     if (!resultId) {
       throw new Error("resultCode가 유효하지 않습니다.");
     }
+
+    // 0) 수정 전 상태 가져오기 (헤더 + 메인 item)
+    const headers = await conn.query(sql.getSupportResultDetailByCode, [
+      resultId,
+    ]);
+    const headerBefore = headers[0];
+    const itemsBefore = await conn.query(
+      sql.getSupportResultItemsByResultCode,
+      [resultId]
+    );
+    const mainBefore = itemsBefore[0] || {};
+
+    const beforeState = {
+      actual_from: headerBefore?.actual_from || null,
+      actual_to: headerBefore?.actual_to || null,
+      goal: mainBefore?.item_title || "",
+      publicContent: mainBefore?.content_for_user || "",
+      privateContent: mainBefore?.content_for_org || "",
+    };
 
     // 실제 진행기간 → actual_from / actual_to
     let actualFrom = null;
@@ -557,7 +582,16 @@ async function updateResultWithItems(formJson, files) {
       }
     }
 
-    // 3) 삭제 예정 첨부 삭제
+    //  수정 후 상태 객체
+    const afterState = {
+      actual_from: actualFrom,
+      actual_to: actualTo,
+      goal: mainForm?.goal || "",
+      publicContent: mainForm?.publicContent || "",
+      privateContent: mainForm?.privateContent || "",
+    };
+
+    // 3) 첨부 삭제
     if (Array.isArray(removedAttachCodes) && removedAttachCodes.length > 0) {
       for (const code of removedAttachCodes) {
         const id = Number(code);
@@ -582,6 +616,23 @@ async function updateResultWithItems(formJson, files) {
         ]);
       }
     }
+
+    // 🔹 5) 히스토리 기록 (실제 변경된 필드만)
+    await logHistoryDiff(conn, {
+      tableName: "support_result",
+      tablePk: resultId,
+      modifier: modifier || null, // 프론트에서 넘겨줘야 함
+      historyType: "BD4",
+      beforeRow: beforeState,
+      afterRow: afterState,
+      fields: [
+        "actual_from",
+        "actual_to",
+        "goal",
+        "publicContent",
+        "privateContent",
+      ],
+    });
 
     await conn.commit();
     return safeJSON({ resultCode: resultId });

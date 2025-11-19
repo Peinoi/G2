@@ -35,7 +35,15 @@
           </span>
 
           <!-- 오른쪽 열: 첫 줄은 비워두기 (정렬용) -->
-          <span class="writer-right"></span>
+          <span class="writer-right">
+            <input
+              type="text"
+              v-model="disabilityType"
+              class="delegate-select"
+              :disabled="writerType !== 'SELF'"
+              placeholder="장애 유형을 입력하세요"
+            />
+          </span>
         </label>
 
         <!-- 대리인 작성 -->
@@ -240,6 +248,8 @@ const selectedPersonCode = ref("");
 // TODO: 실제 API 연결 시 axios로 교체
 const delegateOptions = ref([]);
 
+const disabilityType = ref("");
+
 // 체크박스용 헬퍼: 현재 값에 포함되어 있는지
 function isChecked(itemCode, value) {
   const arr = answers.value[itemCode];
@@ -293,6 +303,11 @@ onMounted(async () => {
           params: { userId: userCode },
         });
         delegateOptions.value = childRes.result ?? [];
+
+        const { data: meRes } = await axios.get("/api/survey/disability-type", {
+          params: { user_code: userCode },
+        });
+        disabilityType.value = meRes.result?.disability_type ?? "";
       }
     }
   } catch (e) {
@@ -321,6 +336,13 @@ async function submitSurvey() {
     if (!userCode) {
       alert("로그인 정보를 찾을 수 없습니다. (user_code 없음)");
       return;
+    }
+
+    if (writerType.value === "SELF" && disabilityType.value) {
+      await axios.put("/api/survey/disability-type", {
+        user_code: Number(userCode),
+        disability_type: disabilityType.value,
+      });
     }
 
     const payload = {

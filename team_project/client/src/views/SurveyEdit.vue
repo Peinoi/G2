@@ -181,7 +181,7 @@
                   </MaterialSwitch>
                 </div>
 
-                <!-- 옵션 -->
+                <!-- 옵션 (라벨만 사용) -->
                 <div v-if="isChoiceType(it.type)" class="mt-4 border-t pt-3">
                   <div class="flex items-center justify-between mb-2">
                     <div class="text-xs font-medium text-gray-700">
@@ -203,11 +203,13 @@
                       :key="op.id"
                       class="option-row"
                     >
-                      <div class="md:col-span-1 text-[11px] text-gray-500">
+                      <!-- 번호 -->
+                      <div class="text-[11px] text-gray-500">
                         #{{ oIndex + 1 }}
                       </div>
 
-                      <div class="md:col-span-4">
+                      <!-- 라벨 -->
+                      <div>
                         <MaterialInput
                           v-model="op.label"
                           :id="`op-label-${it.id}-${op.id}`"
@@ -216,16 +218,8 @@
                         />
                       </div>
 
-                      <div class="md:col-span-6">
-                        <MaterialInput
-                          v-model="op.value"
-                          :id="`op-value-${it.id}-${op.id}`"
-                          label="값"
-                          variant="static"
-                        />
-                      </div>
-
-                      <div class="md:col-span-1 text-right">
+                      <!-- 삭제 버튼 -->
+                      <div class="text-right">
                         <MaterialButton
                           color="dark"
                           size="sm"
@@ -250,7 +244,6 @@
       <!-- /section-card -->
 
       <!-- 하단 컨트롤 -->
-
       <div class="form-actions">
         <MaterialButton
           color="dark"
@@ -347,7 +340,7 @@ function onChangeType(item) {
   if (isChoiceType(item.type)) {
     if (!Array.isArray(item.options)) item.options = [];
     if (item.options.length === 0)
-      item.options.push({ id: newId(), label: "", value: "" });
+      item.options.push({ id: newId(), label: "" }); // 🔥 value 제거
   } else {
     item.options = [];
   }
@@ -357,7 +350,6 @@ function addOption(sIdx, subIdx, iIdx) {
   sections.value[sIdx].subsections[subIdx].items[iIdx].options.push({
     id: newId(),
     label: "",
-    value: "",
   });
 }
 
@@ -399,13 +391,13 @@ onMounted(async () => {
           type: (it.question_type || "TEXT").toUpperCase(),
           text: it.question_text ?? "",
           required: it.is_required === "Y",
+          // 🔥 기존 option_values에서 label만 가져옴 (value는 무시)
           options: (Array.isArray(it.option_values)
             ? it.option_values
             : []
           ).map((op, idx) => ({
             id: newId(),
-            label: op.label ?? "",
-            value: op.value ?? "",
+            label: op.label ?? op.value ?? "",
             order: Number(op.order ?? idx + 1),
           })),
         })),
@@ -447,11 +439,14 @@ async function saveEdit() {
             question_text: it.text,
             is_required: it.required ? "Y" : "N",
             option_values: isChoiceType(it.type)
-              ? it.options.map((op, k) => ({
-                  label: op.label ?? "",
-                  value: op.value ?? "",
-                  order: Number(op.order ?? k + 1),
-                }))
+              ? it.options.map((op, k) => {
+                  const base = op.label || "";
+                  return {
+                    label: base,
+                    value: base, // 🔥 value는 label과 동일하게 저장
+                    order: k + 1,
+                  };
+                })
               : null,
           })),
         })),
@@ -568,17 +563,18 @@ section {
   margin-bottom: 0.75rem;
 }
 
-/* 옵션 행 */
+/* 옵션 행: 번호 + 라벨 + 삭제 버튼 */
 .option-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1.5fr) minmax(0, 2fr) 80px;
+  grid-template-columns: 40px minmax(0, 1.5fr) 80px;
   gap: 0.5rem;
   align-items: center;
 }
+
 .form-actions {
   margin-top: 10px;
   padding-top: 0.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #d1d5db;
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;

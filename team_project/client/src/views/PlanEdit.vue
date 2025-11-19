@@ -500,6 +500,9 @@ function validate() {
   return null;
 }
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 // 수정/재작성 완료
 async function submitAll() {
   const err = validate();
@@ -515,6 +518,7 @@ async function submitAll() {
       mainForm: mainForm.value,
       planItems: planItems.value,
       removedAttachCodes: removedAttachCodes.value,
+      modifier,
     };
 
     const formData = new FormData();

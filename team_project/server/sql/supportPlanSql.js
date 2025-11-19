@@ -116,7 +116,7 @@ SELECT
 
   -- 아동(지원자)
   child.child_name AS child_name,
-  child.disability_type,
+  COALESCE(child.disability_type, writer.disability_type) AS disability_type,
 
   -- 담당자
   assi.name AS assignee_name,
@@ -143,9 +143,8 @@ GROUP BY
   ss.submit_code,
   writer.name,
   child.child_name,
-  child.disability_type,
+  COALESCE(child.disability_type, writer.disability_type),
   assi.name;
-
 `,
 
   // submit_code로 support_plan 있는지 확인

@@ -165,44 +165,44 @@ module.exports = {
     VALUES (?, ?, ?)
   `,
 
-  /* ✅ 상담 상세 조회용 헤더 */
+  //상세 지원자정보
   getCounselHeaderBySubmit: `
-    SELECT
-      cn.counsel_code,
-      cn.submit_code,
-      cn.status,
-      cn.written_at,
+  SELECT
+    cn.counsel_code,
+    cn.submit_code,
+    cn.status,
+    cn.written_at,
 
-      -- 제출 정보
-      ss.submit_at,
+    -- 제출 정보
+    ss.submit_at,
 
-      -- 보호자(작성자)
-      writer.name AS guardian_name,
-      LEFT(writer.ssn, 6) AS guardian_ssn,
+    -- 보호자(작성자)
+    writer.name AS guardian_name,
+    LEFT(writer.ssn, 6) AS guardian_ssn,
 
-      -- 담당자
-      assi.name AS assignee_name,
+    -- 담당자
+    assi.name AS assignee_name,
 
-      -- 지원자(child)
-      c.child_name AS child_name,
-      c.disability_type AS disability_type
+    -- 지원자(child)
+    c.child_name AS child_name,
+    COALESCE(c.disability_type, writer.disability_type) AS disability_type
 
-    FROM counsel_note cn
-    JOIN survey_submission ss
-      ON ss.submit_code = cn.submit_code
+  FROM counsel_note cn
+  JOIN survey_submission ss
+    ON ss.submit_code = cn.submit_code
 
-    LEFT JOIN users writer
-      ON writer.user_code = ss.written_by
+  LEFT JOIN users writer
+    ON writer.user_code = ss.written_by
 
-    LEFT JOIN users assi
-      ON assi.user_code = ss.assi_by
+  LEFT JOIN users assi
+    ON assi.user_code = ss.assi_by
 
-    LEFT JOIN child c
-      ON c.child_code = ss.child_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
 
-    WHERE cn.submit_code = ?
-    LIMIT 1
-  `,
+  WHERE cn.submit_code = ?
+  LIMIT 1
+`,
 
   /* ✅ 상담 상세들 */
   getCounselDetailsByCounsel: `

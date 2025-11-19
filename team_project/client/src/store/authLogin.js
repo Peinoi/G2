@@ -6,7 +6,7 @@ import { login as loginApi } from "../api/user";
 export const useAuthStore = defineStore("authLogin", {
   state: () => ({
     userId: "",
-    role: "",
+    role: "AA0",
     userCode: "",
     isLogin: false,
   }),
@@ -26,6 +26,10 @@ export const useAuthStore = defineStore("authLogin", {
       // -> 새로고침해도 로그인 유지됨
       const loginCheck = localStorage.getItem("user");
       if (!loginCheck) {
+        this.userId = "";
+        this.userCode = "";
+        this.role = "AA0";
+        this.isLogin = false;
         return;
       }
 
@@ -37,6 +41,11 @@ export const useAuthStore = defineStore("authLogin", {
         this.isLogin = true;
       } catch (err) {
         console.error("[ pinia reload 오류 ] : ", err);
+        // 오류나도 게스트로
+        this.userId = "";
+        this.userCode = "";
+        this.role = "AA0";
+        this.isLogin = false;
       }
     },
 
@@ -68,7 +77,7 @@ export const useAuthStore = defineStore("authLogin", {
     // 로그아웃
     logout() {
       this.userId = "";
-      this.role = "";
+      this.role = "AA0";
       this.userCode = "";
       this.isLogin = false;
       localStorage.removeItem("user");

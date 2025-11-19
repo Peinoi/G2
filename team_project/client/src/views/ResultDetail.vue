@@ -65,50 +65,60 @@
 
       <!-- 본문 -->
       <template v-else>
-        <!-- 기본정보 카드 -->
-        <div class="meta-card space-y-3">
-          <div class="meta-row">
-            <span class="meta-label">이름</span>
-            <span class="meta-value">
-              <strong>{{ basicInfo.name || "-" }}</strong>
-            </span>
-          </div>
+        <!-- 기본정보 카드 (그리드) -->
+        <div class="meta-card">
+          <div class="meta-grid">
+            <!-- 1. 지원자 -->
+            <div class="meta-item">
+              <span class="meta-label">지원자</span>
+              <span class="meta-value">
+                {{ basicInfo.childName || "본인" }}
+              </span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">생년월일</span>
-            <span class="meta-value">
-              {{ basicInfo.ssnFront || "-" }}
-            </span>
-          </div>
+            <!-- 2. 보호자 -->
+            <div class="meta-item">
+              <span class="meta-label">보호자</span>
+              <span class="meta-value">
+                {{ basicInfo.guardianName || "-" }}
+              </span>
+            </div>
 
-          <div class="meta-row meta-row-inline">
-            <span class="meta-label">계획서</span>
-            <span class="meta-value meta-value-inline">
-              <MaterialButton
-                v-if="basicInfo.planSubmitAt"
-                color="dark"
-                size="sm"
-                @click="openPlanDetail"
-              >
-                계획서 제출일: {{ formattedPlanSubmitAt }}
-              </MaterialButton>
-            </span>
-          </div>
+            <!-- 3. 담당자 -->
+            <div class="meta-item">
+              <span class="meta-label">담당자</span>
+              <span class="meta-value">
+                {{ basicInfo.assigneeName || "-" }}
+              </span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">결과 작성일</span>
-            <span class="meta-value">
-              {{ mainForm.resultDate || "-" }}
-            </span>
-          </div>
+            <!-- 4. 장애유형 -->
+            <div class="meta-item">
+              <span class="meta-label">장애유형</span>
+              <span class="meta-value">
+                {{ basicInfo.disabilityType || "-" }}
+              </span>
+            </div>
 
-          <div class="meta-row">
-            <span class="meta-label">진행기간</span>
-            <span class="meta-value">
-              <span>{{ mainForm.actualStart || "미지정" }}</span>
-              <span class="mx-1">~</span>
-              <span>{{ mainForm.actualEnd || "미지정" }}</span>
-            </span>
+            <!-- 5. 계획작성일 (계획서 작성/제출일) -->
+            <div class="meta-item">
+              <span class="meta-label">계획작성일</span>
+              <span class="meta-value">
+                <MaterialButton color="dark" size="sm" @click="openPlanDetail">
+                  {{ formattedPlanSubmitAt }}
+                </MaterialButton>
+              </span>
+            </div>
+
+            <!-- 6. 실제 진행기간 -->
+            <div class="meta-item">
+              <span class="meta-label">실제 진행기간</span>
+              <span class="meta-value">
+                <span>{{ mainForm.actualStart || "미지정" }}</span>
+                <span class="mx-1">~</span>
+                <span>{{ mainForm.actualEnd || "미지정" }}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -327,11 +337,11 @@ const isTemp = computed(() => status.value === "CD1" || status.value === "CD3");
 
 // 기본 정보
 const basicInfo = ref({
-  name: "",
-  ssnFront: "",
-  counselSubmitAt: "",
+  childName: "",
+  guardianName: "",
+  assigneeName: "",
+  disabilityType: "",
   planSubmitAt: "",
-  resultWrittenAt: "",
 });
 
 const formattedPlanSubmitAt = computed(() => {
@@ -392,11 +402,11 @@ async function loadBasicInfo() {
   const res = data.result;
 
   basicInfo.value = {
-    name: res.name || "",
-    ssnFront: (res.ssnFront || "").replace(/[^0-9]/g, "").slice(0, 6),
-    counselSubmitAt: res.counselSubmitAt || "",
+    childName: res.childName || "",
+    guardianName: res.guardianName || "",
+    assigneeName: res.assigneeName || "-",
+    disabilityType: res.disabilityType || "-",
     planSubmitAt: res.planSubmitAt || "",
-    resultWrittenAt: res.resultWrittenAt || "",
   };
 }
 
@@ -706,6 +716,7 @@ section {
   font-size: 0.85rem;
 }
 
+/* 기존 row 스타일 (다른 곳에서 쓸 수도 있으니 유지) */
 .meta-row + .meta-row {
   margin-top: 0.35rem;
 }
@@ -848,5 +859,29 @@ section {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* ===== 기본정보 그리드 ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-item .meta-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.15rem;
+}
+
+.meta-item .meta-value {
+  font-size: 0.9rem;
+  color: #111827;
+  font-weight: 500;
 }
 </style>

@@ -291,30 +291,46 @@ ORDER BY sr.result_code DESC
     WHERE result_code = ?
   `,
 
-  // 🔹 submit_code 기준 기본 정보 + 계획/결과 작성일 조회
+  // submit_code 기준 기본 정보 + 계획/결과 작성일 조회
   getResultBasicBySubmitCode: `
-    SELECT
-      ss.submit_code,
-      u.name             AS writer_name,
-      u.ssn              AS ssn,
-      MIN(cn.written_at) AS counsel_submit_at,
-      MAX(sp.written_at) AS plan_submit_at,
-      MAX(sr.written_at) AS result_written_at
-    FROM survey_submission ss
-    JOIN users u
-      ON u.user_code = ss.written_by
-    LEFT JOIN counsel_note cn
-      ON cn.submit_code = ss.submit_code
-    LEFT JOIN support_plan sp
-      ON sp.submit_code = ss.submit_code
-    LEFT JOIN support_result sr
-      ON sr.plan_code = sp.plan_code
-    WHERE ss.submit_code = ?
-    GROUP BY
-      ss.submit_code,
-      u.name,
-      u.ssn
-  `,
+  SELECT
+    ss.submit_code,
+    -- 보호자 이름 (기존 writer_name)
+    u.name              AS guardian_name,
+    u.ssn               AS ssn,
+
+    -- ✅ child 테이블 + 사용자(user) 장애유형 병합
+    c.child_name        AS child_name,
+    COALESCE(c.disability_type, u.disability_type) AS disability_type,
+
+    MIN(cn.written_at)  AS counsel_submit_at,
+    MAX(sp.written_at)  AS plan_submit_at,
+    MAX(sr.written_at)  AS result_written_at,
+
+    -- ✅ 담당자 이름
+    MAX(ua.name)        AS assignee_name
+  FROM survey_submission ss
+  JOIN users u
+    ON u.user_code = ss.written_by               -- 보호자(작성자)
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
+  LEFT JOIN counsel_note cn
+    ON cn.submit_code = ss.submit_code
+  LEFT JOIN support_plan sp
+    ON sp.submit_code = ss.submit_code
+  LEFT JOIN support_result sr
+    ON sr.plan_code = sp.plan_code
+  LEFT JOIN users ua
+    ON ua.user_code = sp.assi_by          -- 담당자
+  WHERE ss.submit_code = ?
+  GROUP BY
+    ss.submit_code,
+    guardian_name,
+    ssn,
+    child_name,
+    COALESCE(c.disability_type, u.disability_type)
+`,
+
   // 🔹 result_code 로 support_result 한 건 조회
   getSupportResultByCode: `
     SELECT *

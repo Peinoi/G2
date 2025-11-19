@@ -297,6 +297,9 @@ const route = useRoute();
 const router = useRouter();
 const submitCode = Number(route.params.submitCode);
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 const loading = ref(false);
 const error = ref("");
 
@@ -466,6 +469,7 @@ async function submitAll() {
       mainForm: mainForm.value,
       records: records.value,
       removeAttachmentCodes: removedAttachmentCodes.value,
+      modifier,
     };
 
     const formData = new FormData();

@@ -33,6 +33,46 @@
         </div>
       </div>
 
+      <!-- 🔍 검색 / 필터 / 정렬 라인 -->
+      <div class="filter-row" v-if="role !== 1">
+        <form class="filter-form" @submit.prevent="onSearch">
+          <!-- 검색 인풋 -->
+          <div class="filter-field filter-field--search">
+            <input
+              v-model="searchText"
+              type="text"
+              class="search-input"
+              :placeholder="searchPlaceholder"
+            />
+          </div>
+
+          <!-- 상태 셀렉트 -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select v-model="statusFilter" class="select-input">
+              <option value="ALL">전체 상태</option>
+              <option value="CA1">미검토</option>
+              <option value="CA3">검토완료</option>
+            </select>
+          </div>
+
+          <!-- 정렬 셀렉트 -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select v-model="sortOption" class="select-input">
+              <option value="RECENT">최신순</option>
+              <option value="OLD">오래된순</option>
+              <option value="NAME">이름순</option>
+            </select>
+          </div>
+
+          <!-- 검색 버튼 -->
+          <div class="filter-field filter-field--button">
+            <MaterialButton type="submit" color="dark" size="sm">
+              검색
+            </MaterialButton>
+          </div>
+        </form>
+      </div>
+
       <!-- 상태 표시 -->
       <div v-if="loading" class="text-gray-500">불러오는 중...</div>
       <div v-else-if="error" class="text-red-600">{{ error }}</div>
@@ -155,13 +195,6 @@ import MaterialPaginationItem from "@/components/MaterialPaginationItem.vue";
 
 const router = useRouter();
 
-/**
- * 🔹 role: 백엔드 쿼리용 숫자 역할
- *  - 1: 일반 사용자 (AA1)
- *  - 2: 담당자 (AA2)
- *  - 3: 관리자 (AA3)
- *  - 4: 시스템 (AA4)
- */
 const role = ref(1);
 
 /**
@@ -178,22 +211,96 @@ const list = ref([]);
 const loading = ref(false);
 const error = ref("");
 
+// 🔍 검색 / 필터 / 정렬 상태
+const searchText = ref(""); // 입력창에 보이는 값
+const appliedSearch = ref(""); // 실제로 필터에 사용하는 값
+const statusFilter = ref("ALL"); // ALL | CA1 | CA3
+const sortOption = ref("RECENT"); // RECENT | OLD | NAME
+
+const searchPlaceholder = computed(() => {
+  if (role.value === 4) {
+    return "지원자, 보호자, 담당자, 기관명 검색";
+  }
+  return "지원자, 보호자, 담당자 검색";
+});
+
 // 🔹 페이징 상태
 const currentPage = ref(1);
 const pageSize = 10;
 
+// 🔍 검색 / 상태필터 / 정렬 적용된 리스트
+const filteredList = computed(() => {
+  let rows = [...list.value];
+
+  // 1) 검색 (버튼/엔터 눌렀을 때만 적용되는 appliedSearch 사용)
+  const q = appliedSearch.value;
+  if (q) {
+    rows = rows.filter((row) => {
+      // 공통: 지원자 / 보호자 / 담당자
+      const baseTargets = [
+        row.child_name, // 지원자 이름
+        row.writer_name, // 보호자 이름
+        row.assignee_name, // 담당자 이름
+      ];
+
+      // 시스템 권한(role 4)일 때만 기관명 추가
+      const extraTargets =
+        role.value === 4
+          ? [row.org_name, row.institution_name] // 기관명 컬럼들
+          : [];
+
+      const targets = [...baseTargets, ...extraTargets];
+
+      return targets.some((v) =>
+        String(v || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }
+
+  // 2) 상태 필터
+  if (statusFilter.value !== "ALL") {
+    rows = rows.filter((row) => row.status === statusFilter.value);
+  }
+
+  // 3) 정렬
+  if (sortOption.value === "RECENT") {
+    // 최신 제출일 순 (submit_at DESC)
+    rows.sort((a, b) => new Date(b.submit_at) - new Date(a.submit_at));
+  } else if (sortOption.value === "OLD") {
+    // 오래된 제출일 순 (submit_at ASC)
+    rows.sort((a, b) => new Date(a.submit_at) - new Date(b.submit_at));
+  } else if (sortOption.value === "NAME") {
+    // 지원자 이름 가나다순 (없으면 "본인" 기준)
+    rows.sort((a, b) => {
+      const an = a.child_name || "본인";
+      const bn = b.child_name || "본인";
+      return an.localeCompare(bn, "ko");
+    });
+  }
+
+  return rows;
+});
+
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(list.value.length / pageSize) || 1)
+  Math.max(1, Math.ceil(filteredList.value.length / pageSize) || 1)
 );
 
 const paginatedList = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return list.value.slice(start, start + pageSize);
+  return filteredList.value.slice(start, start + pageSize);
 });
 
 function changePage(page) {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
+}
+
+function onSearch() {
+  // 🔥 이때만 실제 검색어 적용
+  appliedSearch.value = searchText.value.trim().toLowerCase();
+  currentPage.value = 1;
 }
 
 /** AA 코드 → 숫자 역할 매핑 */
@@ -533,6 +640,82 @@ table td {
 .td-status {
   overflow: visible;
   text-overflow: clip;
-  white-space: nowrap; /* 줄바꿈 허용하고 싶으면 이 줄 지워도 돼 */
+  white-space: nowrap;
+}
+
+/* 🔍 필터 라인 */
+.filter-row {
+  margin-bottom: 0.75rem;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 */
+  gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* 공통 필드 래퍼 */
+.filter-field {
+  display: flex;
+}
+
+/* 🔹 검색 인풋은 가능한 한 넓게 차지 */
+.filter-field--search {
+  flex: 1 1 260px; /* 남는 공간 다 먹고, 최소 260px */
+  min-width: 0; /* 줄여질 때 깨지지 않게 */
+}
+
+/* 🔹 셀렉트들은 내용 크기만큼 */
+.filter-field--select {
+  flex: 0 0 auto;
+}
+
+/* 🔹 버튼도 내용 크기만큼 */
+.filter-field--button {
+  flex: 0 0 auto;
+}
+
+/* 검색 인풋 (pill 스타일) */
+.search-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
+}
+
+/* 셀렉트 wrapper */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 120px;
+}
+
+/* 셀렉트 인풋 (pill) */
+.select-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 1.1rem 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  background-color: #ffffff;
+  outline: none;
+  color: #374151;
+}
+
+.select-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
 }
 </style>

@@ -25,6 +25,51 @@
         </div>
       </header>
 
+      <!-- 🔍 검색 / 필터 / 정렬 라인 -->
+      <div class="filter-row">
+        <form class="filter-form" @submit.prevent="onSearch">
+          <!-- 검색 인풋 -->
+          <div class="filter-field filter-field--search">
+            <input
+              v-model="searchText"
+              type="text"
+              class="search-input"
+              :placeholder="searchPlaceholder"
+            />
+          </div>
+
+          <!-- 상태 셀렉트 -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select v-model="statusFilter" class="select-input">
+              <option value="ALL">전체 상태</option>
+              <option value="TEMP">상담전</option>
+              <option value="CB3">검토전</option>
+              <option value="CB4">반려</option>
+              <option value="CB5">검토완료</option>
+              <option value="CB6">재승인요청</option>
+            </select>
+          </div>
+
+          <!-- 정렬 셀렉트 -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select v-model="sortOption" class="select-input">
+              <option value="COUNSEL_RECENT">상담일 최신순</option>
+              <option value="COUNSEL_OLD">상담일 오래된순</option>
+              <option value="SUBMIT_RECENT">제출일 최신순</option>
+              <option value="SUBMIT_OLD">제출일 오래된순</option>
+              <option value="NAME">이름순</option>
+            </select>
+          </div>
+
+          <!-- 검색 버튼 -->
+          <div class="filter-field filter-field--button">
+            <MaterialButton type="submit" color="dark" size="sm">
+              검색
+            </MaterialButton>
+          </div>
+        </form>
+      </div>
+
       <!-- 상태 표시 -->
       <div v-if="loading" class="text-gray-500">불러오는 중...</div>
       <div v-else-if="error" class="text-red-600">{{ error }}</div>
@@ -40,10 +85,10 @@
               <tr>
                 <th class="th-cell text-center w-14">No</th>
 
-                <!-- 🔥 NEW: 지원자 이름 -->
+                <!-- 지원자 이름 -->
                 <th class="th-cell">지원자 이름</th>
 
-                <!-- 🔥 보호자 이름 (기존 writer_name) -->
+                <!-- 보호자 이름 -->
                 <th class="th-cell">보호자 이름</th>
 
                 <!-- 담당자 -->
@@ -71,7 +116,7 @@
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
 
-                <!-- 🔥 지원자 이름: child_name 있으면 자녀 이름 / 없으면 본인 -->
+                <!-- 지원자 이름: child_name 있으면 자녀 이름 / 없으면 본인 -->
                 <td class="td-cell">
                   {{ row.child_name ? row.child_name : "본인" }}
                 </td>
@@ -245,6 +290,20 @@ const list = ref([]);
 const loading = ref(false);
 const error = ref(null);
 
+// 🔍 검색 / 필터 / 정렬 상태
+const searchText = ref(""); // 인풋에 묶여있는 값
+const appliedSearch = ref(""); // 실제 필터에 쓰는 값(검색 버튼 눌렀을 때만 갱신)
+const statusFilter = ref("ALL"); // ALL | CB1~CB6
+const sortOption = ref("COUNSEL_RECENT");
+
+// placeholder (시스템이면 기관명 포함)
+const searchPlaceholder = computed(() => {
+  if (selectedRole.value === 4) {
+    return "지원자, 보호자, 담당자, 기관명 검색";
+  }
+  return "지원자, 보호자, 담당자 검색";
+});
+
 // 🔹 페이징 상태
 const currentPage = ref(1);
 const pageSize = 10;
@@ -300,7 +359,6 @@ function normStatus(raw) {
 function isTempStatus(code) {
   const s = normStatus(code);
   return s === "CB1" || s === "CB2";
-  // 또는: return ['CB1', 'CB2'].includes(s);
 }
 
 function formatDate(val) {
@@ -310,7 +368,7 @@ function formatDate(val) {
 function statusLabel(code) {
   switch (normStatus(code)) {
     case "CB1":
-      return "상담전"; // 임시저장
+      return "상담전";
     case "CB2":
       return "상담전";
     case "CB3":
@@ -343,35 +401,111 @@ function statusPillClass(code) {
   }
 }
 
-// 🔹 최신순(역순) 정렬 리스트
-const sortedList = computed(() => {
-  return [...list.value].sort((a, b) => {
-    const aDate = a.submit_at ?? "";
-    const bDate = b.submit_at ?? "";
+// 🔍 검색/필터/정렬이 모두 적용된 리스트
+const filteredList = computed(() => {
+  let rows = [...list.value];
 
-    if (aDate && bDate && aDate !== bDate) {
-      // 날짜 기준 최신 → 오래된 순
-      return bDate.localeCompare(aDate);
+  // 1) 검색 (지원자 / 보호자 / 담당자 / [시스템이면 기관명])
+  const q = appliedSearch.value.trim().toLowerCase();
+  if (q) {
+    rows = rows.filter((row) => {
+      const baseTargets = [
+        row.child_name, // 지원자
+        row.writer_name, // 보호자
+        row.assi_name, // 담당자
+      ];
+      const extraTargets =
+        selectedRole.value === 4
+          ? [row.org_name] // 시스템 권한일 때 기관명
+          : [];
+
+      const targets = [...baseTargets, ...extraTargets];
+
+      return targets.some((v) =>
+        String(v || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }
+
+  // 2) 상태 필터
+  if (statusFilter.value !== "ALL") {
+    if (statusFilter.value === "TEMP") {
+      // 상담전(CB1, CB2) 모두 포함
+      rows = rows.filter((row) => isTempStatus(row.status));
+    } else {
+      rows = rows.filter(
+        (row) => normStatus(row.status) === statusFilter.value
+      );
     }
+  }
+  // 3) 정렬
+  if (sortOption.value === "COUNSEL_RECENT") {
+    // 상담일 최신순 (note_created_at DESC)
+    rows.sort((a, b) => {
+      const aDate = a.note_created_at ?? "";
+      const bDate = b.note_created_at ?? "";
 
-    // 날짜가 같거나 없으면 submit_code 기준 역순
-    return Number(b.submit_code) - Number(a.submit_code);
-  });
+      if (aDate && bDate && aDate !== bDate) {
+        return bDate.localeCompare(aDate);
+      }
+
+      // 상담일이 없거나 같으면 제출일 기준 보조 정렬
+      return (b.submit_at || "").localeCompare(a.submit_at || "");
+    });
+  } else if (sortOption.value === "COUNSEL_OLD") {
+    // 상담일 오래된순 (note_created_at ASC)
+    rows.sort((a, b) => {
+      const aDate = a.note_created_at ?? "";
+      const bDate = b.note_created_at ?? "";
+
+      if (aDate && bDate && aDate !== bDate) {
+        return aDate.localeCompare(bDate);
+      }
+
+      return (a.submit_at || "").localeCompare(b.submit_at || "");
+    });
+  } else if (sortOption.value === "SUBMIT_RECENT") {
+    // 제출일 최신순 (submit_at DESC)
+    rows.sort((a, b) => {
+      return (b.submit_at || "").localeCompare(a.submit_at || "");
+    });
+  } else if (sortOption.value === "SUBMIT_OLD") {
+    // 제출일 오래된순 (submit_at ASC)
+    rows.sort((a, b) => {
+      return (a.submit_at || "").localeCompare(b.submit_at || "");
+    });
+  } else if (sortOption.value === "NAME") {
+    // 이름순: child_name 기준, 없으면 "본인"
+    rows.sort((a, b) => {
+      const an = a.child_name || "본인";
+      const bn = b.child_name || "본인";
+      return an.localeCompare(bn, "ko");
+    });
+  }
+  return rows;
 });
 
 // 🔹 페이지 수 & 페이징된 리스트
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedList.value.length / pageSize) || 1)
+  Math.max(1, Math.ceil(filteredList.value.length / pageSize) || 1)
 );
 
 const paginatedList = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return sortedList.value.slice(start, start + pageSize);
+  return filteredList.value.slice(start, start + pageSize);
 });
 
 function changePage(page) {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
+}
+
+// 🔍 검색 버튼 / 엔터 눌렀을 때
+function onSearch() {
+  appliedSearch.value = searchText.value;
+  currentPage.value = 1;
 }
 
 // 🔹 상담 목록 조회
@@ -539,6 +673,82 @@ section {
 .role-warning {
   font-size: 0.7rem;
   color: #b91c1c;
+}
+
+/* 🔍 필터 라인 */
+.filter-row {
+  margin-bottom: 0.75rem;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 */
+  gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* 공통 필드 래퍼 */
+.filter-field {
+  display: flex;
+}
+
+/* 검색 인풋은 가능한 한 넓게 차지 */
+.filter-field--search {
+  flex: 1 1 260px; /* 남는 공간 다 먹고, 최소 260px */
+  min-width: 0;
+}
+
+/* 셀렉트들은 내용 크기만큼 */
+.filter-field--select {
+  flex: 0 0 auto;
+}
+
+/* 버튼도 내용 크기만큼 */
+.filter-field--button {
+  flex: 0 0 auto;
+}
+
+/* 검색 인풋 (pill 스타일) */
+.search-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
+}
+
+/* 셀렉트 wrapper */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 120px;
+}
+
+/* 셀렉트 인풋 (pill) */
+.select-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 1.1rem 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  background-color: #ffffff;
+  outline: none;
+  color: #374151;
+}
+
+.select-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
 }
 
 /* 비었을 때 */
@@ -735,6 +945,6 @@ table td {
 .td-status {
   overflow: visible;
   text-overflow: clip;
-  white-space: nowrap; /* 줄바꿈 허용하고 싶으면 이 줄 지워도 돼 */
+  white-space: nowrap;
 }
 </style>

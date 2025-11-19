@@ -290,7 +290,7 @@ module.exports = {
     -- 지원자(자녀) + 장애유형
     ss.child_code,
     c.child_name,
-    c.disability_type,
+    COALESCE(c.disability_type, w.disability_type) AS disability_type,
 
     -- 조사지/버전 정보
     stv.template_code,
@@ -362,5 +362,20 @@ module.exports = {
     FROM child
     WHERE user_code = ?
     ORDER BY child_name
+  `,
+
+  // 사용자 장애 유형 업데이트
+  updateUserDisabilityType: `
+    UPDATE users
+    SET disability_type = ?
+    WHERE user_code = ?
+  `,
+
+  // 사용자 장애 유형 단건 조회
+  getUserDisabilityType: `
+    SELECT disability_type
+    FROM users
+    WHERE user_code = ?
+    LIMIT 1
   `,
 };

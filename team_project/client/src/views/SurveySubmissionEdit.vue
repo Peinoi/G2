@@ -161,6 +161,9 @@ const route = useRoute();
 const router = useRouter();
 const submitCode = route.params.submitCode;
 
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const modifier = Number(user.user_code || 0);
+
 // 쿼리로 넘어온 현재 사용자/역할 (로그인 없이 테스트용)
 const role = computed(() => Number(route.query.role || 1));
 const userId = computed(() => Number(route.query.userId || 1));
@@ -263,7 +266,10 @@ async function save() {
       return;
     }
 
-    const payload = { answers: answers.value, updated_by: userId.value };
+    const payload = {
+      answers: answers.value,
+      modifier,
+    };
     const res = await axios.put(
       `/api/survey/submission/${submitCode}`,
       payload
