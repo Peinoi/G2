@@ -50,7 +50,7 @@
           <tr
             v-for="item in list"
             :key="item.approval_code"
-            @click="goDetail(item)"
+            @click="onRowClick(item)"
             class="priority-row"
           >
             <td>{{ item.approval_code }}</td>
@@ -113,6 +113,63 @@
           다음
         </button>
       </div>
+
+      <!-- 🔹 반려사유 모달 -->
+      <div
+        v-if="showRejectModal"
+        class="priority-modal-backdrop"
+        @click.self="closeRejectModal"
+      >
+        <div class="priority-modal">
+          <h3 class="priority-modal-title">이전 반려 사유</h3>
+
+          <div class="priority-modal-section">
+            <div class="priority-modal-label">반려 사유</div>
+            <div class="priority-modal-reason">
+              {{ rejectModalData.reason }}
+            </div>
+          </div>
+
+          <div class="priority-modal-section">
+            <div class="priority-modal-label">최신 승인 상태</div>
+            <div class="priority-modal-text">
+              <template v-if="rejectModalData.newestState === 'BA1'">
+                이 건은 현재
+                <strong>재승인 요청(대기)</strong>
+                상태입니다.<br />
+                재승인 승인코드:
+              </template>
+
+              <template v-else-if="rejectModalData.newestState === 'BA2'">
+                이 건은 현재
+                <strong>승인 완료된 건</strong>
+                입니다.<br />
+                최종 승인코드:
+              </template>
+
+              <template v-else-if="rejectModalData.newestState === 'BA3'">
+                이 건은 현재도
+                <strong>반려 상태</strong>
+                입니다.<br />
+                최신 승인코드:
+              </template>
+
+              <template v-else>
+                이 건에는 이후 승인 이력이 있습니다.<br />
+                최신 승인코드:
+              </template>
+
+              <strong>{{ rejectModalData.newestApprovalCode || "-" }}</strong>
+            </div>
+          </div>
+
+          <div class="priority-modal-actions">
+            <button class="priority-modal-btn" @click="closeRejectModal">
+              닫기
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -140,6 +197,17 @@ const totalPages = computed(() =>
 const keyword = ref("");
 const state = ref("");
 const orderBy = ref("latest"); // 최신순 기본
+
+const showRejectModal = ref(false);
+const rejectModalData = ref({
+  reason: "",
+  newestApprovalCode: "",
+  newestState: "",
+});
+
+const detailRole = computed(() => {
+  return isSystemAdmin.value ? 4 : 3;
+});
 
 // 🔹 공통: 유저 role, loginId 계산
 const userRole = computed(() => {
@@ -277,13 +345,43 @@ function changePage(nextPage) {
   loadList();
 }
 
-// ✅ 각 행 클릭 시 상담 상세로 이동 (모든 상태 이동 가능)
+// 모달 닫기
+function closeRejectModal() {
+  showRejectModal.value = false;
+}
+
+// 행 클릭 처리
+function onRowClick(item) {
+  // 🔹 재요청 이력이 있는 옛 반려건만 모달
+  if (item.state === "BA3" && item.has_newer_request) {
+    // newest_approval_code 에 해당하는 최신 행을 현재 목록에서 찾기
+    const latestRow = list.value.find(
+      (row) => row.approval_code === item.newest_approval_code
+    );
+
+    const newestState = latestRow?.state || "";
+
+    rejectModalData.value = {
+      reason: item.rejection_reason || "(등록된 반려 사유가 없습니다.)",
+      newestApprovalCode: item.newest_approval_code || "",
+      newestState, // BA1 / BA2 / BA3 ...
+    };
+
+    showRejectModal.value = true;
+    return;
+  }
+
+  // 그 외는 기존 상세 이동
+  goDetail(item);
+}
+
+// ✅ 각 행 클릭 시 상담 상세로 이동
 function goDetail(item) {
   router.push({
     name: "counsel-detail",
     params: { submitCode: item.submit_code },
     query: {
-      role: 3,
+      role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },
   });
 }
@@ -502,5 +600,86 @@ onMounted(() => {
   border-radius: 6px;
   font-size: 12px;
   background: white;
+}
+
+.priority-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.priority-modal {
+  width: 420px;
+  max-width: 90%;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  padding: 20px 22px 16px;
+}
+
+.priority-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #111827;
+}
+
+.priority-modal-section {
+  margin-bottom: 12px;
+}
+
+.priority-modal-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.priority-modal-reason {
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  white-space: pre-wrap;
+}
+
+.priority-modal-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.priority-modal-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.priority-modal-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.priority-modal-btn:hover {
+  background: #1f2937;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  transform: translateY(-0.5px);
 }
 </style>

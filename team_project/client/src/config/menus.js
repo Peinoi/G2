@@ -204,7 +204,7 @@ export const counselMenu = [
     label: "상담 목록",
     path: "/counsel-list",
     collapseRef: "Counsel",
-    role: ["AA1", "AA2", "AA3", "AA4"],
+    role: ["AA2", "AA3", "AA4"],
   },
 ];
 
@@ -223,5 +223,14 @@ export const historyMenu = [
     path: "/historyList",
     collapseRef: "HistoryList",
     role: ["AA3", "AA4"],
+  },
+];
+
+export const appStatusMenu = [
+  {
+    label: "신청현황",
+    path: "/applicationStatus",
+    collapseRef: "ApplicationStatus",
+    role: ["AA1"],
   },
 ];
