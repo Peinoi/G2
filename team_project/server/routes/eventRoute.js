@@ -406,4 +406,79 @@ router.get("/:event_code", async (req, res) => {
   }
 });
 
+// ==========================
+// 이벤트 계획 승인
+// GET /event/:eventCode/approve
+// ==========================
+router.post("/:eventCode/approve", async (req, res) => {
+  try {
+    const eventCode = Number(req.params.eventCode);
+    const result = await eventService.approveEventPlan(eventCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/:eventCode/approve]", e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ==========================
+// 이벤트 계획 반려
+// POST /event/:eventCode/reject
+// ==========================
+router.post("/:eventCode/reject", async (req, res) => {
+  try {
+    const eventCode = Number(req.params.eventCode);
+    const { reason } = req.body;
+
+    const result = await eventService.rejectEventPlan(eventCode, reason || "");
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/:eventCode/reject]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message,
+    });
+  }
+});
+
+//반려사유 조회
+router.get("/:eventCode/rejection-reason", async (req, res) => {
+  try {
+    const eventCode = Number(req.params.eventCode);
+
+    if (!eventCode) {
+      return res.status(400).json({
+        success: false,
+        message: "유효한 이벤트 코드가 아닙니다.",
+      });
+    }
+
+    const result = await eventService.getRejectionReason(eventCode);
+
+    if (!result) {
+      // 반려 이력이 없는 경우
+      return res.status(404).json({
+        success: false,
+        message: "반려 사유를 찾을 수 없습니다.",
+      });
+    }
+
+    // { rejection_reason, rejection_date } 그대로 넘겨줌
+    return res.json({
+      success: true,
+      result,
+      rejection_reason: result.rejection_reason,
+      rejection_date: result.rejection_date,
+    });
+  } catch (e) {
+    console.error("[GET /api/event/:eventCode/rejection-reason]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
 module.exports = router;

@@ -1,3 +1,5 @@
+// team_project/server/mappers/approvalMapper.js
+
 const pool = require("../configs/db.js");
 const approvalSQL = require("../sql/approvalSQL");
 

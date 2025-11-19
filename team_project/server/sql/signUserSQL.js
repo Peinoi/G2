@@ -2,6 +2,7 @@ const FIND_ID = "SELECT user_id FROM users WHERE user_id = ?";
 
 const AUTH_LOGIN = `
   SELECT user_code,
+         org_code,
          user_id, 
          role
   FROM users
@@ -40,10 +41,33 @@ const SEARCH_ORG = `
   LIMIT 10
 `;
 
+const FIND_USER_ID = `
+SELECT user_id
+FROM users
+WHERE name = ?
+AND phone = ?`;
+
+const FIND_USER_PW = `
+SELECT password_hash
+FROM users
+WHERE user_id = ?
+AND name = ?
+AND phone = ?`;
+
+const FIND_RESET_PW = `
+UPDATE users
+SET password_hash = ?
+WHERE user_id = ?
+AND name = ?
+AND phone = ?`;
+
 module.exports = {
   FIND_ID,
   AUTH_LOGIN,
   INSERT_USER,
   FIND_ORG_CODE,
   SEARCH_ORG,
+  FIND_USER_ID,
+  FIND_USER_PW,
+  FIND_RESET_PW,
 };

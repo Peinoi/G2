@@ -121,6 +121,27 @@ const priorityApprovalList = `
     , cp.level                AS priority_level  -- 우선순위 등급(BB코드)
     , ra.state                AS state         -- 상태(BA1/BA2/BA3)
     , ra.approval_date        AS approval_date -- 처리일(승인/반려 일자)
+    , ra.rejection_reason     AS rejection_reason  -- 반려 사유
+    -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   LEFT JOIN counsel_note cn
@@ -248,9 +269,30 @@ const supportPlanApprovalList = `
       cp.level            AS priority_level,  -- 우선순위(BB코드)
       ra.state            AS state,           -- 상태(BA코드)
       ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
+      ra.rejection_reason AS rejection_reason,  -- 반려 사유
 
       sp.plan_code        AS plan_code,
       sp.submit_code      AS submit_code
+      -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   LEFT JOIN support_plan sp
@@ -380,7 +422,28 @@ const supportResultApprovalList = `
       ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
 
       sr.result_code      AS result_code,     -- 결과코드 (상세 이동용)
+      ra.rejection_reason AS rejection_reason,  -- 반려 사유
       sr.plan_code        AS plan_code
+      -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   /* 지원결과 헤더 */
@@ -525,6 +588,27 @@ const eventPlanApprovalList = `
     , ra.state              AS state        -- 요청 상태(BA 코드)
     , ra.approval_date      AS approval_date -- 처리일(승인/반려 일자)
     , e.event_code          AS event_code   -- 상세 이동용
+    , ra.rejection_reason     AS rejection_reason  -- 반려 사유
+    -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   /* 이벤트 계획(헤더) */
@@ -634,6 +718,27 @@ const eventResultApprovalList = `
     , ra.state              AS state        -- 요청 상태(BA 코드)
     , ra.approval_date      AS approval_date -- 처리일(승인/반려 일자)
     , er.event_result_code  AS result_code  -- 이벤트 결과 코드 (상세 이동용)
+    , ra.rejection_reason     AS rejection_reason  -- 반려 사유
+    -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   /* 이벤트 결과 헤더 */
@@ -743,6 +848,27 @@ const sponsorshipPlanApprovalList = `
     , org.org_name      AS org_name     -- 기관명
     , ra.state          AS state        -- 요청 상태(BA1/BA2/BA3)
     , ra.approval_date  AS approval_date -- 처리일(승인/반려 일자)
+    , ra.rejection_reason     AS rejection_reason  -- 반려 사유
+    -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
   JOIN support_program sp
     ON ra.linked_table_name = 'support_program'
@@ -844,6 +970,27 @@ const sponsorshipResultApprovalList = `
     , org.org_name      AS org_name     -- 기관명
     , ra.state          AS state        -- 요청 상태(BA1/BA2/BA3)
     , ra.approval_date  AS approval_date -- 처리일(승인/반려 일자)
+    , ra.rejection_reason     AS rejection_reason  -- 반려 사유
+    -- ✅ 재요청 유무
+    , EXISTS (
+    SELECT 1
+    FROM request_approval ra2
+    WHERE ra2.approval_type     = ra.approval_type
+      AND ra2.linked_table_name = ra.linked_table_name
+      AND ra2.linked_record_pk  = ra.linked_record_pk
+      AND ra2.approval_code     > ra.approval_code
+    ) AS has_newer_request
+    -- ✅ 재요청(가장 최신)의 승인코드
+    , (
+      SELECT ra2.approval_code
+      FROM request_approval ra2
+      WHERE ra2.approval_type     = ra.approval_type
+        AND ra2.linked_table_name = ra.linked_table_name
+        AND ra2.linked_record_pk  = ra.linked_record_pk
+        AND ra2.approval_code     > ra.approval_code
+      ORDER BY ra2.approval_code DESC
+      LIMIT 1
+    ) AS newest_approval_code
   FROM request_approval ra
 
   /* 후원 결과 보고서 */

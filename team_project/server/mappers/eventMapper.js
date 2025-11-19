@@ -4,6 +4,12 @@ const eventSQL = require("../sql/eventSQL.js");
 
 const moment = require("moment");
 const commonCodeService = require("../services/commonCodeService.js");
+
+function safeJSON(v) {
+  return JSON.parse(
+    JSON.stringify(v, (_, x) => (typeof x === "bigint" ? Number(x) : x))
+  );
+}
 // ==========================
 // 이벤트
 // ==========================
@@ -132,6 +138,10 @@ async function selectEventOneFull(event_code, user_code) {
     event.recruit_status_name = await commonCodeService.getCodeName(
       "DC",
       event.recruit_status
+    );
+    event.register_status_name = await commonCodeService.getCodeName(
+      "BA",
+      event.register_status
     );
     event.event_type_name = await commonCodeService.getCodeName(
       "DD",
@@ -292,6 +302,23 @@ async function addEventFull(data) {
       }
     }
 
+    // 6️⃣ 🔥 이벤트 승인요청 중복 여부 체크
+    const [existReq] = await conn.query(eventSQL.getApprovalForPlan, [
+      event_code,
+    ]);
+
+    // 7️⃣ 🔥 이벤트 승인요청 등록
+    if (!existReq) {
+      await conn.query(eventSQL.insertRequestApprovalForPlan, [
+        data.user_code, // requester_code
+        1, // processor_code (관리자)
+        "AE6", // approval_type (이벤트 계획)
+        "BA1", // state (요청)
+        "event", // linked_table_name
+        event_code, // linked_record_pk
+      ]);
+    }
+
     await conn.commit();
     return { event_code, ...data };
   } catch (err) {
@@ -350,39 +377,6 @@ async function addEventWithSub(data) {
       "[eventMapper.js || 이벤트+세부 이벤트 등록 실패]",
       err.message
     );
-    throw err;
-  } finally {
-    if (conn) conn.release();
-  }
-}
-
-// ✅ 이벤트 등록
-async function addEvent(data) {
-  let conn;
-  try {
-    conn = await pool.getConnection();
-    const params = [
-      data.org_code,
-      data.user_code,
-      data.event_name,
-      data.event_type,
-      data.event_content,
-      data.event_location,
-      data.target_audience,
-      data.max_participants,
-      moment(data.recruit_start_date).format("YYYY-MM-DD"),
-      moment(data.recruit_end_date).format("YYYY-MM-DD"),
-      moment(data.event_start_date).format("YYYY-MM-DD"),
-      moment(data.event_end_date).format("YYYY-MM-DD"),
-      data.recruit_status,
-      moment(data.event_register_date).format("YYYY-MM-DD HH:mm:ss"),
-      data.register_status,
-    ];
-    const rows = await conn.query(eventSQL.insertEvent, params);
-    console.log("[eventMapper.js || 이벤트 등록 성공]");
-    return rows;
-  } catch (err) {
-    console.error("[eventMapper.js || 이벤트 등록 실패]", err.message);
     throw err;
   } finally {
     if (conn) conn.release();
@@ -685,12 +679,120 @@ async function deleteSubEvent(sub_event_code) {
   }
 }
 
+// 🔹 이벤트계획 승인
+async function approveEventPlan(eventCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const eventId = Number(eventCode);
+    if (!eventId) {
+      throw new Error("유효한 eventCode가 아닙니다.");
+    }
+
+    // 1) event 상태 BA2(승인)로 변경
+    await conn.query(eventSQL.updateEventStatus, ["BA2", eventId]);
+
+    // 2) request_approval 상태 BA2(승인)로 변경
+    const result = await conn.query(eventSQL.updateApprovalApproveForPlan, [
+      eventId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 이벤트 계획 반려
+async function rejectEventPlan(eventCode, reason) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const eventId = Number(eventCode);
+    if (!eventId) {
+      throw new Error("유효한 eventCode가 아닙니다.");
+    }
+
+    const result = await conn.query(eventSQL.updateApprovalRejectForPlan, [
+      reason || "",
+      eventId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 이벤트계획에 대한 반려 사유,일자 조회
+async function getRejectionReason(eventCode) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(eventSQL.getRejectReasonByPlan, [eventCode]);
+
+    if (!rows || rows.length === 0) {
+      // 반려 이력이 없으면 null
+      return null;
+    }
+
+    // { rejection_reason, rejection_date } 형태
+    return safeJSON(rows[0]);
+  } finally {
+    conn.release();
+  }
+}
+
+//재승인 신청
+async function resubmitPlan(eventCode, requesterCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) event 상태를 BA1(요청)으로 변경
+    await conn.query(eventSQL.updateEventStatus, ["BA1", eventCode]);
+
+    // 2) request_approval에 새 승인요청 INSERT
+    await conn.query(eventSQL.insertRequestApprovalForPlan, [
+      requesterCode, // requester_code (담당자)
+      1, // processor_code (관리자, 임시)
+      "AE6", // approval_type
+      "BA1", // state: 요청
+      "event",
+      eventCode, // linked_record_pk = plan_code
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      eventCode,
+      register_status: "BA3",
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
   selectEventOneFull,
   addEventWithSub,
-  addEvent,
   updateEventWithSub,
   addEventApply,
   updateEvent,
@@ -705,4 +807,8 @@ module.exports = {
   selectEventApplyList,
   cancelApply,
   selectEventApplyResult,
+  approveEventPlan,
+  rejectEventPlan,
+  getRejectionReason,
+  resubmitPlan,
 };

@@ -8,7 +8,7 @@
       <input
         v-model="keyword"
         class="priority-input"
-        :placeholder="searchPlaceholder"
+        placeholder="이벤트명/담당자/기관 검색"
         @keyup.enter="searchList"
       />
 
@@ -37,9 +37,7 @@
             <th>승인코드</th>
             <th>이벤트명</th>
             <th>담당자</th>
-            <!-- 🔹 기관 컬럼은 시스템 관리자만 -->
-            <th v-if="isAA4">기관</th>
-            <!-- 🔹 작성일 추가 (모집인원 왼쪽) -->
+            <th v-if="isOrgVisible">기관</th>
             <th>작성일</th>
             <th>모집인원</th>
             <th>모집기간</th>
@@ -58,19 +56,15 @@
             <td>{{ item.approval_code }}</td>
             <td>{{ item.event_name }}</td>
             <td>{{ item.manager_name }}</td>
-            <!-- 기관 (AA4만) -->
-            <td v-if="isAA4">{{ item.org_name }}</td>
-            <!-- 🔹 작성일 -->
-            <td>{{ formatDate(item.create_date) }}</td>
-            <!-- 모집인원 -->
+            <td v-if="isOrgVisible">{{ item.org_name }}</td>
+            <!-- SQL에서 e.event_register_date AS written_at 이면 여기 written_at 사용 -->
+            <td>{{ formatDate(item.written_at || item.create_date) }}</td>
             <td>{{ item.max_participants }}</td>
-            <!-- 모집기간 -->
             <td>
               {{
                 formatDateRange(item.recruit_start_date, item.recruit_end_date)
               }}
             </td>
-            <!-- 시행기간 -->
             <td>
               {{ formatDateRange(item.event_start_date, item.event_end_date) }}
             </td>
@@ -79,12 +73,17 @@
                 {{ codeLabel(item.state) }}
               </span>
             </td>
-            <td>{{ formatDate(item.approval_date) }}</td>
+            <td>
+              {{
+                item.state === "BA1" || !item.approval_date
+                  ? "-"
+                  : formatDate(item.approval_date)
+              }}
+            </td>
           </tr>
 
           <tr v-if="list.length === 0">
-            <!-- 🔹 기관 컬럼 여부에 따라 colspan 다르게 (작성일 추가로 +1) -->
-            <td class="priority-empty" :colspan="isAA4 ? 10 : 9">
+            <td class="priority-empty" :colspan="isOrgVisible ? 10 : 9">
               데이터가 없습니다.
             </td>
           </tr>
@@ -121,7 +120,7 @@
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
-import { useAuthStore } from "@/store/authLogin"; // 경로는 프로젝트에 맞게 수정
+import { useAuthStore } from "@/store/authLogin.js";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -142,18 +141,48 @@ const totalPages = computed(() =>
 // 검색어, 상태, 정렬
 const keyword = ref("");
 const state = ref("");
-const orderBy = ref("latest"); // 최신순 기본
+const orderBy = ref("latest");
 
-// 역할별 플래그
-const isAA3 = computed(() => auth.role === "AA3"); // 기관 관리자
-const isAA4 = computed(() => auth.role === "AA4"); // 시스템 관리자
+// 유저 역할 코드 (AA3 / AA4 등)
+const userRole = computed(() => {
+  return (
+    auth.role || // 'AA3', 'AA4'
+    (auth.user && auth.user.roleCode) ||
+    ""
+  );
+});
 
-// 검색 placeholder (기관관리자는 기관 검색 텍스트 제거)
-const searchPlaceholder = computed(() =>
-  isAA4.value ? "이벤트명/담당자/기관 검색" : "이벤트명/담당자 검색"
+// 로그인 아이디 (기관 필터 기준)
+const loginId = computed(() => {
+  return (
+    auth.userId ||
+    auth.loginId ||
+    auth.id ||
+    (auth.user && auth.user.userId) ||
+    ""
+  );
+});
+
+// 기관 관리자 여부 (AA3)
+const isOrgManager = computed(() => userRole.value === "AA3");
+
+// 시스템 관리자 여부 (AA4)
+const isSystemAdmin = computed(() => userRole.value === "AA4");
+
+// 이 페이지 접근 가능 여부 (AA3 또는 AA4)
+const canViewEventPlanPage = computed(
+  () => isOrgManager.value || isSystemAdmin.value
 );
 
-// 공통코드 매핑 (요청 상태 BA만 사용)
+// 기관 컬럼 표시 여부 (기관 관리자면 숨김)
+const isOrgVisible = computed(() => !isOrgManager.value);
+
+// 상세화면 role 값 (AA3 → 3, AA4 → 4)
+const detailRole = computed(() => {
+  return isSystemAdmin.value ? 4 : 3;
+});
+
+// 공통코드 매핑 (상태 BA)
 const CODE_LABEL_MAP = {
   BA1: "요청",
   BA2: "승인",
@@ -200,11 +229,6 @@ function formatDateRange(start, end) {
 
 // 이벤트 계획 승인 목록 호출
 async function loadList() {
-  // 혹시 모를 케이스 대비: 권한 체크
-  if (!auth.isLogin || (!isAA3.value && !isAA4.value)) {
-    return;
-  }
-
   loading.value = true;
   try {
     const res = await axios.get("/api/approvals/event-plan", {
@@ -214,9 +238,8 @@ async function loadList() {
         keyword: keyword.value,
         state: state.value,
         orderBy: orderBy.value,
-        // 🔹 기관 필터를 위해 로그인 정보 전달
-        loginId: auth.userId,
-        role: auth.role,
+        loginId: loginId.value, // 기관 필터용 로그인 아이디
+        role: userRole.value, // 역할 (AA3 / AA4)
       },
     });
 
@@ -244,33 +267,22 @@ function changePage(nextPage) {
   loadList();
 }
 
-// ✅ 각 행 클릭 시 이벤트 계획 상세로 이동
+// 각 행 클릭 시 이벤트 계획 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "event-plan-detail", // 라우트 이름은 이렇게 맞춰서 등록
-    params: { planCode: item.event_code }, // SQL에서 e.event_code 로 내려주고 있음
+    name: "EventInfo",
+    params: { eventCode: item.event_code }, // SQL에서 e.event_code 로 내려줌
     query: {
-      role: 3, // 관리자 화면
+      role: detailRole.value, // AA3 -> 3, AA4 -> 4
     },
   });
 }
 
-// ✅ 처음 들어올 때 권한 체크 + 목록 로딩
+// 처음 들어올 때 권한 체크 + 목록 로딩
 onMounted(() => {
-  // 새로고침 시에도 로그인 유지
-  auth.reload();
-
-  if (!auth.isLogin) {
-    alert("로그인이 필요합니다.");
-    router.push({ name: "SignIn" }); // 실제 로그인 라우트 이름에 맞게 수정
-    return;
-  }
-
-  if (auth.role !== "AA3" && auth.role !== "AA4") {
-    alert(
-      "접근 권한이 없습니다. (기관 관리자/시스템 관리자만 이용 가능합니다)"
-    );
-    router.push({ name: "Home" }); // 메인 페이지 이름으로 수정
+  if (!canViewEventPlanPage.value) {
+    alert("기관 관리자 및 시스템 관리자만 접근할 수 있습니다.");
+    router.push("/");
     return;
   }
 
@@ -279,7 +291,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 기존 priority 스타일 재사용 */
 .priority-page {
   max-width: 1100px;
   margin: 24px auto 40px;

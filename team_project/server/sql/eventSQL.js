@@ -182,6 +182,7 @@ SELECT
     e.event_start_date,
     e.event_end_date,
     e.recruit_status, -- 코드값만
+    e.register_status, -- 코드값만
     e.event_type,     -- 코드값만
     org.org_name AS org_name,
     u.name AS main_manager_name
@@ -339,6 +340,91 @@ const deleteSubEvent = `
 DELETE FROM sub_event
 WHERE sub_event_code = ?`;
 
+// 해당 이벤트에 대한 승인요청이 이미 있는지 체크
+const getApprovalForPlan = `
+SELECT approval_code 
+      FROM request_approval
+      WHERE linked_table_name = 'event'
+        AND linked_record_pk = ?
+        AND approval_type = 'AE6'
+        AND state IN ('BA1', 'BA2', 'BA3')
+      LIMIT 1
+`;
+
+// 🔹 이벤트 계획 승인요청 INSERT
+const insertRequestApprovalForPlan = `
+    INSERT INTO request_approval (
+      requester_code,
+      processor_code,
+      approval_type,
+      request_date,
+      approval_date,
+      state,
+      rejection_reason,
+      linked_table_name,
+      linked_record_pk
+    ) VALUES (
+      ?,          -- requester_code (담당자 user_code)
+      ?,          -- processor_code (관리자 user_code, 임시로 1)
+      ?,          -- approval_type (예: 'AE6')
+      CURDATE(),  -- request_date
+      NULL,       -- approval_date
+      ?,          -- state (BA1: 요청)
+      NULL,       -- rejection_reason
+      ?,          -- linked_table_name ('event')
+      ?           -- linked_record_pk (event_code)
+    )
+  `;
+
+// 🔹 이벤트계획 승인요청 → 승인(BA2)
+const updateApprovalApproveForPlan = `
+    UPDATE request_approval
+    SET
+      state = 'BA2',          -- 승인
+      approval_date = CURDATE(),
+      rejection_reason = NULL
+    WHERE linked_table_name = 'event'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE6'
+      AND state = 'BA1'
+  `;
+
+// 🔹 이벤트 계획 승인요청 → 반려(BA3)
+const updateApprovalRejectForPlan = `
+    UPDATE request_approval
+    SET
+      state = 'BA3',          -- 반려
+      approval_date = CURDATE(),
+      rejection_reason = ?
+    WHERE linked_table_name = 'event'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE6'
+      AND state = 'BA1'
+  `;
+
+// 반려사유
+const getRejectReasonByPlan = `
+  SELECT
+    rejection_reason,
+    approval_date AS rejection_date   --  반려된 날짜
+  FROM request_approval
+  WHERE linked_table_name = 'event'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE6'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC,
+    approval_code DESC
+  LIMIT 1
+`;
+
+const updateEventStatus = `
+    UPDATE event
+    SET register_status = ?
+    WHERE event_code = ?
+  `;
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
@@ -359,4 +445,10 @@ module.exports = {
   selectEventApplyList,
   deleteEventApply,
   selectEventApplyResult,
+  getApprovalForPlan,
+  insertRequestApprovalForPlan,
+  updateApprovalApproveForPlan,
+  updateApprovalRejectForPlan,
+  getRejectReasonByPlan,
+  updateEventStatus,
 };
