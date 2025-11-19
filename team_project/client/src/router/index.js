@@ -38,6 +38,7 @@ import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
 import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
 import MyGiving from "../views/Sponsor/MyGiving.vue";
 
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
