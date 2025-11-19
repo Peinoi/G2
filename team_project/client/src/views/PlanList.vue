@@ -1,4 +1,3 @@
-<!-- src/views/PlanList.vue -->
 <template>
   <section class="p-6">
     <div class="page-shell">
@@ -23,6 +22,61 @@
         </div>
       </header>
 
+      <!-- 🔍 검색 / 필터 / 정렬 (일반 이용자 제외) -->
+      <div v-if="selectedRole !== 1" class="filter-row">
+        <form class="filter-form" @submit.prevent="onSearch">
+          <!-- 검색 인풋 -->
+          <div class="filter-field filter-field--search">
+            <input
+              v-model="searchText"
+              type="text"
+              class="search-input"
+              :placeholder="searchPlaceholder"
+              @keyup.enter="onSearch"
+            />
+          </div>
+
+          <!-- 상태 셀렉트 (바꾸면 바로 적용 / 검색어는 안 건드림) -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select
+              v-model="statusFilter"
+              class="select-input"
+              @change="onFilterChange"
+            >
+              <option value="ALL">전체 상태</option>
+              <option value="BEFORE">작성전</option>
+              <option value="REVIEW">검토중</option>
+              <option value="PROGRESS">진행중</option>
+              <option value="DONE">지원완료</option>
+              <option value="RESUBMIT">재승인요청</option>
+              <option value="REJECT">반려</option>
+            </select>
+          </div>
+
+          <!-- 정렬 셀렉트 (바꾸면 바로 적용 / 검색어는 안 건드림) -->
+          <div class="filter-field filter-field--select select-wrapper">
+            <select
+              v-model="sortOption"
+              class="select-input"
+              @change="onFilterChange"
+            >
+              <option value="WRITTEN_RECENT">계획 작성일 최신순</option>
+              <option value="WRITTEN_OLD">계획 작성일 오래된순</option>
+              <option value="SUBMIT_RECENT">조사지 제출일 최신순</option>
+              <option value="SUBMIT_OLD">조사지 제출일 오래된순</option>
+              <option value="NAME">이름순</option>
+            </select>
+          </div>
+
+          <!-- 검색 버튼 (눌렀을 때만 검색어 적용) -->
+          <div class="filter-field filter-field--button">
+            <MaterialButton type="submit" color="dark" size="sm">
+              검색
+            </MaterialButton>
+          </div>
+        </form>
+      </div>
+
       <!-- 상태 표시 -->
       <div v-if="loading" class="text-gray-500 text-sm">불러오는 중...</div>
       <div v-else-if="error" class="text-red-600 text-sm">{{ error }}</div>
@@ -37,7 +91,11 @@
             <thead>
               <tr>
                 <th class="th-cell text-center w-14">No</th>
-                <th class="th-cell">작성자</th>
+
+                <!-- 🔹 지원자 / 보호자 분리 -->
+                <th class="th-cell">지원자 이름</th>
+                <th class="th-cell">보호자 이름</th>
+
                 <th class="th-cell">담당자</th>
 
                 <!-- 🔥 시스템(4)일 때만 기관명 컬럼 추가 -->
@@ -62,10 +120,17 @@
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
 
+                <!-- 🔹 지원자 이름: childName 있으면 자녀, 없으면 '본인' -->
+                <td class="td-cell">
+                  {{ row.childName ? row.childName : "본인" }}
+                </td>
+
+                <!-- 🔹 보호자 이름 -->
                 <td class="td-cell">
                   {{ row.writerName || "-" }}
                 </td>
 
+                <!-- 담당자 -->
                 <td class="td-cell">
                   {{ row.assiName || "-" }}
                 </td>
@@ -79,8 +144,13 @@
                   {{ formatDate(row.submitAt) }}
                 </td>
 
+                <!-- 🔹 CC1 / CC2 이면 계획 작성일 숨기기 -->
                 <td class="td-cell">
-                  {{ formatDate(row.writtenAt) }}
+                  {{
+                    isBeforeWriteStatus(row.status)
+                      ? "-"
+                      : formatDate(row.writtenAt)
+                  }}
                 </td>
 
                 <!-- 상태 배지 -->
@@ -132,7 +202,7 @@
                       >
                         재수정하기
                       </MaterialButton>
-                      <span v-else class="text-gray-400 text-xs">-</span>
+                      <span v-else class="text-gray-400 text-xs"></span>
                     </template>
 
                     <span v-else class="text-gray-400 text-xs"></span>
@@ -271,6 +341,12 @@ function normStatus(raw) {
   return (raw ?? "").toString().trim().toUpperCase();
 }
 
+// 🔹 CC1 / CC2 상태면 "작성 전" → 작성일 표시 안 함
+function isBeforeWriteStatus(code) {
+  const s = normStatus(code);
+  return s === "CC1" || s === "CC2";
+}
+
 function statusLabel(code) {
   switch (normStatus(code)) {
     case "CC1":
@@ -308,22 +384,153 @@ function statusPillClass(code) {
   }
 }
 
-//페이징
+// 🔍 검색 / 상태 / 정렬 상태
+const searchText = ref(""); // 인풋에 직접 타이핑하는 값
+const appliedSearchText = ref(""); // 실제로 필터에 사용하는 값
+const statusFilter = ref("ALL"); // ALL | BEFORE | REVIEW | PROGRESS | DONE | RESUBMIT | REJECT
+const sortOption = ref("WRITTEN_RECENT"); // WRITTEN_RECENT | WRITTEN_OLD | SUBMIT_RECENT | SUBMIT_OLD | NAME
+
+const searchPlaceholder = computed(() => {
+  if (selectedRole.value === 4) {
+    return "지원자, 보호자, 담당자, 기관명 검색";
+  }
+  return "지원자, 보호자, 담당자 검색";
+});
+
+// 🔍 검색/필터/정렬 적용된 리스트
+const filteredPlans = computed(() => {
+  let rows = [...plans.value];
+
+  // 1) 검색 (버튼/엔터로 확정된 appliedSearchText만 사용)
+  const q = appliedSearchText.value.trim().toLowerCase();
+  if (q) {
+    rows = rows.filter((row) => {
+      const baseTargets = [row.childName, row.writerName, row.assiName];
+      const extraTargets = selectedRole.value === 4 ? [row.orgName] : [];
+      const targets = [...baseTargets, ...extraTargets];
+
+      return targets.some((v) =>
+        String(v || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }
+
+  // 2) 상태 필터
+  if (statusFilter.value !== "ALL") {
+    rows = rows.filter((row) => {
+      const s = normStatus(row.status);
+      switch (statusFilter.value) {
+        case "BEFORE":
+          return s === "CC1" || s === "CC2";
+        case "REVIEW":
+          return s === "CC3";
+        case "PROGRESS":
+          return s === "CC4";
+        case "DONE":
+          return s === "CC5";
+        case "RESUBMIT":
+          return s === "CC6";
+        case "REJECT":
+          return s === "CC7";
+        default:
+          return true;
+      }
+    });
+  }
+
+  // 3) 정렬
+  if (sortOption.value === "WRITTEN_RECENT") {
+    // 계획 작성일 최신순 (writtenAt DESC)
+    rows.sort((a, b) => {
+      const aDate = a.writtenAt ?? "";
+      const bDate = b.writtenAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return bDate.localeCompare(aDate);
+      }
+      // 작성일 없으면 submitAt 기준 보조정렬
+      const aSub = a.submitAt ?? "";
+      const bSub = b.submitAt ?? "";
+      if (aSub && bSub && aSub !== bSub) {
+        return bSub.localeCompare(aSub);
+      }
+      return Number(b.planCode) - Number(a.planCode);
+    });
+  } else if (sortOption.value === "WRITTEN_OLD") {
+    // 계획 작성일 오래된순 (writtenAt ASC)
+    rows.sort((a, b) => {
+      const aDate = a.writtenAt ?? "";
+      const bDate = b.writtenAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return aDate.localeCompare(bDate);
+      }
+      const aSub = a.submitAt ?? "";
+      const bSub = b.submitAt ?? "";
+      if (aSub && bSub && aSub !== bSub) {
+        return aSub.localeCompare(bSub);
+      }
+      return Number(a.planCode) - Number(b.planCode);
+    });
+  } else if (sortOption.value === "SUBMIT_RECENT") {
+    // 조사지 제출일 최신순 (submitAt DESC)
+    rows.sort((a, b) => {
+      const aDate = a.submitAt ?? "";
+      const bDate = b.submitAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return bDate.localeCompare(aDate);
+      }
+      return Number(b.planCode) - Number(a.planCode);
+    });
+  } else if (sortOption.value === "SUBMIT_OLD") {
+    // 조사지 제출일 오래된순 (submitAt ASC)
+    rows.sort((a, b) => {
+      const aDate = a.submitAt ?? "";
+      const bDate = b.submitAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return aDate.localeCompare(bDate);
+      }
+      return Number(a.planCode) - Number(b.planCode);
+    });
+  } else if (sortOption.value === "NAME") {
+    // 지원자 이름 가나다순
+    rows.sort((a, b) => {
+      const an = a.childName || "본인";
+      const bn = b.childName || "본인";
+      return an.localeCompare(bn, "ko");
+    });
+  }
+
+  return rows;
+});
+
+// 페이징
 const currentPage = ref(1);
 const pageSize = 10;
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(plans.value.length / pageSize) || 1)
+  Math.max(1, Math.ceil(filteredPlans.value.length / pageSize) || 1)
 );
 
 const paginatedPlans = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return plans.value.slice(start, start + pageSize);
+  return filteredPlans.value.slice(start, start + pageSize);
 });
 
 function changePage(page) {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
+}
+
+// 🔍 검색 버튼 / 엔터 눌렀을 때만 검색어 적용
+function onSearch() {
+  appliedSearchText.value = searchText.value;
+  currentPage.value = 1;
+}
+
+// 🔽 상태/정렬 변경 시: 검색어는 그대로 두고 페이지만 초기화
+function onFilterChange() {
+  currentPage.value = 1;
 }
 
 const loadList = async () => {
@@ -377,7 +584,7 @@ function goDetail(row) {
   });
 }
 
-//반려 모달
+// 반려 모달
 const rejectReasonModalOpen = ref(false);
 const rejectReasonText = ref("");
 const rejectReasonLoading = ref(false);
@@ -495,6 +702,82 @@ section {
   color: #b91c1c;
 }
 
+/* 🔍 필터 라인 */
+.filter-row {
+  margin-bottom: 0.75rem;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 */
+  gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* 공통 필드 래퍼 */
+.filter-field {
+  display: flex;
+}
+
+/* 🔹 검색 인풋은 가능한 한 넓게 차지 */
+.filter-field--search {
+  flex: 1 1 260px; /* 남는 공간 다 먹고, 최소 260px */
+  min-width: 0; /* 줄여질 때 깨지지 않게 */
+}
+
+/* 🔹 셀렉트들은 내용 크기만큼 */
+.filter-field--select {
+  flex: 0 0 auto;
+}
+
+/* 🔹 버튼도 내용 크기만큼 */
+.filter-field--button {
+  flex: 0 0 auto;
+}
+
+/* 검색 인풋 (pill 스타일) */
+.search-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
+}
+
+/* 셀렉트 wrapper */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+  min-width: 150px;
+}
+
+/* 셀렉트 인풋 (pill) */
+.select-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.45rem 1.1rem 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  background-color: #ffffff;
+  outline: none;
+  color: #374151;
+}
+
+.select-input:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
+}
+
 /* 비었을 때 */
 .empty-state {
   margin-top: 1.5rem;
@@ -507,7 +790,7 @@ section {
   color: #6b7280;
 }
 
-/* 상담 목록 래퍼 */
+/* 목록 래퍼 */
 .table-wrapper {
   margin-top: 0.5rem;
 }
@@ -604,7 +887,7 @@ section {
 
 .status-pill--done {
   background-color: #111827;
-  color: #f9fafb;
+  color: #f9f9fb;
   border-color: #111827;
 }
 
@@ -638,22 +921,6 @@ section {
 .status-pill--clickable:hover {
   transform: translateY(-0.5px);
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16);
-}
-
-/* 작은 칩 버튼 (작업 버튼) */
-.chip-button {
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid #d1d5db;
-  background-color: #f9fafb;
-  font-size: 0.75rem;
-  color: #4b5563;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.chip-button:hover {
-  background-color: #e5e7eb;
 }
 
 /* 모달 */
@@ -690,6 +957,6 @@ section {
 .td-status {
   overflow: visible;
   text-overflow: clip;
-  white-space: nowrap; /* 줄바꿈 허용하고 싶으면 이 줄 지워도 돼 */
+  white-space: nowrap;
 }
 </style>

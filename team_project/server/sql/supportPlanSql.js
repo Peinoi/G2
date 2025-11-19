@@ -1,5 +1,5 @@
 module.exports = {
-  // 시스템 목록
+  //시스템
   listSupportPlanAll: `
   SELECT
     sp.plan_code,
@@ -7,17 +7,20 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    writer.name       AS writer_name,
+    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
+    writer.name       AS writer_name,    -- 보호자 이름
     assi.name         AS assi_name,
-    org.org_name      AS org_name          -- 🔥 기관명
+    org.org_name      AS org_name        -- 기관명
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
+  LEFT JOIN child c                      -- 🔥 child join
+    ON c.child_code = ss.child_code
   JOIN users writer
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
     ON assi.user_code = ss.assi_by
-  LEFT JOIN organization org               -- 🔥 작성자 기준 기관
+  LEFT JOIN organization org
     ON org.org_code = writer.org_code
   ORDER BY sp.plan_code DESC
 `,
@@ -30,12 +33,15 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    writer.name       AS writer_name,
+    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
+    writer.name       AS writer_name,    -- 보호자 이름
     assi.name         AS assi_name,
     org.org_name      AS org_name
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
   JOIN users writer
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
@@ -54,12 +60,15 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    writer.name       AS writer_name,
+    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
+    writer.name       AS writer_name,    -- 보호자 이름
     assi.name         AS assi_name,
     org.org_name      AS org_name
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
   JOIN users writer
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
@@ -78,12 +87,15 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    writer.name       AS writer_name,
+    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
+    writer.name       AS writer_name,    -- 보호자 이름
     assi.name         AS assi_name,
     org.org_name      AS org_name
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
   JOIN users writer
     ON writer.user_code = ss.written_by
   LEFT JOIN users assi
@@ -94,24 +106,46 @@ module.exports = {
   ORDER BY sp.plan_code DESC
 `,
 
-  // submit_code로 기본 정보 + 상담지 제출일 조회
+  //기본정보
   getPlanBasicBySubmitCode: `
-    SELECT
-      ss.submit_code,
-      u.name        AS writer_name,
-      u.ssn   AS ssn,       -- 생년월일 또는 주민번호 앞자리 컬럼명에 맞게 수정
-      MIN(cn.written_at) AS counsel_submit_at
-    FROM survey_submission ss
-    JOIN users u
-      ON u.user_code = ss.written_by
-    LEFT JOIN counsel_note cn
-      ON cn.submit_code = ss.submit_code
-    WHERE ss.submit_code = ?
-    GROUP BY
-      ss.submit_code,
-      u.name,
-      u.ssn
-  `,
+SELECT
+  ss.submit_code,
+
+  -- 작성자(보호자/본인)
+  writer.name AS writer_name,
+
+  -- 아동(지원자)
+  child.child_name AS child_name,
+  COALESCE(child.disability_type, writer.disability_type) AS disability_type,
+
+  -- 담당자
+  assi.name AS assignee_name,
+
+  -- 상담지 제출일
+  MIN(cn.written_at) AS counsel_submit_at
+
+FROM survey_submission ss
+JOIN users writer
+  ON writer.user_code = ss.written_by
+
+LEFT JOIN child
+  ON child.child_code = ss.child_code
+
+LEFT JOIN users assi
+  ON assi.user_code = ss.assi_by   -- ⭐ 담당자 조인 추가
+
+LEFT JOIN counsel_note cn
+  ON cn.submit_code = ss.submit_code
+
+WHERE ss.submit_code = ?
+
+GROUP BY
+  ss.submit_code,
+  writer.name,
+  child.child_name,
+  COALESCE(child.disability_type, writer.disability_type),
+  assi.name;
+`,
 
   // submit_code로 support_plan 있는지 확인
   getSupportPlanBySubmitCode: `

@@ -199,6 +199,15 @@ export const spportMenu = [
   },
 ];
 
+export const counselMenu = [
+  {
+    label: "상담 목록",
+    path: "/counsel-list",
+    collapseRef: "Counsel",
+    role: ["AA2", "AA3", "AA4"],
+  },
+];
+
 export const infoMenu = [
   {
     label: "회원 정보 관리",
