@@ -55,7 +55,7 @@
         </thead>
         <tbody>
           <tr v-for="(item, index) in list" :key="item.id">
-            <td>{{ totalCount - (page - 1) * pageSize - index }}</td>
+            <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
             <td>
               <a href="#" @click.prevent="openDetail(item)">
                 {{ item.applicantName }}
@@ -99,23 +99,28 @@
       </table>
     </div>
 
-    <div v-if="totalCount > pageSize" class="apv-pagination">
+    <div v-if="totalCount > pageSize" class="pagination-wrap">
       <button
-        @click="fetchList(page - 1)"
-        :disabled="page === 1"
-        class="apv-pagination-btn"
+        class="page-btn"
+        :disabled="currentPage === 1"
+        @click="setPageAndFetch(currentPage - 1)"
       >
-        &lt; 이전
+        &lt;
       </button>
-      <span class="apv-page-info"
-        >{{ page }} / {{ totalPages }} 페이지 (총 {{ totalCount }}건)</span
-      >
       <button
-        @click="fetchList(page + 1)"
-        :disabled="page === totalPages"
-        class="apv-pagination-btn"
+        v-for="p in pageNumbers"
+        :key="p"
+        :class="['page-btn', { active: p === currentPage }]"
+        @click="setPageAndFetch(p)"
       >
-        다음 &gt;
+        {{ p }}
+      </button>
+      <button
+        class="page-btn"
+        :disabled="currentPage === totalPages"
+        @click="setPageAndFetch(currentPage + 1)"
+      >
+        &gt;
       </button>
     </div>
 
@@ -210,7 +215,7 @@ export default {
       // 목록 데이터 및 페이지네이션
       list: [],
       pageSize: 10,
-      page: 1,
+      currentPage: 1,
       totalCount: 0,
 
       // 모달
@@ -223,6 +228,25 @@ export default {
     totalPages() {
       return Math.ceil(this.totalCount / this.pageSize);
     },
+    pageNumbers() {
+      const maxPagesToShow = 5;
+      let startPage = Math.max(
+        1,
+        this.currentPage - Math.floor(maxPagesToShow / 2)
+      );
+      let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+
+      if (endPage - startPage + 1 < maxPagesToShow) {
+        const newStart = Math.max(1, endPage - maxPagesToShow + 1);
+        startPage = newStart;
+      }
+
+      const pages = [];
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      return pages;
+    },
   },
 
   mounted() {
@@ -230,7 +254,6 @@ export default {
   },
 
   methods: {
-    // 진행상태 텍스트
     getProgressText(state) {
       switch (state) {
         case 'PR1':
@@ -241,11 +264,9 @@ export default {
           return '알 수 없음';
       }
     },
-    // 진행상태 스타일 클래스
     getProgressClass(state) {
       return `apv-state-${state}`;
     },
-    // 단계 텍스트
     getStageText(stage) {
       switch (stage) {
         case 'ST1':
@@ -259,7 +280,12 @@ export default {
       }
     },
 
-    // 단계 변경 액션 (목업)
+    setPageAndFetch(page) {
+      if (page >= 1 && page <= this.totalPages) {
+        this.fetchList(page);
+      }
+    },
+
     onChangeStage(id, newStage) {
       const item = this.list.find((i) => i.id === id);
       if (
@@ -269,27 +295,22 @@ export default {
           )}'(으)로 변경하시겠습니까?`
         )
       ) {
-        // TODO: 실제 API 호출 (단계를 변경하는 PUT/PATCH 요청)
-        // alert('단계가 변경되었습니다.');
-        this.fetchList(this.page); // 변경 후 목록 새로고침 (실제는 성공 콜백에서 진행)
+        this.fetchList(this.currentPage);
       } else {
-        // 취소 시 원래 값으로 되돌리기
-        this.$nextTick(() => {
-          // 강제 리렌더링 등으로 원래 값을 유지해야 함 (목업 한계)
-          // 실제로는 API 호출이 성공했을 때만 데이터가 업데이트되므로 이 문제는 발생하지 않음
-        });
+        this.$nextTick(() => {});
       }
     },
 
-    // 리스트 조회
-    async fetchList(pageNumber) {
-      if (pageNumber) {
-        this.page = pageNumber;
-      }
-
+    async fetchList(newPage) {
       try {
+        if (newPage === 1) {
+          this.currentPage = 1;
+        } else if (newPage) {
+          this.currentPage = newPage;
+        }
+
         const result = await fetchPendingListApi({
-          page: this.page,
+          page: this.currentPage,
           pageSize: this.pageSize,
           stage: this.stage,
           progressState: this.progressState,
@@ -306,7 +327,6 @@ export default {
       }
     },
 
-    // 상세 모달 열기
     openDetail(item) {
       this.detailData = item;
       this.showDetailModal = true;
@@ -316,38 +336,31 @@ export default {
 </script>
 
 <style scoped>
-/*
-  이하 스타일은 기존 컴포넌트의 스타일과 일관성을 위해 복사되었습니다.
-*/
 .apv-page {
-  padding: 10px 0;
+  /* 폰트 통일: 시스템 기본 폰트 + 맑은 고딕 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕',
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
+
 .apv-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  gap: 10px;
+  margin-bottom: 20px;
+  padding: 0 10px;
 }
 .apv-filters {
   display: flex;
   gap: 10px;
-  flex-grow: 1;
+  align-items: center;
 }
-.apv-input {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  flex-grow: 1;
-  max-width: 150px;
-  transition: border-color 0.2s;
-}
+.apv-input,
 .apv-select {
   padding: 8px 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #dee2e6;
   border-radius: 8px;
-  min-width: 120px;
-  transition: border-color 0.2s;
+  font-size: 14px;
+  min-width: 140px;
 }
 .apv-select-sm {
   padding: 4px 8px;
@@ -355,49 +368,54 @@ export default {
   height: 30px;
   min-width: 100px;
 }
-.apv-btn {
-  padding: 8px 16px;
-  border: none;
+
+.apv-btn,
+.apv-btn-outline {
+  padding: 8px 15px; /* P.A.와 통일 */
   border-radius: 8px;
-  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  border: 1px solid transparent; /* 기본 테두리 속성 추가 */
+  transition: all 0.2s;
+  font-weight: 600; /* P.A.의 기본 버튼 폰트 두께 */
 }
 .apv-btn-outline {
-  background: #fff;
-  color: #5e72e4;
-  border: 1px solid #5e72e4;
-  transition: background 0.2s;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  height: 38px;
+  line-height: 20px;
+  color: #495057;
+  font-weight: 500; /* 기본 600을 500으로 재설정 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 .apv-btn-outline:hover {
-  background: #5e72e4;
-  color: #fff;
+  background: #f0f0f0;
+  border-color: #c0c0c0;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 /* 테이블 */
 .apv-table-wrap {
   overflow-x: auto;
-  margin-bottom: 1rem;
+  min-height: 560px;
 }
 .apv-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
+  text-align: left;
 }
 .apv-table th,
 .apv-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #eee;
-  text-align: center;
+  padding: 10px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
   font-size: 14px;
 }
 .apv-table th {
   background-color: #f8f9fa;
-  font-weight: 600;
-  color: #6c757d;
-  text-transform: uppercase;
-}
-.apv-table tbody tr:hover {
-  background-color: #f5f5f5;
+  font-weight: 700;
+  color: #344767;
 }
 .apv-table td a {
   color: #5e72e4;
@@ -406,44 +424,38 @@ export default {
   font-size: 14px;
   text-align: left;
 }
+.apv-table td {
+  text-align: left !important;
+}
 
 /* 상태 뱃지 */
 .apv-state {
   display: inline-block;
   padding: 4px 8px;
-  border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  border-radius: 6px;
+  white-space: nowrap;
 }
-/* 진행상태: 작성중 (노란색 계열) */
-.apv-state-PR1 {
+
+.apv-state-PR1,
+.apv-state-ST1 {
   background: #fff3cd;
   color: #856404;
   border: 1px solid #ffeeba;
 }
-/* 진행상태: 승인완료 (초록색 계열) */
+
 .apv-state-PR2 {
   background: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
 }
-/* 단계: 지원중 (파란색 계열, 임의 지정) */
-.apv-state-ST1 {
-  background: #cce5ff;
-  color: #004085;
-  border: 1px solid #b8daff;
-}
-/* 단계: 기간만료 (회색 계열, 임의 지정) */
+
+.apv-state-ST3,
 .apv-state-ST2 {
-  background: #e2e3e5;
-  color: #383d41;
-  border: 1px solid #d6d8db;
-}
-/* 단계: 반려 (빨간색 계열) */
-.apv-state-ST3 {
-  background: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }
 
 .apv-text-info {
@@ -455,32 +467,34 @@ export default {
   font-size: 12px;
 }
 
-/* 페이지네이션 */
-.apv-pagination {
+.pagination-wrap {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
+  gap: 5px;
+  margin-top: 20px;
+  padding: 15px 10px;
+  background-color: transparent;
+  box-shadow: none;
 }
-.apv-pagination-btn {
-  background: #f8f9fa;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
+.page-btn {
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s;
 }
-.apv-pagination-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.page-btn:hover:not(:disabled) {
+  background-color: #e9ecef;
 }
-.apv-page-info {
-  font-size: 14px;
-  font-weight: 600;
-  color: #6c757d;
+.page-btn.active {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
 }
-
-/* 모달 */
 .apv-modal-backdrop {
   position: fixed;
   inset: 0;
