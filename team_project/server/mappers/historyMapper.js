@@ -65,27 +65,27 @@ async function historyList({
 
     // 🔹 검색(검색조건 + keyword)
     if (keyword) {
-      if (searchField === "table_name") {
-        whereClauses.push("h.table_name LIKE CONCAT('%', ?, '%')");
-        params.push(keyword);
-      } else if (searchField === "change_item") {
-        whereClauses.push("h.change_item LIKE CONCAT('%', ?, '%')");
+      if (searchField === "revision_date") {
+        // 예: 2025-11-20, 2025-11, 11-20 등 문자열로 검색
+        whereClauses.push(`
+      DATE_FORMAT(h.revision_date, '%Y-%m-%d %H:%i:%s')
+      LIKE CONCAT('%', ?, '%')
+    `);
         params.push(keyword);
       } else if (searchField === "modifier_name") {
         whereClauses.push("u.name LIKE CONCAT('%', ?, '%')");
         params.push(keyword);
       } else {
+        // 전체: 수정일시 + 수정자 둘 다 대상으로 검색
         whereClauses.push(`
-          (
-               h.table_name  LIKE CONCAT('%', ?, '%')
-            OR h.change_item LIKE CONCAT('%', ?, '%')
-            OR u.name       LIKE CONCAT('%', ?, '%')
-          )
-        `);
-        params.push(keyword, keyword, keyword);
+      (
+        DATE_FORMAT(h.revision_date, '%Y-%m-%d %H:%i:%s') LIKE CONCAT('%', ?, '%')
+        OR u.name LIKE CONCAT('%', ?, '%')
+      )
+    `);
+        params.push(keyword, keyword);
       }
     }
-
     let whereSql = "";
     if (whereClauses.length > 0) {
       whereSql = " AND " + whereClauses.join(" AND ");

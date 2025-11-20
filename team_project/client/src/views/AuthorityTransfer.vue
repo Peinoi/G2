@@ -407,6 +407,7 @@ const onTransfer = async () => {
   transferring.value = true;
   try {
     await axios.post("/api/authority-transfer/transfer", {
+      loginId: auth.userId,
       fromManagerCode: sourceManagerCode.value,
       toManagerCode: targetManagerCode.value,
       userCodes: selectedUserCodes.value,
