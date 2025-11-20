@@ -36,6 +36,13 @@
         </div>
       </div>
 
+      <div class="at-field-group">
+        <label class="at-label">내용</label>
+        <div class="ck-wrapper">
+          <MyEditor v-model="content" />
+        </div>
+      </div>
+
       <!-- 후원금 사용 용도 -->
       <div class="at-row at-expenditure-header">
         <div class="at-field-group at-field-grow">
@@ -86,7 +93,7 @@
             >
             <material-input
               :id="`amount-${item.id}`"
-              placeholder="금액을 입력해주세요 "
+              placeholder="지급 금액을 입력해주세요 "
               class="at-input"
               v-model="item.amountFormatted"
               @input="formatAmount(item)"
@@ -122,8 +129,6 @@
       <material-button class="at-btn" @click="goList()">닫기</material-button>
     </div>
   </div>
-
-
 </template>
 
 <script setup>
@@ -132,6 +137,7 @@ import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
 import numberFormat from "../../../utils/numberFormat.js";
 import { ref, onBeforeMount, defineEmits } from "vue";
+import MyEditor from "@/components/Sponsor/Common/CkEditor.vue";
 // --- [데이터 정의] ---
 let sponsorList = ref([]); // 프로그램 목록
 const programCode = ref("");
@@ -226,7 +232,10 @@ const activityAdd = () => {
   console.log("내용:", content.value);
 
   // 실제 amount 값이 숫자로 들어가 있음
-  console.log("후원금 사용 내역:", JSON.parse(JSON.stringify(expenditureList.value)));
+  console.log(
+    "후원금 사용 내역:",
+    JSON.parse(JSON.stringify(expenditureList.value))
+  );
 
   // TODO: 등록 API 호출
 };
@@ -240,9 +249,6 @@ defineExpose({
   getSponsorList,
 });
 </script>
-
-
-
 
 <style scoped>
 /* AuthorityTransfer.vue의 스타일 테마를 기반으로 재구성 */
@@ -312,21 +318,9 @@ defineExpose({
     box-shadow 0.2s;
 }
 
-/* 일반 <textarea> 스타일 추가 */
-.at-textarea {
+.ck-wrapper {
   width: 100%;
-  height: 120px; /* 높이 지정 */
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  font-size: 15px;
-  color: #374151;
-  background-color: #ffffff;
-  resize: vertical; /* 수직 크기 조절 허용 */
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  display: block;
 }
 
 /* 포커스 시 스타일 (select, textarea만) */
@@ -457,8 +451,8 @@ defineExpose({
   .at-btn-delete {
     width: 100%;
   }
-}:deep(.ck-editor__editable) {
+}
+:deep(.ck-editor__editable) {
   min-height: 200px;
 }
-
 </style>
