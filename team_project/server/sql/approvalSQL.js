@@ -190,7 +190,7 @@ const priorityApprovalList = `
     , mgr.name                AS manager_name  -- 담당자 이름
     , org.org_name            AS org_name      -- 기관명
     , cn.written_at           AS counsel_date  -- 상담기록(상담일자)
-    , c.disability_type       AS disability_type -- 장애유형
+    , COALESCE(c.disability_type, parent.disability_type)  AS disability_type -- 장애유형
     , cp.level                AS priority_level  -- 우선순위 등급(BB코드)
     , ra.state                AS state         -- 상태(BA1/BA2/BA3)
     , ra.approval_date        AS approval_date -- 처리일(승인/반려 일자)
@@ -228,7 +228,7 @@ const priorityApprovalList = `
     ON parent.user_code = ss.written_by
 
   LEFT JOIN child c
-    ON c.user_code = parent.user_code
+    ON c.child_code = ss.child_code
 
   LEFT JOIN users mgr
     ON mgr.user_code = ss.assi_by
@@ -338,7 +338,7 @@ const supportPlanApprovalList = `
 
       sp.written_at       AS written_at,   -- 계획 작성일
 
-      c.disability_type   AS disability_type, -- 장애유형
+      COALESCE(c.disability_type, parent.disability_type)  AS disability_type, -- 장애유형
       cp.level            AS priority_level,  -- 우선순위(BB코드)
       ra.state            AS state,           -- 상태(BA코드)
       ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
@@ -379,7 +379,7 @@ const supportPlanApprovalList = `
     ON parent.user_code = ss.written_by
 
   LEFT JOIN child c
-    ON c.user_code = parent.user_code
+    ON c.child_code = ss.child_code
 
   LEFT JOIN users mgr
     ON mgr.user_code = sp.assi_by
@@ -488,7 +488,7 @@ const supportResultApprovalList = `
 
       sr.written_at       AS written_at,   -- 결과 작성일
 
-      c.disability_type   AS disability_type, -- 장애유형
+      COALESCE(c.disability_type, parent.disability_type)  AS disability_type, -- 장애유형
       cp.level            AS priority_level,  -- 우선순위(BB코드)
       ra.state            AS state,           -- 상태(BA코드)
 
@@ -496,9 +496,10 @@ const supportResultApprovalList = `
 
       sr.result_code      AS result_code,     -- 결과코드 (상세 이동용)
       ra.rejection_reason AS rejection_reason,  -- 반려 사유
-      sr.plan_code        AS plan_code
+      sr.plan_code        AS plan_code,
+      ss.submit_code      AS submit_code,
       -- ✅ 재요청 유무
-    , EXISTS (
+     EXISTS (
     SELECT 1
     FROM request_approval ra2
     WHERE ra2.approval_type     = ra.approval_type
@@ -538,7 +539,7 @@ const supportResultApprovalList = `
 
   /* 아이: 보호자(user_code) 기준으로 연결 */
   LEFT JOIN child c
-    ON c.user_code = parent.user_code
+    ON c.child_code = ss.child_code
 
   /* 담당자 & 기관 (지원결과 담당자 코드 사용) */
   LEFT JOIN users mgr

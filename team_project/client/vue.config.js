@@ -1,4 +1,5 @@
 module.exports = {
+  assetsDir: "@/assets/",
   devServer: {
     proxy: {
       "/api": {

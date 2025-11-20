@@ -79,24 +79,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import axios from "axios";
-import dateFormat from "@/utils/dateFormat";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import dateFormat from '@/utils/dateFormat';
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
 const goToEventAdd = () => {
-  router.push({ name: "EventAdd" });
+  router.push({ name: 'EventAdd' });
 };
 
 const goToEventInfo = (event_code) => {
   if (!event_code) {
-    console.warn("eventCode가 없습니다!");
+    console.warn('eventCode가 없습니다!');
     return;
   }
   router.push({
-    name: "EventInfo",
+    name: 'EventInfo',
     params: { eventCode: event_code },
   });
 };
@@ -105,12 +105,12 @@ const events = ref([]);
 
 // 검색 조건
 const filters = ref({
-  recruit_status: "",
-  recruit_start_date: "",
-  recruit_end_date: "",
-  event_start_date: "",
-  event_end_date: "",
-  event_name: "",
+  recruit_status: '',
+  recruit_start_date: '',
+  recruit_end_date: '',
+  event_start_date: '',
+  event_end_date: '',
+  event_name: '',
 });
 
 const fetchEvents = async () => {
@@ -120,7 +120,7 @@ const fetchEvents = async () => {
     const res = await axios.get(`/api/event/list?${query}`); // 백엔드에서 위 쿼리 결과 반환
     events.value = res.data.data;
   } catch (err) {
-    console.error("이벤트 메인 조회 실패", err);
+    console.error('이벤트 메인 조회 실패', err);
   }
 };
 
@@ -139,8 +139,8 @@ const resetFilters = () => {
 
 // 날짜 포맷
 const formatDate = (dateStr) => {
-  if (!dateStr) return "";
-  return dateFormat(dateStr, "yyyy-MM-dd");
+  if (!dateStr) return '';
+  return dateFormat(dateStr, 'yyyy-MM-dd');
 };
 
 onMounted(() => {

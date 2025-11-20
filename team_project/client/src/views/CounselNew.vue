@@ -244,12 +244,14 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "../store/authLogin";
 import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
 import MaterialInput from "@/components/MaterialInput.vue";
 
+const auth = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 const submitCode = Number(route.params.submitCode);
@@ -488,6 +490,7 @@ async function submitAll() {
       mainForm: mainForm.value,
       records: records.value,
       removeAttachmentCodes: removedAttachmentCodes.value,
+      modifier: auth.userCode,
     };
 
     const formData = new FormData();

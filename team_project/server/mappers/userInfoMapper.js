@@ -16,7 +16,6 @@ async function findUserInfo(userData) {
     return result;
   } catch (err) {
     console.error('[ findUserInfo 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -37,7 +36,6 @@ async function updateUser(data) {
     return { ok: false, message: '사용자 수정 실패' };
   } catch (err) {
     console.error('[ updateUser 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -56,7 +54,6 @@ async function updateOrg(data) {
     return { ok: false, message: '해당 기관명이 없습니다.' };
   } catch (err) {
     console.error('[ updateOrg 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -77,7 +74,6 @@ async function updateChild(data) {
     return { ok: false, message: '자녀 수정 실패' };
   } catch (err) {
     console.error('[ updateChild 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -96,7 +92,6 @@ async function addChild(data) {
     return { ok: true, message: '자녀 추가 성공' };
   } catch (err) {
     console.error('[ addChild 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -110,7 +105,6 @@ async function deleteChild(data) {
     return { ok: false, message: '자녀 삭제 실패' };
   } catch (err) {
     console.error('[ deleteChild 실패 ] : ', err);
-    throw err;
   }
 }
 

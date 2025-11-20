@@ -1,70 +1,17 @@
 <template>
   <div class="apv-page">
-    <h2 class="apv-title">후원 프로그램 관리</h2>
+    <h2 class="apv-title">후원 활동 보고서 관리</h2>
 
     <div class="apv-toolbar apv-toolbar-top">
       <button class="apv-btn apv-btn-primary" @click="programAdd()">
-        후원 프로그램 등록
+        후원 활동 보고서 등록
       </button>
-    </div>
-
-    <div class="apv-toolbar">
-      <div class="apv-filters">
-        <div class="apv-date-range">
-          <input
-            type="date"
-            v-model="startDate"
-            class="apv-input apv-input-date"
-          />
-          <span class="apv-date-separator">~</span>
-          <input
-            type="date"
-            v-model="endDate"
-            class="apv-input apv-input-date"
-          />
-        </div>
-
-        <select
-          name="program_select"
-          id="program_select"
-          v-model="programCode"
-          class="apv-select"
-        >
-          <option value="">프로그램 명</option>
-          <option
-            v-for="program in programList"
-            :key="program.program_code"
-            :value="program.program_code"
-          >
-            {{ program.program_name }}
-          </option>
-        </select>
-
-        <select name="" id="" v-model="sponsorType" class="apv-select">
-          <option value="">후원 방법</option>
-          <option value="단기">단기</option>
-          <option value="정기">정기</option>
-        </select>
-
-        <select name="" id="" v-model="status" class="apv-select">
-          <option value="">진행 상태</option>
-          <option value="진행전">진행전</option>
-          <option value="진행중">진행중</option>
-          <option value="완료">완료</option>
-          <option value="중단">중단</option>
-        </select>
-
-        <select name="" id="" v-model="approval_status" class="apv-select">
-          <option value="">승인 상태</option>
-          <option value="승인대기">승인대기</option>
-          <option value="승인완료">승인완료</option>
-          <option value="반려">반려</option>
-        </select>
-      </div>
-
-      <div class="apv-actions-group">
-        <button class="apv-btn apv-btn-outline" @click="search()">검색</button>
-        <button class="apv-btn" @click="clear()">조건 초기화</button>
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="프로그램명 입력"
+          v-model="searchKeyword"
+        />
       </div>
     </div>
 
@@ -73,41 +20,25 @@
         <thead>
           <tr>
             <th>프로그램</th>
-            <th>후원 종류</th>
-            <th>상태</th>
-            <th>시작일</th>
-            <th>종료일</th>
+            <th>제목</th>
+            <th>작성자</th>
+            <th>작성일</th>
             <th>목표 금액</th>
-            <th>현재 금액</th>
-            <th>승인</th>
+            <th>사용 금액</th>
           </tr>
         </thead>
         <tbody>
           <tr
-            v-for="program in sponsorList"
+            v-for="program in finalList"
             @click="selectProgram(program)"
             :key="program.program_code"
           >
             <td>{{ program.program_name }}</td>
-            <td>{{ program.sponsor_type }}</td>
-            <td>
-              <span class="apv-state-pill" :class="statusClass(program.status)">
-                {{ program.status }}
-              </span>
-            </td>
-            <td>{{ dateFormat(program.start_date, "yyyy-MM-dd") }}</td>
-            <td>{{ dateFormat(program.end_date, "yyyy-MM-dd") }}</td>
+            <td>{{ program.title }}</td>
+            <td>{{ program.writer }}</td>
+            <td>{{ dateFormat(program.create_date, "yyyy-MM-dd") }}</td>
             <td>{{ numberFormat(program.goal_amount) }}원</td>
-            <td>{{ numberFormat(program.current_amount) }}원</td>
-            <td>
-              <button
-                class="apv-btn apv-btn-xs"
-                :class="approvalClass(program.approval_status)"
-                @click.stop="Approval(program)"
-              >
-                {{ program.approval_status }}
-              </button>
-            </td>
+            <td>{{ numberFormat(program.used_amount) }}원</td>
           </tr>
         </tbody>
       </table>
@@ -125,52 +56,15 @@
 import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
-import { ref, onBeforeMount } from "vue";
+import { ref, onBeforeMount, computed } from "vue";
 const emit = defineEmits(["go-to-add", "selectProgram"]);
-let startDate = ref("");
-let endDate = ref("");
-let programCode = ref(""); // 프로그램 Select의 값
-let sponsorType = ref(""); // 후원 방법 Select의 값
-// let amount = ref(null); // 금액 Input의 값
-let status = ref(""); // 진행 상태 Select의 값
-let approval_status = ref(""); // 승인 상태 Select의 값
+
 let sponsorList = ref([]); // 전체 조회 조건 조회
 let programList = ref([]); // 검색창 프로그램 명 리스트 불러오기
-
-// 헬퍼 함수 추가: 상태 클래스 매핑
-const statusClass = (statusValue) => {
-  switch (statusValue) {
-    case "진행전":
-      return "apv-state-BA1"; // 노란색 계열
-    case "진행중":
-      return "apv-state-BA2"; // 녹색 계열
-    case "완료":
-      return "apv-state-BA3"; // 빨간색 계열 (완료 상태는 다른 색으로 변경 필요 시 수정)
-    case "중단":
-      return "apv-state-BA3"; // 빨간색 계열
-    default:
-      return "";
-  }
-};
-
-// 헬퍼 함수 추가: 승인 상태 클래스 매핑
-const approvalClass = (approvalStatus) => {
-  switch (approvalStatus) {
-    case "승인대기":
-    case "승인대기중":
-      return "apv-btn-outline";
-    case "승인완료":
-    case "승인":
-      return "apv-btn-primary";
-    case "반려":
-      return "apv-btn-danger";
-    default:
-      return "";
-  }
-};
+const searchKeyword = ref("");
 const getSponsorList = async (params = {}) => {
   let result = await axios
-    .get(`/api/sponsor`, { params: params })
+    .get(`/api/sponsor/activity`, { params: params })
     .catch((err) => console.log(err));
 
   // API 호출 실패 처리 추가 (이전 대화에서 논의된 부분)
@@ -216,36 +110,20 @@ onBeforeMount(() => {
 defineExpose({
   getSponsorList,
 });
-const search = () => {
-  const searchParams = {
-    startDate: startDate.value,
-    endDate: endDate.value,
-    programCode: programCode.value,
-    sponsorType: sponsorType.value,
-    // amount: amount.value,
-    status: status.value,
-    approval_status: approval_status.value,
-  };
-
-  // getSponsorList 함수를 검색 파라미터와 함께 호출
-  console.log(searchParams);
-  getSponsorList(searchParams);
-};
 
 const programAdd = () => {
   emit("go-to-add"); // 'go-to-add' 이벤트를 발생시킴
 };
+// -------------------------------
+// 검색 기능
+// -------------------------------
+const finalList = computed(() => {
+  const kw = searchKeyword.value.trim();
+  if (!kw) return sponsorList.value; // 검색어 없으면 전체 리턴
 
-const clear = () => {
-  startDate.value = "";
-  endDate.value = "";
-  programCode.value = "";
-  sponsorType.value = "";
-  // amount.value = null;
-  status.value = "";
-  approval_status.value = "";
-  getSponsorList(); // 전체 리스트 다시 조회
-};
+  // 검색어 있을 때만 필터
+  return sponsorList.value.filter((item) => item.program_name.includes(kw));
+});
 // client/comments/Sponsor/ProgramList.vue
 
 const selectProgram = async (program) => {
@@ -273,34 +151,6 @@ const selectProgram = async (program) => {
       attachments: attachments, // ✨ 첨부파일 목록을 추가
     };
     emit("select-program", fullDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
-  }
-};
-
-const Approval = async (program) => {
-  if (program.approval_status === "승인대기중") {
-    alert("이미 승인 요청 중입니다.");
-    return;
-  }
-  if (program.approval_status === "승인") {
-    alert("승인이 완료된 건입니다.");
-    return;
-  }
-  if (!confirm("승인 요청 하시겠습니까?")) return;
-
-  try {
-    const userJson = localStorage.getItem("user");
-    const user = JSON.parse(userJson);
-    const requesterCode = user.user_code;
-
-    await axios.post(`/api/sponsor/${program.program_code}/request-approval`, {
-      requesterCode,
-    });
-
-    alert("승인 요청을 발송했습니다.");
-    getSponsorList(); // 목록 새로고침
-  } catch (err) {
-    console.error(err);
-    alert("승인 요청 중 오류가 발생했습니다.");
   }
 };
 </script>
@@ -332,7 +182,7 @@ const Approval = async (program) => {
 
 /* 등록 버튼 상단 툴바 */
 .apv-toolbar-top {
-  justify-content: flex-start;
+  justify-content: space-between;
   margin-bottom: 8px; /* 제목과 검색창 사이 간격 조절 */
 }
 
@@ -474,6 +324,21 @@ const Approval = async (program) => {
   font-weight: 600;
   color: #4a5568;
   white-space: nowrap;
+}
+/* 검색 */
+.search-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #bbb;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background-color: white;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  border-radius: 5px;
 }
 
 /* 테이블 행 호버 시 스타일 */

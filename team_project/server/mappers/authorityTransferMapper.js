@@ -8,10 +8,12 @@ function rowsFrom(ret) {
   return ret;
 }
 
-// 이용자 목록 조회
-// - loginId : 로그인한 기관 관리자 user_id
-// - managerCode : 특정 담당자(user_code) 기준으로 필터 (선택)
-// - keyword : 아이디/이름/연락처 검색 (선택)
+/**
+ * 🔹 이용자 목록 조회
+ * - loginId : 로그인한 기관 관리자 user_id
+ * - managerCode : 특정 담당자(user_code) 기준으로 필터 (선택)
+ * - keyword : 아이디/이름/연락처 검색 (선택)
+ */
 async function authorityUserList({
   loginId,
   managerCode,
@@ -29,18 +31,19 @@ async function authorityUserList({
     const params = [];
     const countParams = [];
 
-    // 기본: loginId로 기관 제한 (첫 번째 파라미터)
+    // 🔸 기본: loginId 로 기관 제한 (첫 번째 파라미터)
     params.push(loginId);
     countParams.push(loginId);
 
-    // 담당자 필터 (from / to 담당자 둘 다 이 API로 조회 가능)
+    // 🔸 담당자 필터: managerCode 가 있으면 assi_by 기반 필터 적용
     if (managerCode) {
-      whereClauses.push("u.manager_code = ?");
-      params.push(managerCode);
-      countParams.push(managerCode);
+      whereClauses.push(authoritySQL.authorityUserManagerFilter);
+      // managerFilter 내부 ? 가 3개 → 3번 바인딩
+      params.push(managerCode, managerCode, managerCode);
+      countParams.push(managerCode, managerCode, managerCode);
     }
 
-    // 검색어 (아이디 / 이름 / 연락처)
+    // 🔸 검색어 필터
     if (keyword) {
       whereClauses.push(`
         (
@@ -53,11 +56,13 @@ async function authorityUserList({
       countParams.push(keyword, keyword, keyword);
     }
 
+    // 최종 WHERE 조합
     let whereSql = "";
     if (whereClauses.length > 0) {
       whereSql = " AND " + whereClauses.join(" AND ");
     }
 
+    // 🔸 리스트 조회 SQL
     const listSql = `
       ${authoritySQL.authorityUserListBase}
       ${whereSql}
@@ -69,6 +74,7 @@ async function authorityUserList({
     const retRows = await conn.query(listSql, listParams);
     const rows = rowsFrom(retRows);
 
+    // 🔸 카운트 조회 SQL
     const countSql = `
       ${authoritySQL.authorityUserCountBase}
       ${whereSql}
@@ -105,7 +111,10 @@ async function authorityUserList({
   }
 }
 
-// 권한 이관 (여러 이용자에 대해 담당자 변경 + 관련 테이블 담당자 코드 변경)
+/**
+ * 🔹 권한 이관 (담당자 기준 assi_by 변경)
+ * - users.manager_code 업데이트는 사용하지 않음 (폐기)
+ */
 async function transferUsers({
   loginId,
   fromManagerCode,
@@ -123,20 +132,7 @@ async function transferUsers({
     const placeholders = userCodes.map(() => "?").join(", ");
     const baseAssiParams = [toManagerCode, fromManagerCode];
 
-    // 1) users.manager_code 변경 (기존 로직)
-    const userSql = `
-      ${authoritySQL.authorityTransferUpdateBase}
-        AND user_code IN (${placeholders})
-    `;
-    const userParams = [
-      toManagerCode, // SET manager_code = ?
-      fromManagerCode, // AND manager_code = ?
-      loginId, // AND org_code = ( SELECT ... WHERE user_id = ? )
-      ...userCodes, // IN (...)
-    ];
-    const userRet = await conn.query(userSql, userParams);
-
-    // 2) survey_submission.assi_by 변경
+    // 1) 🔸 조사지 담당자 변경
     const surveySql = `
       ${authoritySQL.transferSurveyAssiByBase}
         AND u.user_code IN (${placeholders})
@@ -144,7 +140,7 @@ async function transferUsers({
     const surveyParams = [...baseAssiParams, ...userCodes];
     const surveyRet = await conn.query(surveySql, surveyParams);
 
-    // 3) support_plan.assi_by 변경
+    // 2) 🔸 지원계획 담당자 변경
     const planSql = `
       ${authoritySQL.transferSupportPlanAssiByBase}
         AND u.user_code IN (${placeholders})
@@ -152,7 +148,7 @@ async function transferUsers({
     const planParams = [...baseAssiParams, ...userCodes];
     const planRet = await conn.query(planSql, planParams);
 
-    // 4) support_result.assi_by 변경
+    // 3) 🔸 지원결과 담당자 변경
     const resultSql = `
       ${authoritySQL.transferSupportResultAssiByBase}
         AND u.user_code IN (${placeholders})
@@ -163,15 +159,12 @@ async function transferUsers({
     await conn.commit();
 
     const totalAffected =
-      (userRet.affectedRows || 0) +
       (surveyRet.affectedRows || 0) +
       (planRet.affectedRows || 0) +
       (resultRet.affectedRows || 0);
 
     console.log(
       "[authorityTransferMapper] transferUsers:",
-      "users:",
-      userRet.affectedRows,
       "| survey:",
       surveyRet.affectedRows,
       "| plan:",

@@ -12,7 +12,7 @@ router.get('/checkid', async (req, res) => {
     console.error('[ authUser.js -> checkid 라우터 오류 ]', err);
     res
       .status(500)
-      .json({ ok: false, message: '[ authUser.js -> checkid 오류 ]' });
+      .json({ ok: false, message: '[ authUser.js -> checkid 라우터 오류 ]' });
   }
 });
 
@@ -22,10 +22,10 @@ router.post('/addUser', async (req, res) => {
     const result = await userService.addUser(req.body);
     res.json(result);
   } catch (err) {
-    console.error(err);
+    console.error('[ authUser.js -> addUser 라우터 오류 ]', err);
     res
       .status(500)
-      .json({ ok: false, message: '[ signUser.js 회원가입 실패 ]' });
+      .json({ ok: false, message: '[ authUser.js -> addUser 라우터 오류 ]' });
   }
 });
 
@@ -38,7 +38,7 @@ router.post('/addOrg', async (req, res) => {
     console.error('[ authUser.js -> addOrg 라우터 오류 ]', err);
     res
       .status(500)
-      .json({ ok: false, message: '[ signUser.js 회원가입 실패 ]' });
+      .json({ ok: false, message: '[ authUser.js -> addOrg 라우터 오류 ]' });
   }
 });
 
@@ -48,8 +48,10 @@ router.post('/login', async (req, res) => {
     const result = await userService.login(req.body);
     res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, message: '[ signUser.js 로그인 실패 ]' });
+    console.error('[ authUser.js -> login 라우터 오류 ]', err);
+    res
+      .status(500)
+      .json({ ok: false, message: '[ authUser.js -> login 라우터 오류 ]' });
   }
 });
 
@@ -60,9 +62,10 @@ router.post('/findIdPw', async (req, res) => {
     const result = await userService.findIdPw(type, data);
     res.json(result);
   } catch (err) {
+    console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
     res
       .status(500)
-      .json({ ok: false, message: '[ signUser.js ID / PW 찾기 실패 ]' });
+      .json({ ok: false, message: '[ authUser.js -> findIdPw 라우터 오류 ]' });
   }
 });
 
@@ -73,9 +76,11 @@ router.put('/findIdPw', async (req, res) => {
     const result = await userService.findIdPw(type, data);
     res.json(result);
   } catch (err) {
+    console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
     res
       .status(500)
-      .json({ ok: false, message: '[ signUser.js PW 변경 실패 ]' });
+      .json({ ok: false, message: '[ authUser.js -> findIdPw 라우터 오류 ]' });
   }
 });
+
 module.exports = router;

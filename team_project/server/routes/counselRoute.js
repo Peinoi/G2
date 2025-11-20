@@ -111,7 +111,7 @@ router.get("/:submitCode/rejection-reason", async (req, res) => {
     const result = await counselService.getRejectionReason(submitCode);
 
     if (!result) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
         message: "반려 사유를 찾을 수 없습니다.",
       });

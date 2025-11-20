@@ -17,6 +17,48 @@ async function sponsorSQL() {
   }
 }
 
+//활동 보고서 전체 조회
+async function activitySQL() {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+    const sponsorRows = await sponsorConn.query(sponsorSql.activity_select);
+    console.log("[ activitySQL.js || 성공 ]");
+    //  console.log(sponsorRows);
+    return sponsorRows;
+  } catch (err) {
+    console.error("[ activitySQL.js || 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
+
+//활동 보고서 단건 조회
+async function activity_SelectSQL(activity_code) {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+    const sponsorRows = await sponsorConn.query(
+      sponsorSql.activity_select_one,
+      [activity_code]
+    );
+    const history = await sponsorConn.query(
+      sponsorSql.activity_history_select,
+      [activity_code]
+    );
+
+    console.log("[ activitySQL.js || 성공 ]");
+    //  console.log(sponsorRows);
+    return sponsorRows;
+  } catch (err) {
+    console.error("[ activitySQL.js || 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
+
 async function programAddSQL(programDataArray, attachments) {
   let sponsorConn;
   try {
@@ -362,7 +404,7 @@ async function mygivingSQL() {
     if (sponsorConn) sponsorConn.release();
   }
 }
-
+//활동 보고서 추가
 async function activityAddSQL(programDataArray) {
   let sponsorConn;
   try {
@@ -376,17 +418,97 @@ async function activityAddSQL(programDataArray) {
 
     const program_code = result.insertId;
     console.log("프로그램 코드:", program_code);
-    console.log("[ sponsorConn.js || 프로그램 등록 쿼리 성공 ]");
+    console.log("[ sponsorConn.js || 활동보고서 등록 쿼리 성공 ]");
 
     await sponsorConn.commit();
     return { programResult: result };
   } catch (err) {
-    console.error("[ sponsorConn.js || 프로그램 등록 쿼리 실패 ]", err.message);
+    console.error(
+      "[ sponsorConn.js || 활동보고서 등록 쿼리 실패 ]",
+      err.message
+    );
     throw err;
   } finally {
     if (sponsorConn) sponsorConn.release();
   }
 }
+//보고서 사용 내역 추가
+async function activityHistoryAddSQL(arr) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.query(sponsorSql.activity_history, arr);
+    await conn.commit();
+  } catch (err) {
+    console.error("[activityHistoryAddSQL 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+//결제에 따른 현재 모금액 변경
+async function current_amountUpdate(amount, code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
+
+    // 1) 현재금액 조회
+    const rows = await conn.query(sponsorSql.current_amount, [code]);
+    const curr_amount = rows[0].current_amount;
+
+    // 2) 새로운 금액 계산
+    const new_amount = curr_amount + amount;
+
+    // 3) update 실행
+    await conn.query(sponsorSql.update_current_amount, [new_amount, code]);
+
+    await conn.commit();
+  } catch (err) {
+    console.error("[activityHistoryAddSQL 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+//활동 보고서 전체 조회
+async function summaryStatement() {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+    const sponsorRows = await sponsorConn.query(sponsorSql.summaryStatement);
+    console.log("[ summaryStatement.js || 성공 ]");
+    //  console.log(sponsorRows);
+    return sponsorRows;
+  } catch (err) {
+    console.error("[ summaryStatement.js || 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
+
+//활동 보고서 단건 조회
+async function summaryStatementSelect(activity_code) {
+  let sponsorConn;
+  try {
+    sponsorConn = await pool.getConnection();
+    const sponsorRows = await sponsorConn.query(
+      sponsorSql.summaryStatementSelect,
+      [activity_code]
+    );
+    console.log("[ summaryStatementSelect.js || 성공 ]");
+    //  console.log(sponsorRows);
+    return sponsorRows;
+  } catch (err) {
+    console.error("[ summaryStatementSelect.js || 실패 ]", err.message);
+    throw err;
+  } finally {
+    if (sponsorConn) sponsorConn.release();
+  }
+}
+
 module.exports = {
   sponsorSQL,
   programAddSQL,
@@ -401,4 +523,9 @@ module.exports = {
   payments,
   mygivingSQL,
   activityAddSQL,
+  activitySQL,
+  activityHistoryAddSQL,
+  current_amountUpdate,
+  summaryStatement,
+  summaryStatementSelect,
 };
