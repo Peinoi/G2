@@ -1,9 +1,11 @@
 const pool = require('../configs/db');
 const pendingSQL = require('../sql/pendingSQL');
 
-async function getPendingListMapper() {
+async function getPendingListMapper(data) {
   try {
-    const result = await pool.query(pendingSQL.GET_PENDING_LIST);
+    const result = await pool.query(pendingSQL.GET_PENDING_LIST, [
+      data.org_code,
+    ]);
     return result;
   } catch (err) {
     console.error('[ getPendingListMapper 실패 ] : ', err);
@@ -26,4 +28,20 @@ async function updateStatusMapper(data) {
   }
 }
 
-module.exports = { getPendingListMapper, updateStatusMapper };
+async function searchManagersMapper(data) {
+  try {
+    const result = await pool.query(pendingSQL.SEARCH_MANAGERS, [data]);
+    if (result.length == 0) {
+      return { ok: false, message: '값 없음' };
+    }
+    return result;
+  } catch (err) {
+    console.error('[ searchManagersMapper 실패 ] : ', err);
+  }
+}
+
+module.exports = {
+  getPendingListMapper,
+  updateStatusMapper,
+  searchManagersMapper,
+};
