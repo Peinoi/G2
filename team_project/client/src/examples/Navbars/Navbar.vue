@@ -8,7 +8,9 @@
   >
     <div class="px-3 py-1 container-fluid">
       <!-- 왼쪽에 있는 현재 페이지의 이름 -->
-      <breadcrumbs :currentPage="currentRouteName" :color="color" />
+      <div class="navbar-left-area">
+        <breadcrumbs :currentPage="currentRouteName" :color="color" />
+      </div>
 
       <!-- 중앙 버튼 영역 -->
       <div
@@ -317,5 +319,10 @@ export default {
 
 .badge-link .badge:hover {
   opacity: 0.8;
+}
+
+.navbar-left-area {
+  width: 170px;
+  flex-shrink: 0;
 }
 </style>
