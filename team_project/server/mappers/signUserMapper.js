@@ -11,7 +11,6 @@ async function findUserId(id) {
     return { ok: true, message: '사용 가능한 아이디입니다.' };
   } catch (err) {
     console.error('[ findUserId 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -39,7 +38,6 @@ async function addUser(data) {
     return { ok: true, message: '회원가입 완료' };
   } catch (err) {
     console.error('[ addUser 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -53,7 +51,6 @@ async function findOrgCode(orgName) {
     return rows[0].org_code;
   } catch (err) {
     console.error('[ findOrgCode 찾기 실패 ] : ', err);
-    throw err;
   }
 }
 
@@ -81,7 +78,6 @@ async function addOrg(data) {
     return { ok: true, message: '기관 회원가입 완료' };
   } catch (err) {
     console.error('[ insertOrgUser 실패 ]', err);
-    throw err;
   }
 }
 
@@ -99,7 +95,6 @@ async function authLogin(data) {
     return { ok: true, message: '로그인 성공', ...result[0] };
   } catch (err) {
     console.error('[ authLogin 실패 ]', err);
-    throw err;
   }
 }
 
@@ -116,7 +111,6 @@ async function findId(data) {
     return { ok: true, message: 'ID 찾기 성공', ...result[0] };
   } catch (err) {
     console.error('[ findId 실패 ]', err);
-    throw err;
   }
 }
 
@@ -134,7 +128,6 @@ async function findPw(data) {
     return { ok: true, message: 'PW 찾기 성공' };
   } catch (err) {
     console.error('[ findPw 실패 ]', err);
-    throw err;
   }
 }
 
@@ -153,7 +146,6 @@ async function updatePw(data) {
     return { ok: true, message: 'PW 변경 성공' };
   } catch (err) {
     console.error('[ updatePw 실패 ]', err);
-    throw err;
   }
 }
 

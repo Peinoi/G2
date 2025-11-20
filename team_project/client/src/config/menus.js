@@ -247,12 +247,6 @@ export const historyMenu = [
 
 export const pendingMenu = [
   {
-    label: '대기자 목록',
-    path: '/pendinglist',
-    collapseRef: 'PendingList',
-    role: ['AA2', 'AA3', 'AA4'],
-  },
-  {
     label: '담당자 배정 목록',
     path: '/pendingapproval',
     collapseRef: 'PendingApproval',

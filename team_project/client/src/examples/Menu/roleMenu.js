@@ -1,7 +1,7 @@
 export const roleMenu = {
   AA0: [
-    { name: "후원", path: "/sponsorprogramlist", color: "success" },
-    { name: "이벤트", path: "/event", color: "success" },
+    { name: '후원', path: '/sponsorprogramlist', color: 'success' },
+    { name: '이벤트', path: '/event', color: 'success' },
   ],
   AA1: [
     { name: '신청현황', path: '/applicationStatus', color: 'primary' },
@@ -12,7 +12,7 @@ export const roleMenu = {
   ],
 
   AA2: [
-    { name: '대기자 목록', path: '/pendinglist', color: 'primary' },
+    { name: '대기자 목록', path: '/pendingapproval', color: 'primary' },
     { name: '조사지', path: '/survey-list', color: 'success' },
     { name: '상담', path: '/counsel-list', color: 'success' },
     { name: '지원', path: '/plan-list', color: 'success' },
@@ -21,7 +21,7 @@ export const roleMenu = {
   ],
 
   AA3: [
-    { name: '대기자 목록', path: '/pendinglist', color: 'primary' },
+    { name: '대기자 목록', path: '/pendingapproval', color: 'primary' },
     { name: '조사지', path: '/survey-list', color: 'success' },
     { name: '상담', path: '/counsel-list', color: 'success' },
     { name: '지원', path: '/plan-list', color: 'success' },
@@ -32,7 +32,7 @@ export const roleMenu = {
   ],
 
   AA4: [
-    { name: '대기자 목록', path: '/pendinglist', color: 'primary' },
+    { name: '대기자 목록', path: '/pendingapproval', color: 'primary' },
     { name: '조사지', path: '/survey-list', color: 'success' },
     { name: '상담', path: '/counsel-list', color: 'success' },
     { name: '지원', path: '/plan-list', color: 'info' },

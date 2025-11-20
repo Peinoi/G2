@@ -26,8 +26,6 @@ import { appReqMenu } from '@/config/menus';
 import { historyMenu } from '@/config/menus';
 import { infoMenu } from '@/config/menus';
 import { pendingMenu } from '@/config/menus';
-import PendingUserList from '../views/PendingUserList.vue';
-import PendingList from '../components/PendingList.vue';
 import PendingApproval from '../components/PendingApproval.vue';
 import SponsorDetail from '@/components/Sponsor/Common/SponsorDetail.vue';
 import PaymentPage from '@/components/Sponsor/User/PaymentPage.vue';
@@ -57,23 +55,12 @@ const router = createRouter({
       name: 'UserInfo',
       component: UserInfo,
     },
-    // 대기자 목록
-    {
-      path: '/pendinglist',
-      name: 'PendingList',
-      component: PendingList,
-    },
+
     // 담당자 배정 목록
     {
       path: '/pendingapproval',
       name: 'PendingApproval',
       component: PendingApproval,
-    },
-    // nav 대기자 목록
-    {
-      path: '/pendinguserlist',
-      name: 'PendingUserList',
-      component: PendingUserList,
     },
     {
       path: '/sponsor',
@@ -511,7 +498,7 @@ router.beforeEach((to, from, next) => {
   const historyPages = ['HistoryList'];
 
   // 대기자 목록 그룹
-  const pendingPages = ['PendingList', 'PendingApproval'];
+  const pendingPages = ['PendingApproval'];
 
   // 신청현황 그룹
   const appStatusPages = ['ApplicationStatus'];
