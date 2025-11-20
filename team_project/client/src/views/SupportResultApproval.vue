@@ -55,7 +55,7 @@
             class="priority-row"
           >
             <td>{{ item.approval_code }}</td>
-            <td>{{ item.child_name }}</td>
+            <td>{{ item.child_name || "본인" }}</td>
             <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
@@ -288,6 +288,8 @@ function goDetail(item) {
     params: { resultCode: item.result_code },
     query: {
       role: detailRole.value, // AA3 -> 3, AA4 -> 4
+      submitCode: item.submit_code,
+      planCode: item.plan_code,
     },
   });
 }

@@ -54,7 +54,7 @@
             class="priority-row"
           >
             <td>{{ item.approval_code }}</td>
-            <td>{{ item.child_name }}</td>
+            <td>{{ item.child_name || "본인" }}</td>
             <td>{{ item.disability_type }}</td>
             <td>{{ item.parent_name }}</td>
             <td>{{ item.manager_name }}</td>
@@ -279,10 +279,11 @@ function changePage(nextPage) {
 // ✅ 각 행 클릭 시 지원계획 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "counsel-detail",
-    params: { submitCode: item.submit_code },
+    name: "planDetail",
+    params: { planCode: item.plan_code },
     query: {
       role: detailRole.value, // AA3 -> 3, AA4 -> 4
+      submitCode: item.submit_code,
     },
   });
 }

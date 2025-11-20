@@ -36,18 +36,14 @@
         </div>
       </div>
 
-      <div class="at-row">
-        <div class="at-field-group at-field-grow">
-          <label for="content" class="at-label">내용</label>
-          <textarea
-            id="content"
-            placeholder="내용을 입력해주세요"
-            class="at-textarea"
-            v-model="content"
-          />
+      <div class="at-field-group">
+        <label class="at-label">내용</label>
+        <div class="ck-wrapper">
+          <MyEditor v-show="loadEditor" v-model="content" />
         </div>
       </div>
 
+      <!-- 후원금 사용 용도 -->
       <div class="at-row at-expenditure-header">
         <div class="at-field-group at-field-grow">
           <label class="at-label">후원금 사용 용도</label>
@@ -59,6 +55,7 @@
         </div>
       </div>
 
+      <!-- 동적 항목 -->
       <div
         v-for="item in expenditureList"
         :key="item.id"
@@ -89,16 +86,17 @@
         </div>
 
         <div class="at-row at-expenditure-row">
+          <!-- 금액 입력 (자동 콤마 적용) -->
           <div class="at-field-group at-field-half">
             <label :for="`amount-${item.id}`" class="at-label"
               >지급 금액 (원)</label
             >
             <material-input
               :id="`amount-${item.id}`"
-              placeholder="숫자만 입력"
+              placeholder="지급 금액을 입력해주세요 "
               class="at-input"
-              type="number"
-              v-model.number="item.amount"
+              v-model="item.amountFormatted"
+              @input="formatAmount(item)"
             />
           </div>
 
@@ -137,27 +135,34 @@
 import axios from "axios";
 import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
-import { ref, onBeforeMount, defineEmits } from "vue";
-
+import numberFormat from "../../../utils/numberFormat.js";
+import { nextTick, ref, onBeforeMount, defineEmits } from "vue";
+import MyEditor from "@/components/Sponsor/Common/CkEditor.vue";
 // --- [데이터 정의] ---
 let sponsorList = ref([]); // 프로그램 목록
 const programCode = ref("");
 const title = ref("");
 const content = ref("");
+const showEditor = ref(false);
 
-// 후원금 사용 내역을 담을 배열 (동적 항목)
+const loadEditor = async () => {
+  // 레이아웃 변경 작업을 수행합니다 (예: 탭 변경, 모달 열기)
+  await nextTick(); // DOM 업데이트가 완료될 때까지 기다립니다.
+  showEditor.value = true; // 그 후에 CKEditor를 렌더링합니다.
+};
+// 후원금 사용 내역 (동적)
 const expenditureList = ref([
-  // 초기 1개 항목
   {
     id: Date.now(),
     usageItem: "",
     recipient: "",
-    amount: null,
+    amount: null, // 실제 숫자
+    amountFormatted: "", // 콤마 포함 문자열
     usedAt: "",
   },
 ]);
 
-// --- [로직 함수] ---
+// emit 선언
 const emit = defineEmits(["goToList"]);
 
 /**
@@ -171,12 +176,25 @@ const getSponsorList = async () => {
     return;
   }
   const res = result.data.serviceSponsor;
-  let list = JSON.parse(JSON.stringify(res));
-  sponsorList.value = list;
+  sponsorList.value = JSON.parse(JSON.stringify(res));
 };
 
 /**
- * 새로운 후원금 사용 내역 항목을 추가합니다.
+ * 입력값을 콤마 포함 문자열로 변환
+ */
+const formatAmount = (item) => {
+  // 숫자만 남기기
+  let raw = item.amountFormatted.replace(/[^0-9]/g, "");
+
+  // 실제 숫자 저장
+  item.amount = raw ? Number(raw) : null;
+
+  // 화면 표시용 문자열 포맷
+  item.amountFormatted = raw ? numberFormat(raw) : "";
+};
+
+/**
+ * 항목 추가
  */
 const addExpenditure = () => {
   expenditureList.value.push({
@@ -184,15 +202,15 @@ const addExpenditure = () => {
     usageItem: "",
     recipient: "",
     amount: null,
+    amountFormatted: "",
     usedAt: "",
   });
 };
 
 /**
- * 특정 ID를 가진 후원금 사용 내역 항목을 삭제합니다.
+ * 항목 삭제
  */
 const removeExpenditure = (id) => {
-  // 항목이 하나만 남았을 때는 삭제를 방지합니다.
   if (expenditureList.value.length === 1) {
     alert("최소 하나의 사용 용도 항목은 유지해야 합니다.");
     return;
@@ -204,28 +222,13 @@ const removeExpenditure = (id) => {
 };
 
 /**
- * 목록 페이지로 이동합니다.
+ * 목록 이동
  */
 const goList = () => {
   emit("goToList");
 };
 
-/**
- * 활동 보고서를 제출합니다.
- */
-const activityAdd = () => {
-  console.log("--- 등록 데이터 확인 ---");
-  console.log("프로그램 코드:", programCode.value);
-  console.log("제목:", title.value);
-  console.log("내용:", content.value);
-  console.log(
-    "후원금 사용 내역:",
-    JSON.parse(JSON.stringify(expenditureList.value))
-  );
-  // TODO: 여기에 등록 API 호출 로직을 구현합니다.
-};
-
-// --- [생명 주기 훅] ---
+// mount
 onBeforeMount(() => {
   getSponsorList();
 });
@@ -233,6 +236,43 @@ onBeforeMount(() => {
 defineExpose({
   getSponsorList,
 });
+
+//제출
+const activityAdd = async () => {
+  const userDataString = localStorage.getItem("user");
+  const userData = JSON.parse(userDataString);
+  const used_amount = expenditureList.value.reduce(
+    (sum, item) => sum + (item.amount || 0),
+    0
+  );
+
+  const payload = {
+    writer: userData.user_id,
+    title: title.value,
+    content: content.value,
+    used_amount,
+    program_code: programCode.value,
+    history: expenditureList.value.map((item) => ({
+      usage_item: item.usageItem,
+      recipient: item.recipient,
+      amount: item.amount,
+      used_at: item.usedAt,
+    })),
+  };
+  console.log("활동 보고서");
+
+  console.log(payload);
+  try {
+    await axios.post(
+      `/api/sponsor/${programCode.value}/${userData.user_id}/activity`,
+      payload
+    );
+    alert("활동 보고서 작성 완료");
+    goList();
+  } catch (err) {
+    console.log("제출 실패" + err);
+  }
+};
 </script>
 
 <style scoped>
@@ -303,21 +343,9 @@ defineExpose({
     box-shadow 0.2s;
 }
 
-/* 일반 <textarea> 스타일 추가 */
-.at-textarea {
+.ck-wrapper {
   width: 100%;
-  height: 120px; /* 높이 지정 */
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  font-size: 15px;
-  color: #374151;
-  background-color: #ffffff;
-  resize: vertical; /* 수직 크기 조절 허용 */
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  display: block;
 }
 
 /* 포커스 시 스타일 (select, textarea만) */
@@ -448,5 +476,8 @@ defineExpose({
   .at-btn-delete {
     width: 100%;
   }
+}
+:deep(.ck-editor__editable) {
+  min-height: 200px;
 }
 </style>

@@ -29,7 +29,6 @@
 
       <div class="search-box">
         <input type="text" placeholder="검색어 입력" v-model="searchKeyword" />
-        <button class="search-btn">🔍</button>
       </div>
     </div>
 
@@ -37,14 +36,12 @@
     <!-- 카드형 리스트 -->
     <!-- --------------------- -->
     <div class="card-list">
-      
       <div
         class="card-item"
         v-for="item in finalList"
         :key="item.program_code"
         @click="selectCampaign(item)"
       >
-
         <!-- 이미지 -->
         <img class="thumbnail" :src="getThumbnail(item)" alt="thumbnail" />
 
@@ -58,7 +55,6 @@
             {{ formatDate(item.end_date, "yyyy-MM-dd") }}
           </div>
         </div>
-   
       </div>
     </div>
   </div>
@@ -68,6 +64,8 @@ import axios from "axios";
 import { ref, computed, onMounted } from "vue";
 import dateFormat from "@/utils/dateFormat";
 import { useRouter } from "vue-router";
+// import NO_IMAGE from "@/assets/img/noimage.png";
+
 const router = useRouter();
 // -------------------------------
 // 상태값
@@ -80,21 +78,19 @@ const campaignList = ref([]);
 
 // 대표 이미지 저장 (program_code → file_path)
 const thumbnailMap = ref({});
-
-// 이미지 없을 때 대체 이미지
 const NO_IMAGE = "/img/noimage.png";
 // -------------------------------
 // 단건 조회 → 상세 페이지로 이동
 // -------------------------------
 const selectCampaign = (program) => {
-    // 1. 라우트 이름('SponsorDetail' 등)과 params를 이용한 이동 (권장)
-    router.push({ 
-        name: 'SponsorDetail', // 라우터에 정의한 name
-        params: { programCode: program.program_code }
-    });
+  // 1. 라우트 이름('SponsorDetail' 등)과 params를 이용한 이동 (권장)
+  router.push({
+    name: "SponsorDetail", // 라우터에 정의한 name
+    params: { programCode: program.program_code },
+  });
 
-    // 2. 경로 문자열을 이용한 이동 (간단하지만 name 사용이 더 유연함)
-    // router.push(`/sponsordetail/${program.program_code}`);
+  // 2. 경로 문자열을 이용한 이동 (간단하지만 name 사용이 더 유연함)
+  // router.push(`/sponsordetail/${program.program_code}`);
 };
 // -------------------------------
 // 대표 이미지 로딩
@@ -260,12 +256,14 @@ onMounted(() => {
   align-items: center;
   border: 1px solid #bbb;
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 10px;
+  background-color: white;
 }
 
 .search-box input {
   border: none;
   outline: none;
+  border-radius: 5px;
 }
 
 .search-btn {

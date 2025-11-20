@@ -7,7 +7,7 @@ const historyService = require("../services/historyService");
 // GET /histories  - 수정 이력 목록
 router.get("/", async (req, res) => {
   try {
-    const searchField = req.query.searchField || "all"; // all, table_name, change_item, modifier_name
+    const searchField = req.query.searchField || "all"; // all, revision_date, modifier_name
     const keyword = req.query.keyword || "";
     const orderBy = req.query.orderBy || "latest"; // latest / oldest
     const typeCode = req.query.typeCode || ""; // BD1~BD8 (이력 유형)

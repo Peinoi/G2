@@ -17,12 +17,6 @@ export const sponsorMenu = [
     collapseRef: 'mygiving',
     role: ['AA1', 'AA2', 'AA3'],
   },
-  // {
-  //   label: "전체 후원 거래 내역서",
-  //   path: "/report",
-  //   collapseRef: "billing",
-  //   role: ["AA2", "AA3"],
-  // },
   {
     label: '활동 보고서',
     path: '/activity',
@@ -35,36 +29,11 @@ export const sponsorMenu = [
     collapseRef: 'BudgetSummary',
     role: ['AA1', 'AA2', 'AA3', 'AA4'],
   },
-  // {
-  //   label: '후원 보고서 관리',
-  //   path: '/profile',
-  //   collapseRef: 'profile',
-  //   role: ['AA2', 'AA3'],
-  // },
-  // {
-  //   label: '분기 통지 / 발송 이력',
-  //   path: '/notice',
-  //   collapseRef: 'sign-in',
-  //   role: ['AA1', 'AA2', 'AA3'],
-  // },
   {
     label: '담당자 관리',
     path: '/manager',
     collapseRef: 'tables',
     role: ['AA2'],
-  },
-
-  {
-    label: '활동 보고서',
-    path: '/activity',
-    collapseRef: 'rtl-page',
-    role: ['AA1', 'AA2', 'AA3'],
-  },
-  {
-    label: '총괄표 관리',
-    path: '/summary',
-    collapseRef: 'notifications',
-    role: ['AA3'],
   },
 ];
 

@@ -10,29 +10,45 @@
           data-bs-interval="2000"
         >
           <div class="carousel-inner">
-            <!-- 첫 번째 배너 -->
-            <div class="carousel-item active">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
+            <!-- ✅ 이벤트 + 후원 합친 배너 사용 -->
+            <template v-if="bannerSlides.length">
+              <div
+                v-for="(item, idx) in bannerSlides"
+                :key="item._bannerKey || item.event_code || item.program_code"
+                class="carousel-item"
+                :class="{ active: idx === 0 }"
+                @click="handleBannerClick(item)"
+                style="cursor: pointer"
+              >
+                <div class="banner-ratio">
+                  <img
+                    :src="item.file_path"
+                    :alt="item.title || item.event_name || item.program_name"
+                  />
+                </div>
               </div>
-            </div>
+            </template>
 
-            <!-- 두 번째 배너 -->
-            <div class="carousel-item">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/2.png" alt="후원 배너" />
+            <!-- ❌ 배너가 하나도 없을 때: 기본 이미지 -->
+            <template v-else>
+              <div class="carousel-item active">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
+                </div>
               </div>
-            </div>
-
-            <!-- 세 번째 배너 -->
-            <div class="carousel-item">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/3.png" alt="공지 배너" />
+              <div class="carousel-item">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/2.png" alt="후원 배너" />
+                </div>
               </div>
-            </div>
+              <div class="carousel-item">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/3.png" alt="공지 배너" />
+                </div>
+              </div>
+            </template>
           </div>
 
-          <!-- 좌우 버튼 -->
           <button
             class="carousel-control-prev"
             type="button"
@@ -59,32 +75,46 @@
     <div class="summary-grid">
       <!-- (1,1) 신청 현황 -->
       <div class="summary-item summary-item--apply">
-        <mini-statistics-card
+        <dashboard-table-card
           title="신청 현황"
-          value="7억건"
           icon="assignment"
           color="success"
-          description="이번 주 기준 신청 현황"
+          :columns="[
+            { label: 'NO', field: 'no', align: 'left' },
+            { label: '지원자', field: 'child_name', align: 'left' },
+            { label: '신청일', field: 'survey_date', align: 'left' },
+            { label: '상태', field: 'status_label', align: 'right' },
+          ]"
+          :rows="applyRows"
+          :maxRows="4"
+          :user-role="userRole"
         />
       </div>
 
-      <!-- (1,2) 이벤트 -->
+      <!-- (1,2) 이벤트 카드 (테이블) -->
       <div class="summary-item summary-item--event">
-        <mini-statistics-card
-          title="이벤트 참여"
-          value="2억명"
+        <dashboard-table-card
+          title="이벤트"
           icon="event"
           color="info"
-          description="이번 달 등록된 이벤트 수"
+          :columns="[
+            { label: 'NO', field: 'no', align: 'left' },
+            { label: '이벤트명', field: 'event_name', align: 'left' },
+            { label: '기간', field: 'period', align: 'left' },
+          ]"
+          :rows="eventRows || []"
+          :maxRows="4"
+          empty-message-override="등록된 이벤트가 없습니다."
+          @row-click="goEventDetail"
         />
       </div>
 
-      <!-- (2,1) 동글동글 버튼들 -->
+      <!-- (2,1) 동글동글 퀵 버튼 -->
       <div class="summary-item summary-item--actions">
         <div class="quick-actions-inline">
-          <button class="quick-action-btn" @click="goSurvey">
-            <span class="quick-action-label">조사지</span>
-            <span class="quick-action-sub">작성하기</span>
+          <button class="quick-action-btn" @click="handleSurveyClick">
+            <span class="quick-action-label">{{ surveyMainText }}</span>
+            <span class="quick-action-sub">{{ surveySubText }}</span>
           </button>
           <button class="quick-action-btn" @click="goEvent">
             <span class="quick-action-label">이벤트</span>
@@ -97,14 +127,21 @@
         </div>
       </div>
 
-      <!-- (2,2) 후원 -->
+      <!-- (2,2) 후원 카드 (테이블) -->
       <div class="summary-item summary-item--donation">
-        <mini-statistics-card
-          title="후원 금액"
-          value="₩280,000,000,000"
+        <dashboard-table-card
+          title="후원 프로그램"
           icon="volunteer_activism"
           color="primary"
-          description="총 누적 후원 금액"
+          :columns="[
+            { label: 'NO', field: 'no', align: 'left' },
+            { label: '후원명', field: 'program_name', align: 'left' },
+            { label: '기간', field: 'period', align: 'left' },
+          ]"
+          :rows="sponsorRows || []"
+          :maxRows="4"
+          empty-message-override="등록된 후원 프로그램이 없습니다."
+          @row-click="goSponsorDetail"
         />
       </div>
     </div>
@@ -112,21 +149,430 @@
 </template>
 
 <script>
-import MiniStatisticsCard from "@/components/MiniStatisticsCard.vue";
+import DashboardTableCard from "@/components/DashboardTableCard.vue";
+import axios from "axios";
 
 export default {
   name: "Dashboard",
-  components: { MiniStatisticsCard },
-  methods: {
-    // 👉 실제 라우트 경로에 맞게 바꿔 쓰면 됨
-    goSurvey() {
-      this.$router.push("/survey");
+  components: { DashboardTableCard },
+  data() {
+    return {
+      userRole: null,
+      applyRows: [],
+      eventRows: [],
+      sponsorRows: [],
+      loadingApply: false,
+      loadingEvent: false,
+      loadingSponsor: false,
+      // 배너용 이벤트
+      bannerEvents: [],
+      // 배너용 후원
+      bannerSponsors: [],
+    };
+  },
+  created() {
+    // 로그인 정보에서 role 세팅
+    const userStr = localStorage.getItem("user");
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        this.userRole = user.role || null;
+      } catch (e) {
+        console.error("[Dashboard] user 파싱 실패:", e);
+        this.userRole = null;
+      }
+    }
+
+    // AA1~AA4는 모두 신청 현황 조회
+    if (["AA1", "AA2", "AA3", "AA4"].includes(this.userRole)) {
+      this.fetchApplyStats();
+    }
+
+    // 이벤트 / 후원 목록 조회
+    this.fetchEventList();
+    this.fetchSponsorList();
+  },
+  computed: {
+    surveyMainText() {
+      if (this.userRole === "AA0" || !this.userRole) return "로그인";
+      return "조사지";
     },
+    surveySubText() {
+      if (this.userRole === "AA0" || !this.userRole) return "로그인 하러가기";
+      if (this.userRole === "AA1") return "작성하기";
+      if (["AA2", "AA3", "AA4"].includes(this.userRole)) return "목록 바로가기";
+      return "";
+    },
+    bannerSlides() {
+      const merged = [...this.bannerEvents, ...this.bannerSponsors];
+      if (!merged.length) return [];
+
+      // 새로고침마다 랜덤 섞고, 첫 번째만 active 표시
+      const shuffled = [...merged].sort(() => Math.random() - 0.5);
+      return shuffled.map((item, idx) => ({
+        ...item,
+        _active: idx === 0,
+      }));
+    },
+  },
+  methods: {
+    // ───────────────── 신청 관련 ─────────────────
+    handleSurveyClick() {
+      const role = this.userRole;
+
+      if (role === "AA1") {
+        this.$router.push("/survey/write");
+      } else if (["AA2", "AA3", "AA4"].includes(role)) {
+        this.$router.push("/survey-list");
+      } else {
+        this.$router.push("/sign-in");
+      }
+    },
+
+    // ───────────────── 라우팅 버튼 ─────────────────
     goEvent() {
-      this.$router.push("/event");
+      this.$router.push("/event/list");
     },
     goSupport() {
-      this.$router.push("/support");
+      this.$router.push("/sponsorprogramlist");
+    },
+
+    // ───────────────── 이벤트 행 클릭 ─────────────────
+    goEventDetail({ row }) {
+      const code = row.event_code;
+      if (!code) {
+        console.warn("event_code 없음:", row);
+        return;
+      }
+      this.$router.push(`/event/info/${code}`);
+    },
+
+    // ───────────────── 후원 행 클릭 ─────────────────
+    goSponsorDetail({ row }) {
+      const code = row.program_code;
+      if (!code) {
+        console.warn("program_code 없음:", row);
+        return;
+      }
+      // ⚠ 실제 라우터 path에 맞게 수정해줘
+      this.$router.push(`/sponsordetail/${code}`);
+    },
+
+    // ───────────────── 신청 현황 조회 ─────────────────
+    async fetchApplyStats() {
+      const userStr = localStorage.getItem("user");
+
+      if (!userStr) {
+        this.applyRows = [];
+        return;
+      }
+
+      let loginId = null;
+      try {
+        const user = JSON.parse(userStr);
+        // 🔥 백엔드 WHERE parent.user_id = ? 이면 user_id 사용
+        loginId = user.user_id;
+      } catch (e) {
+        console.error("[Dashboard] user 파싱 실패:", e);
+        this.applyRows = [];
+        return;
+      }
+
+      if (!loginId) {
+        this.applyRows = [];
+        return;
+      }
+
+      this.loadingApply = true;
+
+      try {
+        const res = await axios.get("/api/applications/mine", {
+          params: {
+            loginId,
+            role: this.userRole,
+          },
+        });
+
+        const raw = res.data?.data ?? [];
+        const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+        const sorted = list
+          .filter((row) => row && row.submit_code)
+          .sort((a, b) => {
+            const da = new Date(a.survey_date || a.submit_at || 0);
+            const db = new Date(b.survey_date || b.submit_at || 0);
+            return db - da; // 최신 먼저
+          })
+          .slice(0, 4);
+
+        this.applyRows = sorted.map((row, idx) => {
+          let status = "-";
+
+          if (row.result_status) {
+            status = "결과";
+          } else if (row.plan_status) {
+            status = "계획";
+          } else if (row.counsel_status) {
+            status = "상담";
+          } else {
+            status = "접수";
+          }
+
+          const dateStr = row.survey_date
+            ? String(row.survey_date).substring(0, 10)
+            : "";
+
+          return {
+            no: idx + 1,
+            child_name: row.child_name || row.name,
+            org_name: row.org_name || "-",
+            survey_date: dateStr,
+            status_label: status,
+          };
+        });
+      } catch (err) {
+        console.error("[Dashboard] 신청 현황 조회 실패:", err);
+        this.applyRows = [];
+      } finally {
+        this.loadingApply = false;
+      }
+    },
+
+    // ───────────────── 이벤트 목록 조회 ─────────────────
+    async fetchEventList() {
+      this.loadingEvent = true;
+
+      try {
+        const res = await axios.get("/api/event/list");
+        const raw = res.data?.data ?? [];
+
+        // 🔹 캐러셀 배너용 이벤트 세팅
+        this.setupBannerEvents(raw);
+
+        const sorted = raw
+          .sort((a, b) => b.event_code - a.event_code)
+          .slice(0, 4);
+
+        this.eventRows = sorted.map((row, idx) => {
+          const start = row.event_start_date
+            ? String(row.event_start_date).substring(0, 10)
+            : "-";
+
+          const end = row.event_end_date
+            ? String(row.event_end_date).substring(0, 10)
+            : "-";
+
+          return {
+            no: idx + 1,
+            event_code: row.event_code, // 상세 이동용
+            event_name: row.event_name,
+            period: `${start} ~ ${end}`,
+          };
+        });
+      } catch (e) {
+        console.error("[Dashboard] 이벤트 목록 조회 실패:", e);
+        this.eventRows = [];
+        this.bannerEvents = []; // 배너도 초기화
+      } finally {
+        this.loadingEvent = false;
+      }
+    },
+
+    // ───────────────── 후원(프로그램) 목록 조회 ─────────────────
+    async fetchSponsorList() {
+      this.loadingSponsor = true;
+
+      try {
+        const res = await axios.get("/api/sponsor");
+        // 라우터에서 { status, serviceSponsor } 로 내려주니까 여기!
+        const raw = res.data?.serviceSponsor ?? [];
+
+        // 🔹 배너용 후원(진행/예정) 세팅
+        await this.setupBannerSponsors(raw);
+
+        const sorted = raw
+          .sort((a, b) => b.program_code - a.program_code)
+          .slice(0, 4);
+
+        this.sponsorRows = sorted.map((row, idx) => {
+          const start = row.start_date
+            ? String(row.start_date).substring(0, 10)
+            : "-";
+
+          const end = row.end_date
+            ? String(row.end_date).substring(0, 10)
+            : "-";
+
+          return {
+            no: idx + 1,
+            program_code: row.program_code, // 상세 이동용
+            program_name: row.program_name,
+            period: `${start} ~ ${end}`,
+          };
+        });
+      } catch (e) {
+        console.error("[Dashboard] 후원 프로그램 목록 조회 실패:", e);
+        this.sponsorRows = [];
+      } finally {
+        this.loadingSponsor = false;
+      }
+    },
+    // 배너용 헬퍼
+    setupBannerEvents(events) {
+      if (!Array.isArray(events)) {
+        this.bannerEvents = [];
+        return;
+      }
+
+      // 오늘 날짜(시/분/초 제거)
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      const todayDate = new Date(todayStr + "T00:00:00");
+
+      const parseDateOnly = (str) => {
+        if (!str) return null;
+        const datePart = String(str).split(" ")[0];
+        return new Date(datePart + "T00:00:00");
+      };
+
+      const candidates = events.filter((e) => {
+        // 이미지 없는 이벤트는 배너에서 제외
+        if (!e.file_path) return false;
+
+        const recruitStart = parseDateOnly(e.recruit_start_date);
+        const recruitEnd = parseDateOnly(e.recruit_end_date);
+        if (!recruitStart || !recruitEnd) return false;
+
+        const isUpcoming = todayDate < recruitStart; // 모집 예정
+        const isRecruiting =
+          todayDate >= recruitStart && todayDate <= recruitEnd; // 모집 중
+
+        return isUpcoming || isRecruiting;
+      });
+
+      if (!candidates.length) {
+        this.bannerEvents = [];
+        return;
+      }
+
+      const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 2);
+
+      this.bannerEvents = selected.map((item) => ({
+        ...item,
+        _bannerType: "event",
+        _bannerKey: `event-${item.event_code}`,
+        title: item.event_name,
+      }));
+    },
+
+    // 배너용 후원 (상세 API 호출해서 file_path 채우기)
+    async setupBannerSponsors(programs) {
+      if (!Array.isArray(programs)) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      const todayDate = new Date(todayStr + "T00:00:00");
+
+      const parseDateOnly = (str) => {
+        if (!str) return null;
+        const datePart = String(str).split(" ")[0];
+        return new Date(datePart + "T00:00:00");
+      };
+
+      // 1) 날짜 기준으로 "진행중/예정"만 먼저 필터링
+      const timeFiltered = programs.filter((p) => {
+        const start = parseDateOnly(p.start_date);
+        const end = parseDateOnly(p.end_date);
+        if (!start || !end) return false;
+
+        const isUpcoming = todayDate < start; // 진행 예정
+        const isOngoing = todayDate >= start && todayDate <= end; // 진행 중
+        return isUpcoming || isOngoing;
+      });
+
+      if (!timeFiltered.length) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      // 2) 너무 많이 호출하지 않도록 상위 몇 개만 상세 조회 (예: 5개)
+      const targetForDetail = timeFiltered.slice(0, 5);
+
+      // 3) 각 프로그램에 대해 상세 API 호출해서 file_path 있는 것만 추림
+      const detailResults = await Promise.all(
+        targetForDetail.map(async (p) => {
+          try {
+            // ⚠️ 여기 경로는 SponsorDetail에서 쓰는 상세 API와 맞춰줘야 함
+            const res = await axios.get(`/api/sponsor/${p.program_code}`);
+
+            // 응답 구조는 실제 백엔드에 맞게 조정
+            const detail =
+              res.data?.serviceSponsor || res.data?.data || res.data || {};
+
+            // 첨부파일 리스트에서 첫 번째 이미지 사용 (필요 시 키 이름 맞추기)
+            const attachments =
+              detail.attachments || detail.attachmentList || detail.files || [];
+            const first = Array.isArray(attachments) ? attachments[0] : null;
+
+            const filePath =
+              first?.file_path || first?.filePath || first?.path || null;
+
+            if (!filePath) {
+              // 이미지 없으면 배너 후보에서 제외
+              return null;
+            }
+
+            return {
+              ...p,
+              file_path: filePath,
+            };
+          } catch (e) {
+            console.error(
+              "[Dashboard] 후원 배너 상세 조회 실패:",
+              p.program_code,
+              e
+            );
+            return null;
+          }
+        })
+      );
+
+      // 4) 실제로 이미지가 있는 프로그램들만 사용
+      const withImage = detailResults.filter(Boolean);
+
+      if (!withImage.length) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      // 5) 랜덤 섞어서 최대 2개만 배너에 사용
+      const shuffled = [...withImage].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 2);
+
+      this.bannerSponsors = selected.map((item) => ({
+        ...item,
+        _bannerType: "sponsor",
+        _bannerKey: `sponsor-${item.program_code}`,
+        title: item.program_name,
+      }));
+    },
+
+    // 배너 클릭 핸들러
+    handleBannerClick(item) {
+      if (!item) return;
+
+      if (item._bannerType === "event") {
+        if (!item.event_code) return;
+        this.$router.push(`/event/info/${item.event_code}`);
+      } else if (item._bannerType === "sponsor") {
+        if (!item.program_code) return;
+        this.$router.push(`/sponsordetail/${item.program_code}`);
+      }
     },
   },
 };
@@ -134,18 +580,18 @@ export default {
 
 <style scoped>
 .container-fluid {
-  min-height: 100vh;
-  background-color: #f8f9fa;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
-/* 화면 넓을 때 가운데로 모으는 느낌 */
 @media (min-width: 992px) {
   .container-fluid {
-    padding: 0 300px;
+    padding: 0 60px; /* 가운데 여백 */
   }
 }
 
-/* ✅ 배너 비율 고정 (aspect-ratio 사용) */
+/* 배너 비율 유지 */
 .banner-ratio {
   width: 100%;
   aspect-ratio: 21 / 9;
@@ -156,58 +602,60 @@ export default {
 .banner-ratio > img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff; /* 비율 남는 공간 검정 (원하면 변경 가능) */
 }
 
-/* 카드와 배너 간격 (row + row 구조용) */
+/* 카드와 배너 간격 */
 .row + .row {
   margin-top: 2rem;
 }
 
-/* 📊 2x2 느낌 카드 그리드 */
+/* 📊 그리드 기본(모바일): 1열 + 순서 지정 */
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr; /* 모바일: 한 줄 */
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   margin-top: 0.5rem;
+  grid-template-areas:
+    "apply"
+    "event"
+    "donation"
+    "actions";
 }
 
-/* 화면 좀 넓어지면 2열 그리드 + 2x2 고정 위치 */
+/* 영역 매핑 */
+.summary-item--apply {
+  grid-area: apply;
+}
+.summary-item--event {
+  grid-area: event;
+}
+.summary-item--donation {
+  grid-area: donation;
+}
+.summary-item--actions {
+  grid-area: actions;
+}
+
+/* 큰 화면(>=768px): 2x2 레이아웃 */
 @media (min-width: 768px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(0, auto);
-  }
-
-  .summary-item--apply {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .summary-item--event {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .summary-item--actions {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .summary-item--donation {
-    grid-column: 2;
-    grid-row: 2;
+    grid-template-areas:
+      "apply event"
+      "actions donation";
   }
 }
 
-/* 🔘 퀵 액션 동그라미 버튼 (가로로 3개) */
+/* 🔘 퀵액션 버튼 */
 .quick-actions-inline {
   display: flex;
   justify-content: space-evenly;
   gap: 1rem;
 }
 
-/* 동그란 버튼 자체 스타일 */
 .quick-action-btn {
   width: 90px;
   height: 90px;
