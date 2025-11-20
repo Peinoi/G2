@@ -169,17 +169,11 @@
           :key="index"
           class="sub-manager-item"
         >
-          <select v-model="manager.user_code">
-            <option disabled value="">매니저 선택</option>
-            <option
-              v-for="m in managerList"
-              :key="m.user_code"
-              :value="m.user_code"
-            >
-              {{ m.name }} ({{ m.user_code }})
-            </option>
-          </select>
-
+          <input
+            type="number"
+            v-model="manager.user_code"
+            placeholder="회원코드 입력"
+          />
           <button
             type="button"
             class="btn-danger"
@@ -213,7 +207,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount, onMounted } from "vue";
+import { ref, computed, onBeforeMount } from "vue";
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
 import dateFormat from "@/utils/dateFormat";
@@ -234,6 +228,8 @@ const getNextDay = (dateString) => {
   d.setDate(d.getDate() + 1);
   return dateFormat(d, "yyyy-MM-dd");
 };
+
+const allManagers = ref([]); // 전체 매니저 목록
 
 const eventInfo = ref({
   event_code: "",
@@ -349,39 +345,26 @@ const submitForm = async () => {
 };
 
 // 단건 조회
-const getEvent = async (eno) => {
+const getEventInfo = async (eno) => {
   try {
     const result = await axios.get(`/api/event/${eno}`);
     eventInfo.value = result.data.data;
-
-    // DD2 세부 이벤트 처리
     if (eventInfo.value.event_type === "DD2" && eventInfo.value.times) {
       eventTimes.value = [...eventInfo.value.times];
+    }
+    if (eventInfo.value.managers) {
+      allManagers.value = [...eventInfo.value.managers]; // 전체 매니저 목록
     }
   } catch (err) {
     console.error(err);
   }
 };
 
-const managerList = ref([]);
-
-// 매니저 조회
-const getManager = async () => {
-  try {
-    const result = await axios.get(`/api/event/manager`);
-    managerList.value = result.data.data;
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-onMounted(getManager);
-
-onBeforeMount(async () => {
+onBeforeMount(() => {
   const eno = route.query.no;
   if (eno) {
     isUpdated.value = true;
-    await getEvent(eno);
+    getEventInfo(eno);
   } else {
     eventInfo.value.event_register_date = new Date();
   }

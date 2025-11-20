@@ -66,6 +66,8 @@ const selectEventList = `
     AND (? IS NULL OR e.event_end_date <= ?)
     -- 이벤트명
     AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
+    -- 등록 상태가 승인인 이벤트만 조회
+    AND e.register_status = 'BA2'
   GROUP BY e.event_code
   ORDER BY e.event_code DESC
 `;
@@ -87,7 +89,9 @@ const selectEventApplyResult = `
     a.file_path,
     org.org_name AS org_name,
     u.name AS main_manager_name,
-    e.register_status
+    e.register_status,
+    er.event_result_code,
+    er.result_status
   FROM event e
   LEFT JOIN sub_event se ON e.event_code = se.event_code
   LEFT JOIN (
@@ -99,6 +103,7 @@ const selectEventApplyResult = `
   ) a ON e.event_code = a.linked_record_pk
   LEFT JOIN organization org ON e.org_code = org.org_code
   LEFT JOIN users u ON e.user_code = u.user_code
+  LEFT JOIN event_result er ON er.event_code = e.event_code
   WHERE 1=1
     -- 모집상태
     AND (? IS NULL OR e.recruit_status = ?)
@@ -111,7 +116,7 @@ const selectEventApplyResult = `
     -- 이벤트명
     AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
     -- 이벤트 등록자명
-    AND e.user_code = ?
+    AND ( ? = 'AA3' OR e.user_code = ?)
   GROUP BY e.event_code
   ORDER BY e.event_code DESC
 `;
@@ -127,7 +132,7 @@ INSERT INTO attachment (
 ) VALUES (?, ?, ?, ?, ?)
 `;
 
-// 첨부파일 조회
+// 이벤트 첨부파일 조회
 const selectAttachList = `
 SELECT
     attach_code,
@@ -136,6 +141,18 @@ SELECT
     file_path
 FROM attachment
 WHERE linked_table_name = 'event'
+  AND linked_record_pk = ?
+`;
+
+// 결과보고서 첨부파일 조회
+const selectResultAttachList = `
+SELECT
+    attach_code,
+    original_filename,
+    server_filename,
+    file_path
+FROM attachment
+WHERE linked_table_name = 'event_result'
   AND linked_record_pk = ?
 `;
 
@@ -149,7 +166,7 @@ INSERT INTO manager (
 ) VALUES (?, ?, ?, ?)
 `;
 
-// 매니저 조회
+// 해당 이벤트 매니저 조회
 const selectManager = `
 SELECT
     u.user_id,
@@ -168,10 +185,20 @@ WHERE m.manager_category_code IS NOT NULL
   AND m.manager_category_code = ?
 `;
 
+// 매니저 전체 조회
+const selectManagerAll = `
+  SELECT 
+    user_code
+   ,name
+  FROM users
+  WHERE role = 'AA2'   
+`;
+
 // 이벤트 단건조회
 const selectEventOne = `
 SELECT 
     e.event_code,
+    e.user_code,
     e.event_name,
     e.event_content,
     e.event_location,
@@ -291,18 +318,6 @@ WHERE user_code = ?
   AND event_code = ?
   AND (sub_event_code = ? OR (sub_event_code IS NULL AND ? IS NULL))
 `;
-
-// 이벤트 수정
-const updateEvent = `
-UPDATE event
-SET ?
-WHERE event_code = ?
-`;
-
-// 이벤트 삭제
-const deleteEvent = `
-DELETE FROM event
-WHERE event_code = ?`;
 
 // 세부 이벤트 조회
 const selectSubEventList = `
@@ -425,6 +440,128 @@ const updateEventStatus = `
     WHERE event_code = ?
   `;
 
+// 결과보고서 등록
+const insertEventResult = `
+INSERT INTO event_result (
+  result_status
+ ,result_subject
+ ,result_content
+ ,report_register_date
+ ,event_code)
+VALUES ( ?, ?, ?, ?, ? )
+`;
+
+// 결과보고서 단건조회
+const selectResultOne = `
+SELECT 
+    event_result_code,
+    event_code,
+    result_status,
+    result_subject,
+    result_content,
+    report_register_date
+FROM event_result
+WHERE event_result_code = ?
+`;
+
+// 해당 결과보고서에 대한 승인요청이 이미 있는지 체크
+const getApprovalForResult = `
+SELECT approval_code 
+      FROM request_approval
+      WHERE linked_table_name = 'event_result'
+        AND linked_record_pk = ?
+        AND approval_type = 'AE7'
+        AND state IN ('BA1', 'BA2', 'BA3')
+      LIMIT 1
+`;
+
+// 🔹 결과보고서 승인요청 INSERT
+const insertRequestApprovalForResult = `
+    INSERT INTO request_approval (
+      requester_code,
+      processor_code,
+      approval_type,
+      request_date,
+      approval_date,
+      state,
+      rejection_reason,
+      linked_table_name,
+      linked_record_pk
+    ) VALUES (
+      ?,          -- requester_code (담당자 user_code)
+      ?,          -- processor_code (관리자 user_code, 임시로 1)
+      ?,          -- approval_type (예: 'AE7')
+      CURDATE(),  -- request_date
+      NULL,       -- approval_date
+      ?,          -- state (BA1: 요청)
+      NULL,       -- rejection_reason
+      ?,          -- linked_table_name ('event_result')
+      ?           -- linked_record_pk (event_result_code)
+    )
+  `;
+
+// 🔹 결과보고서 승인요청 → 승인(BA2)
+const updateApprovalApproveForResult = `
+    UPDATE request_approval
+    SET
+      state = 'BA2',          -- 승인
+      approval_date = CURDATE(),
+      rejection_reason = NULL
+    WHERE linked_table_name = 'event_result'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE7'
+      AND state = 'BA1'
+  `;
+
+// 🔹 결과보고서 승인요청 → 반려(BA3)
+const updateApprovalRejectForResult = `
+    UPDATE request_approval
+    SET
+      state = 'BA3',          -- 반려
+      approval_date = CURDATE(),
+      rejection_reason = ?
+    WHERE linked_table_name = 'event_result'
+      AND linked_record_pk = ?
+      AND approval_type = 'AE7'
+      AND state = 'BA1'
+  `;
+
+// 반려사유
+const getRejectReasonByResult = `
+  SELECT
+    rejection_reason,
+    approval_date AS rejection_date   --  반려된 날짜
+  FROM request_approval
+  WHERE linked_table_name = 'event_result'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE7'
+    AND state = 'BA3'      -- 반려 상태
+  ORDER BY
+    approval_date DESC,
+    request_date DESC,
+    approval_code DESC
+  LIMIT 1
+`;
+
+// 이벤트 상태 업데이트
+const updateEventResultStatus = `
+    UPDATE event_result
+    SET result_status = ?
+    WHERE event_result_code = ?
+  `;
+
+// 이벤트 수정
+const updateEvent = `
+UPDATE event
+SET ?
+WHERE event_code = ?
+`;
+
+// 이벤트 삭제
+const deleteEvent = `
+DELETE FROM event
+WHERE event_code = ?`;
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
@@ -451,4 +588,14 @@ module.exports = {
   updateApprovalRejectForPlan,
   getRejectReasonByPlan,
   updateEventStatus,
+  insertEventResult,
+  selectResultOne,
+  getApprovalForResult,
+  insertRequestApprovalForResult,
+  updateApprovalApproveForResult,
+  updateApprovalRejectForResult,
+  getRejectReasonByResult,
+  updateEventResultStatus,
+  selectResultAttachList,
+  selectManagerAll,
 };

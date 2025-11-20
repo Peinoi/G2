@@ -126,12 +126,13 @@ const fetchEvents = async () => {
 
 const resetFilters = () => {
   filters.value = {
-    recruit_status: '',
-    recruit_start_date: '',
-    recruit_end_date: '',
-    event_start_date: '',
-    event_end_date: '',
-    event_name: '',
+    recruit_status: "",
+    recruit_start_date: "",
+    recruit_end_date: "",
+    event_start_date: "",
+    event_end_date: "",
+    event_name: "",
+    register_status: "",
   };
   fetchEvents();
 };
