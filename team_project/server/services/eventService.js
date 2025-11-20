@@ -251,12 +251,9 @@ async function createEventResultFull(data) {
 }
 
 // 결과보고서 단건 조회
-async function getResult(event_result_code, user_code) {
+async function getResult(event_result_code) {
   try {
-    const result = await eventMapper.selectResultOneFull(
-      event_result_code,
-      user_code
-    );
+    const result = await eventMapper.selectResultOneFull(event_result_code);
     return result;
   } catch (err) {
     console.error("[eventService.js || 결과보고서 단건조회 실패]", err.message);
@@ -282,6 +279,54 @@ async function getResultRejectionReason(resultCode) {
 //결과 재승인요청
 async function resubmitResult(resultCode, requesterCode) {
   return await eventMapper.resubmitResult(resultCode, requesterCode);
+}
+
+// 참가자 목록 조회
+async function getAttendance(filters) {
+  try {
+    // 필터 기본값 / 후처리 가능
+    const page = Number(filters.page || 1);
+    const size = Number(filters.size || 20);
+
+    const result = await eventMapper.selectAttendance({
+      applyStatus: filters.applyStatus || null,
+      eventName: filters.eventName || null,
+      managerName: filters.managerName || null,
+      page,
+      size,
+    });
+
+    return {
+      rows: result.rows,
+      totalCount: result.totalCount,
+      page,
+      size,
+    };
+  } catch (err) {
+    console.error("[eventService.js || getAttendance 실패]", err.message);
+    throw err;
+  }
+}
+
+// 신청자/자녀 조회
+async function getAttendanceOne(apply_code) {
+  try {
+    const result = await eventMapper.selectAttendanceOne(apply_code);
+    return result;
+  } catch (err) {
+    console.error("[eventService.js || getAttendanceOne 실패]", err.message);
+    throw err;
+  }
+}
+
+// 이벤트 신청내역 승인
+async function approveMyApply(applyCode) {
+  return await eventMapper.approveMyApply(applyCode);
+}
+
+// 이벤트 신청내역 취소
+async function rejectMyApply(applyCode) {
+  return await eventMapper.rejectMyApply(applyCode);
 }
 
 module.exports = {
@@ -312,4 +357,8 @@ module.exports = {
   getResultRejectionReason,
   resubmitResult,
   getManagerAll,
+  getAttendance,
+  getAttendanceOne,
+  approveMyApply,
+  rejectMyApply,
 };

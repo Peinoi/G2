@@ -113,6 +113,11 @@
             </li>
           </ul>
         </div>
+
+        <!-- 이미지 미리보기 모달 -->
+        <div v-if="previewImage" class="preview-modal" @click="closePreview">
+          <img :src="previewImage" class="preview-img" />
+        </div>
       </div>
     </div>
   </section>
@@ -141,6 +146,33 @@ const event = ref({
 
 const mainImage = ref("");
 const isApplied = ref(false);
+
+// 미리보기 이미지
+const previewImage = ref("");
+
+// 파일 미리보기
+const previewFile = (file) => {
+  const ext = file.original_filename.split(".").pop().toLowerCase();
+
+  // 이미지면 모달로 보기
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    previewImage.value = file.file_path;
+    return;
+  }
+
+  // PDF면 새 창 미리보기
+  if (ext === "pdf") {
+    window.open(file.file_path, "_blank");
+    return;
+  }
+
+  // 그 외 파일은 다운로드
+  window.location.href = file.file_path;
+};
+
+const closePreview = () => {
+  previewImage.value = "";
+};
 
 // 상태 버튼 표시
 const canApply = computed(
@@ -307,7 +339,7 @@ const handleReject = async () => {
 };
 
 // 화면 이동
-const goBack = () => router.push({ name: "EventPlanApprovals" });
+const goBack = () => router.back();
 const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션

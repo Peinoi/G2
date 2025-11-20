@@ -562,6 +562,133 @@ const deleteEvent = `
 DELETE FROM event
 WHERE event_code = ?`;
 
+// 참가자 목록
+const selectAttendance = `
+  SELECT 
+      ea.apply_code,
+      ea.apply_date,
+      ea.apply_status,
+      ea.attend_status,
+
+      -- 신청자 정보
+      u2.name AS applicant_name,
+      u2.ssn AS applicant_ssn,
+      u2.phone AS applicant_phone,
+      u2.address AS applicant_address,
+      u2.email AS applicant_email,
+      u2.org_code AS applicant_org_code,
+
+      -- 자녀 정보 (한 명)
+      c.child_name,
+      c.gender AS child_gender,
+      c.ssn AS child_ssn,
+
+      -- 기관 정보
+      o.org_name AS applicant_org_name,
+
+      -- 이벤트 / 서브 이벤트 / 매니저
+      e.event_code,
+      e.event_name,
+      u.name AS manager_name,
+      se.sub_event_code,
+      se.sub_event_name
+
+  FROM event_apply ea
+  LEFT JOIN users u2 ON ea.user_code = u2.user_code
+  LEFT JOIN child c ON u2.user_code = c.user_code
+  LEFT JOIN organization o ON u2.org_code = o.org_code
+  LEFT JOIN event e ON ea.event_code = e.event_code
+  LEFT JOIN users u ON e.user_code = u.user_code
+  LEFT JOIN sub_event se ON ea.sub_event_code = se.sub_event_code
+  WHERE 1=1
+    AND (ea.apply_status LIKE ? OR ? IS NULL)
+    AND (e.event_name LIKE ? OR ? IS NULL)
+    AND (u.name LIKE ? OR ? IS NULL)
+  ORDER BY ea.apply_date DESC
+  LIMIT ? OFFSET ?
+`;
+
+// 참가자/자녀 단건 조회
+const selectAttendanceOne = `
+  SELECT 
+      ea.apply_code,
+      ea.apply_date,
+      ea.apply_status,
+      ea.attend_status,
+
+      -- 신청자 정보
+      u2.name AS applicant_name,
+      u2.ssn AS applicant_ssn,
+      u2.phone AS applicant_phone,
+      u2.address AS applicant_address,
+      u2.email AS applicant_email,
+      u2.org_code AS applicant_org_code,
+
+      -- 자녀 정보 (한 명)
+      c.child_name,
+      c.gender AS child_gender,
+      c.ssn AS child_ssn,
+
+      -- 기관 정보
+      o.org_name AS applicant_org_name,
+
+      -- 이벤트 / 서브 이벤트 / 매니저
+      e.event_code,
+      e.event_name,
+      u.name AS manager_name,
+      se.sub_event_code,
+      se.sub_event_name
+
+  FROM event_apply ea
+  LEFT JOIN users u2 ON ea.user_code = u2.user_code
+  LEFT JOIN child c ON u2.user_code = c.user_code
+  LEFT JOIN organization o ON u2.org_code = o.org_code
+  LEFT JOIN event e ON ea.event_code = e.event_code
+  LEFT JOIN users u ON e.user_code = u.user_code
+  LEFT JOIN sub_event se ON ea.sub_event_code = se.sub_event_code
+  WHERE ea.apply_code = ?
+`;
+
+const countAttendance = `
+  SELECT COUNT(*) AS cnt
+    FROM event_apply ea
+    LEFT JOIN event e ON ea.event_code = e.event_code
+    LEFT JOIN users u ON e.user_code = u.user_code
+    WHERE 1=1
+      AND (ea.apply_status LIKE ? OR ? IS NULL)
+      AND (e.event_name LIKE ? OR ? IS NULL)
+      AND (u.name LIKE ? OR ? IS NULL)
+`;
+
+// // 해당 신청내역에 대한 승인요청이 이미 있는지 체크
+// const getApprovalForMyApply = `
+// SELECT apply_code
+//       FROM event_apply
+//       WHERE apply_code = ?
+//       AND apply_status IN ('DE1', 'DE2', 'DE4')
+//       LIMIT 1
+// `;
+
+// 🔹 이벤트 신청 승인요청 → 승인(DE2)
+const updateApprovalApproveForMyApply = `
+    UPDATE event_apply
+    SET
+      apply_status = 'DE2',          -- 승인
+      approval_date = CURDATE()
+    WHERE apply_code = ?
+      AND apply_status = 'DE1'
+  `;
+
+// 🔹 이벤트 신청 승인요청 → 취소(DE4)
+const updateApprovalRejectForMyApply = `
+    UPDATE event_apply
+    SET
+      apply_status = 'DE4',          -- 취소
+      approval_date = CURDATE()
+    WHERE apply_code = ?
+      AND apply_status = 'DE1'
+  `;
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
@@ -598,4 +725,10 @@ module.exports = {
   updateEventResultStatus,
   selectResultAttachList,
   selectManagerAll,
+  selectAttendance,
+  countAttendance,
+  selectAttendanceOne,
+  // getApprovalForMyApply,
+  updateApprovalApproveForMyApply,
+  updateApprovalRejectForMyApply,
 };

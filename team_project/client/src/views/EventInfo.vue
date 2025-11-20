@@ -306,7 +306,7 @@ const handleReject = async () => {
 };
 
 // 화면 이동
-const goBack = () => router.push({ name: "EventPlanApprovals" });
+const goBack = () => router.back();
 const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션

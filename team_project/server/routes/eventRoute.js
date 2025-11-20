@@ -404,6 +404,55 @@ router.get("/manager", async (req, res) => {
     });
   }
 });
+
+// 참가자 목록 조회
+router.get("/attendanceList", async (req, res) => {
+  try {
+    const { applyStatus, eventName, managerName, page, size } = req.query;
+    const result = await eventService.getAttendance({
+      applyStatus,
+      eventName,
+      managerName,
+      page,
+      size,
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        rows: result.rows,
+        totalCount: result.totalCount,
+        page: result.page,
+        size: result.size,
+      },
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || /attendance 실패]", err.message);
+    res.status(500).json({ status: "error", message: "참가자 목록 조회 실패" });
+  }
+});
+
+// 신청자/자녀 단건 조회
+router.get("/attendanceList/:apply_code", async (req, res) => {
+  try {
+    const apply_code = req.params.apply_code;
+
+    const result = await eventService.getAttendanceOne(apply_code);
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  } catch (err) {
+    console.error(
+      "[eventRoute.js || /attendanceOne/:apply_code 실패]",
+      err.message
+    );
+    res
+      .status(500)
+      .json({ status: "error", message: "신청자/자녀 단건 조회 실패" });
+  }
+});
+
 // ==========================
 // 이벤트 단건 조회
 // GET /event/:event_code
@@ -546,9 +595,8 @@ router.post("/result", upload.array("attachments"), async (req, res) => {
 router.get("/result/:event_result_code", async (req, res) => {
   try {
     const event_result_code = req.params.event_result_code;
-    const user_code = req.query.user_code; // 여기서 로그인 유저 코드 받기
 
-    const result = await eventService.getResult(event_result_code, user_code);
+    const result = await eventService.getResult(event_result_code);
     console.log("API returned event:", result);
     res.status(200).json({
       status: "success",
@@ -565,9 +613,9 @@ router.get("/result/:event_result_code", async (req, res) => {
 
 // ==========================
 // 결과보고서 승인
-// GET /event/:resultCode/approve
+// GET /event/result/:resultCode/approve
 // ==========================
-router.post("/:resultCode/approve", async (req, res) => {
+router.post("/result/:resultCode/approve", async (req, res) => {
   try {
     const resultCode = Number(req.params.resultCode);
     const result = await eventService.approveEventResult(resultCode);
@@ -581,9 +629,9 @@ router.post("/:resultCode/approve", async (req, res) => {
 
 // ==========================
 // 결과보고서 반려
-// POST /event/:resultCode/reject
+// POST /event/result/:resultCode/reject
 // ==========================
-router.post("/:resultCode/reject", async (req, res) => {
+router.post("/result/:resultCode/reject", async (req, res) => {
   try {
     const resultCode = Number(req.params.resultCode);
     const { reason } = req.body;
@@ -637,6 +685,42 @@ router.get("/:resultCode/rejection-reason", async (req, res) => {
     res.status(500).json({
       success: false,
       message: e.message || "반려 사유 조회 중 오류가 발생했습니다.",
+    });
+  }
+});
+
+// ==========================
+// 이벤트 신청내역 승인
+// GET /event/myApply/approve/:applyCode
+// ==========================
+router.post("/myApply/approve/:applyCode", async (req, res) => {
+  try {
+    const applyCode = Number(req.params.applyCode);
+    const result = await eventService.approveMyApply(applyCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/myApply/approve/:applyCode]", e);
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ==========================
+// 이벤트 신청내역 취소
+// POST /event/myApply/reject/:applyCode
+// ==========================
+router.post("/myApply/reject/:applyCode", async (req, res) => {
+  try {
+    const applyCode = Number(req.params.applyCode);
+
+    const result = await eventService.rejectMyApply(applyCode);
+
+    res.json({ success: true, result });
+  } catch (e) {
+    console.error("[POST /event/myApply/reject/:applyCode]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message,
     });
   }
 });
