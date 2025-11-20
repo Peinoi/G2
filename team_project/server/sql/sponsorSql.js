@@ -341,7 +341,8 @@ SELECT
     sp.current_amount ,
     IFNULL(SUM(de.amount), 0) as useAmount ,
     (sp.current_amount - IFNULL(SUM(de.amount), 0))  as remainder
-	,sa.activity_code
+	,sa.activity_code,
+  sp.program_code
 FROM support_program sp
 LEFT JOIN users u
     ON sp.writer = u.user_id     
@@ -364,34 +365,39 @@ GROUP BY
 
 // 총괄 내역서 단건
 const summaryStatementSelect = `
-SELECT 
-    o.org_name,
-    sp.program_name ,
-    sp.start_date,
-    sp.end_date,
-    sp.goal_amount ,
-    sp.current_amount ,
-    IFNULL(SUM(de.amount), 0) as useAmount ,
-    (sp.current_amount - IFNULL(SUM(de.amount), 0))  as remainder
-	,sa.activity_code
+SELECT
+    sp.program_name,
+    de.used_at,
+    de.usage_item,
+    de.recipient,
+    de.amount,
+
+    sp.current_amount AS totalDonation,
+
+    t.totalUsedAmount,
+    (sp.current_amount - t.totalUsedAmount) AS remainder
+
 FROM support_program sp
-LEFT JOIN users u
-    ON sp.writer = u.user_id     
-LEFT JOIN organization o
-    ON u.user_code = o.user_code
+
 LEFT JOIN support_activity sa
     ON sp.program_code = sa.program_code
+
 LEFT JOIN donation_expenditure de
     ON sa.activity_code = de.activity_code
-WHERE  sp.program_code = ?
-GROUP BY 
-    o.org_name,
-    sp.program_name,
-    sp.start_date,
-    sp.end_date,
-    sp.goal_amount,
-    sp.current_amount,sa.activity_code
-    ;
+
+LEFT JOIN (
+    SELECT 
+        sa.program_code,
+        SUM(de.amount) AS totalUsedAmount
+    FROM support_activity sa
+    LEFT JOIN donation_expenditure de
+        ON sa.activity_code = de.activity_code
+    GROUP BY sa.program_code
+) t ON t.program_code = sp.program_code
+
+WHERE sp.program_code = ?
+ORDER BY de.used_at ASC;
+
 `;
 
 module.exports = {

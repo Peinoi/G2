@@ -25,7 +25,7 @@ export const sponsorMenu = [
   },
   {
     label: '후원 예산 총괄표',
-    path: '/summary',
+    path: '/budget-summary',
     collapseRef: 'BudgetSummary',
     role: ['AA1', 'AA2', 'AA3', 'AA4'],
   },

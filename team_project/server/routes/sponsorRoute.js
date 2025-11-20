@@ -143,8 +143,8 @@ router.get("/summaryStatementList", async (req, res) => {
 router.get("/summaryStatementList/:no", async (req, res) => {
   try {
     //조회 서비스 호출
-    const activity_code = req.params.no;
-    const serviceSponsor = await summaryStatementListSelect(activity_code);
+    const programCode = req.params.no;
+    const serviceSponsor = await summaryStatementListSelect(programCode);
     console.log(serviceSponsor);
     console.log(
       `[ summaryStatementListSelect.js ||총괄표 단건 활동 내역 조회  성공]`
@@ -164,28 +164,7 @@ router.get("/summaryStatementList/:no", async (req, res) => {
     });
   }
 });
-// [수정] 단건 조회 처리
-router.get("/:no", async (req, res) => {
-  try {
-    // URL 파라미터에서 프로그램 코드 (no)를 추출합니다.
-    const programCode = req.params.no;
 
-    // 단건 조회 서비스 호출
-    const serviceSponsor = await sponsorUsers(programCode);
-
-    console.log(`[ sponsorRoute.js || 단건 조회 (${programCode}) 성공]`);
-    res.status(200).json({
-      status: "success",
-      serviceSponsor,
-    });
-  } catch (err) {
-    console.error("[ sponsorRoute.js || 단건 조회 실패]", err.message);
-    res.status(500).json({
-      status: "error",
-      message: "에러 발생",
-    });
-  }
-});
 
 router.post("/", upload.array("attachments"), async (req, res) => {
   try {
@@ -442,4 +421,29 @@ router.post("/:programCode/:user_id/activity", async (req, res) => {
       .json({ success: false, message: "활동 보고서 등록 중 오류" });
   }
 });
+
+
+// [수정] 단건 조회 처리
+router.get("/:no", async (req, res) => {
+  try {
+    // URL 파라미터에서 프로그램 코드 (no)를 추출합니다.
+    const programCode = req.params.no;
+
+    // 단건 조회 서비스 호출
+    const serviceSponsor = await sponsorUsers(programCode);
+
+    console.log(`[ sponsorRoute.js || 단건 조회 (${programCode}) 성공]`);
+    res.status(200).json({
+      status: "success",
+      serviceSponsor,
+    });
+  } catch (err) {
+    console.error("[ sponsorRoute.js || 단건 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "에러 발생",
+    });
+  }
+});
+
 module.exports = router;

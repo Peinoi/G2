@@ -174,10 +174,10 @@ async function summaryStatementList() {
 }
 
 // 총괄표 단건 조회
-async function summaryStatementListSelect(activity_code) {
+async function summaryStatementListSelect(programCode) {
   //  activity_code 인수로 받습니다.
   const sponsorFindDB = await sponsorMapper.summaryStatementSelect(
-    activity_code
+    programCode
   ); // programSearch로 변경
 
   return sponsorFindDB;
