@@ -1,48 +1,50 @@
 <!-- src/views/StaffApprovals.vue -->
 <template>
   <div class="apv-page">
-    <h2 class="apv-title">전체 후원 내역</h2>
-    <!-- 
-    검색/필터
+    <h2 class="apv-title">후원 총괄표</h2>
+
+    <!-- 검색/필터 -->
     <div class="apv-toolbar">
-      <div class="apv-filters">
+      <div class="search-box">
         <input
-          v-model.trim="keyword"
-          class="apv-input"
-          placeholder="프로그램명 검색"
-          @keyup.enter="fetchList"
+          type="text"
+          placeholder="프로그램명 입력"
+          v-model="searchKeyword"
         />
       </div>
-      <button class="apv-btn apv-btn-outline" @click="fetchList">조회</button>
-    </div> -->
+    </div>
 
     <!-- 테이블 -->
     <div class="apv-table-wrap">
       <table class="apv-table">
         <thead>
           <tr>
-            <th>후원일자</th>
-            <th>후원자</th>
-            <th>후원 금액</th>
+            <th>기관명</th>
             <th>프로그램</th>
-            <th>후원 타입</th>
-            <th>상태</th>
-            <th>시작일</th>
-            <th>종료일</th>
+            <th>후원 기간</th>
             <th>목표 금액</th>
+            <th>모금 금액</th>
+            <th>사용 금액</th>
+            <th>잔액</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="sponsor in sponsorList" :key="sponsor.program_code">
-            <td>{{ dateFormat(sponsor.deposit_date, "yyyy-MM-dd") }}</td>
-            <td>{{ sponsor.userID }}</td>
-            <td>{{ numberFormat(sponsor.transaction_amount) }}</td>
-            <td>{{ sponsor.program_name }}</td>
-            <td>{{ sponsor.sponsor_type }}</td>
-            <td>{{ sponsor.status }}</td>
-            <td>{{ dateFormat(sponsor.start_date, "yyyy-MM-dd") }}</td>
-            <td>{{ dateFormat(sponsor.end_date, "yyyy-MM-dd") }}</td>
-            <td>{{ numberFormat(sponsor.goal_amount) }}</td>
+          <tr v-if="!loading && finalList.length === 0">
+            <td :colspan="isOrgVisible ? 10 : 9" class="apv-empty">
+              데이터가 없습니다.
+            </td>
+          </tr>
+          <tr v-for="r in finalList" :key="r.program_code">
+            <td>{{ r.org_name }}</td>
+            <td>{{ r.program_name }}</td>
+            <td>
+              {{ dateFormat(r.start_date, "yyyy-MM-dd") }}~
+              {{ dateFormat(r.end_date, "yyyy-MM-dd") }}
+            </td>
+            <td>{{ numberFormat(r.goal_amount) }}원</td>
+            <td>{{ numberFormat(r.current_amount) }}원</td>
+            <td>{{ numberFormat(r.useAmount) }}원</td>
+            <td>{{ numberFormat(r.remainder) }}원</td>
           </tr>
         </tbody>
       </table>
@@ -54,11 +56,13 @@
 import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
-import { ref, onBeforeMount } from "vue";
+import { ref, onBeforeMount, computed } from "vue";
+
 let sponsorList = ref([]); // 전체 조회 조건 조회
+const searchKeyword = ref("");
 const getSponsorList = async () => {
   let result = await axios
-    .get(`/api/sponsor/mygiving`)
+    .get(`/api/sponsor/summaryStatementList`)
     .catch((err) => console.log(err));
 
   // API 호출 실패 처리 추가 (이전 대화에서 논의된 부분)
@@ -68,16 +72,37 @@ const getSponsorList = async () => {
     return;
   }
   const res = result.data.serviceSponsor;
+
+  // // 1. 테이블 목록 갱신
+  // const list = JSON.parse(JSON.stringify(res));
+  // sponsorList.value = JSON.parse(JSON.stringify(res));
+  // console.log(list);
+
   let list = JSON.parse(JSON.stringify(res));
   sponsorList.value = list;
+  // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
+  //    (검색 결과는 programList에 영향을 주지 않아야 함)
   console.log(JSON.parse(JSON.stringify(sponsorList.value)));
 };
+
 onBeforeMount(() => {
   getSponsorList();
 });
 defineExpose({
   getSponsorList,
 });
+
+// -------------------------------
+// 검색 기능
+// -------------------------------
+const finalList = computed(() => {
+  const kw = searchKeyword.value.trim();
+  if (!kw) return sponsorList.value; // 검색어 없으면 전체 리턴
+
+  // 검색어 있을 때만 필터
+  return sponsorList.value.filter((item) => item.program_name.includes(kw));
+});
+// client/comments/Sponsor/ProgramList.vue
 </script>
 
 <style scoped>
@@ -319,23 +344,19 @@ defineExpose({
   gap: 8px;
   margin-top: 12px;
 }
-
-/* 페이징/에러 */
-.apv-pagination {
+/* 검색 */
+.search-box {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
+  border: 1px solid #bbb;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background-color: white;
 }
 
-.apv-page-text {
-  font-size: 13px;
-}
-
-.apv-error {
-  margin-top: 8px;
-  color: #b91c1c;
-  font-size: 12px;
+.search-box input {
+  border: none;
+  outline: none;
+  border-radius: 5px;
 }
 </style>

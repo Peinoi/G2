@@ -39,7 +39,7 @@
       <div class="at-field-group">
         <label class="at-label">내용</label>
         <div class="ck-wrapper">
-          <MyEditor v-model="content" />
+          <MyEditor v-show="loadEditor" v-model="content" />
         </div>
       </div>
 
@@ -136,14 +136,20 @@ import axios from "axios";
 import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
 import numberFormat from "../../../utils/numberFormat.js";
-import { ref, onBeforeMount, defineEmits } from "vue";
+import { nextTick, ref, onBeforeMount, defineEmits } from "vue";
 import MyEditor from "@/components/Sponsor/Common/CkEditor.vue";
 // --- [데이터 정의] ---
 let sponsorList = ref([]); // 프로그램 목록
 const programCode = ref("");
 const title = ref("");
 const content = ref("");
+const showEditor = ref(false);
 
+const loadEditor = async () => {
+  // 레이아웃 변경 작업을 수행합니다 (예: 탭 변경, 모달 열기)
+  await nextTick(); // DOM 업데이트가 완료될 때까지 기다립니다.
+  showEditor.value = true; // 그 후에 CKEditor를 렌더링합니다.
+};
 // 후원금 사용 내역 (동적)
 const expenditureList = ref([
   {
@@ -222,24 +228,6 @@ const goList = () => {
   emit("goToList");
 };
 
-/**
- * 제출
- */
-const activityAdd = () => {
-  console.log("--- 등록 데이터 확인 ---");
-  console.log("프로그램 코드:", programCode.value);
-  console.log("제목:", title.value);
-  console.log("내용:", content.value);
-
-  // 실제 amount 값이 숫자로 들어가 있음
-  console.log(
-    "후원금 사용 내역:",
-    JSON.parse(JSON.stringify(expenditureList.value))
-  );
-
-  // TODO: 등록 API 호출
-};
-
 // mount
 onBeforeMount(() => {
   getSponsorList();
@@ -248,6 +236,43 @@ onBeforeMount(() => {
 defineExpose({
   getSponsorList,
 });
+
+//제출
+const activityAdd = async () => {
+  const userDataString = localStorage.getItem("user");
+  const userData = JSON.parse(userDataString);
+  const used_amount = expenditureList.value.reduce(
+    (sum, item) => sum + (item.amount || 0),
+    0
+  );
+
+  const payload = {
+    writer: userData.user_id,
+    title: title.value,
+    content: content.value,
+    used_amount,
+    program_code: programCode.value,
+    history: expenditureList.value.map((item) => ({
+      usage_item: item.usageItem,
+      recipient: item.recipient,
+      amount: item.amount,
+      used_at: item.usedAt,
+    })),
+  };
+  console.log("활동 보고서");
+
+  console.log(payload);
+  try {
+    await axios.post(
+      `/api/sponsor/${programCode.value}/${userData.user_id}/activity`,
+      payload
+    );
+    alert("활동 보고서 작성 완료");
+    goList();
+  } catch (err) {
+    console.log("제출 실패" + err);
+  }
+};
 </script>
 
 <style scoped>
