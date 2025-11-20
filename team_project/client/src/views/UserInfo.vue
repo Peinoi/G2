@@ -45,6 +45,7 @@
               @edit="editMode = true"
               @cancel="cancelUserEdit"
               @save="saveUserInfo"
+              @openPwModal="showPwModal = true"
             />
           </div>
 
@@ -69,6 +70,12 @@
               @delete-child="deleteChild"
             />
           </div>
+
+          <UserPasswordModal
+            v-if="showPwModal"
+            @close="showPwModal = false"
+            @confirm="submitPasswordChange"
+          />
         </material-card-content>
       </material-card>
     </div>
@@ -80,7 +87,14 @@ import { useAuthStore } from '@/store/authLogin';
 import UserBasicInfo from '@/components/userInfo/UserBasicInfo.vue';
 import UserOrgInfo from '@/components/userInfo/UserOrgInfo.vue';
 import UserChildInfo from '@/components/userInfo/UserChildInfo.vue';
-import { findUserInfo, addChild, deleteChild, updateInfo } from '@/api/user';
+import UserPasswordModal from '@/components/userInfo/UserPasswordModal.vue';
+import {
+  findUserInfo,
+  addChild,
+  deleteChild,
+  updateInfo,
+  updatePw,
+} from '@/api/user';
 import dateFormat from '@/utils/dateFormat';
 
 export default {
@@ -90,12 +104,14 @@ export default {
     UserBasicInfo,
     UserOrgInfo,
     UserChildInfo,
+    UserPasswordModal,
   },
   data() {
     return {
       activeTab: 'user',
       editMode: false,
       orgEditMode: false,
+      showPwModal: false,
       userData: {
         user_id: '',
         name: '',
@@ -150,10 +166,12 @@ export default {
       this.userData = { ...this.originalUser };
       this.editMode = false;
     },
+
     cancelOrgEdit() {
       this.orgData = { ...this.originalOrg };
       this.orgEditMode = false;
     },
+
     async saveUserInfo(updated) {
       const result = await updateInfo('user', updated);
       if (!result.ok) {
@@ -164,6 +182,25 @@ export default {
       this.editMode = false;
       alert('수정 완료');
     },
+
+    async submitPasswordChange(passwords) {
+      const data = JSON.parse(localStorage.getItem('user'));
+      const payload = {
+        user_code: data.user_code,
+        newPw: passwords.newPw,
+      };
+
+      const result = await updatePw(payload);
+      console.log(result);
+      if (!result.ok) {
+        alert('변경 실패');
+        return;
+      }
+
+      alert('변경 성공');
+      this.showPwModal = false;
+    },
+
     async saveOrgInfo(updated) {
       const updateData = {
         user_id: this.auth.userId,

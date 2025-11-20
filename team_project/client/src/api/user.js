@@ -88,6 +88,18 @@ export async function updateInfo(type, updateData) {
   }
 }
 
+// pw 교체
+export async function updatePw(updateData) {
+  try {
+    const result = await axios.put('/api/userinfo/updatePw', {
+      data: updateData,
+    });
+    return result.data;
+  } catch (err) {
+    console.error('[ updatePw 오류 ]', err);
+  }
+}
+
 // 자녀 추가
 export async function addChild(childData) {
   try {

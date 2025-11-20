@@ -14,9 +14,10 @@ async function getPendingListMapper(data) {
 
 async function updateStatusMapper(data) {
   try {
-    const { status, submit_code } = data;
+    const { status, manager_code, submit_code } = data;
     const result = await pool.query(pendingSQL.UPDATE_STATUS, [
       status,
+      manager_code,
       submit_code,
     ]);
     if (result.affectedRows == 0) {

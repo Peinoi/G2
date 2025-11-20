@@ -8,7 +8,7 @@
           <input
             type="radio"
             name="manager"
-            :value="mgr.user_id"
+            :value="mgr.user_code"
             v-model="selected"
           />
           <span>{{ mgr.name }} ({{ mgr.user_id }})</span>

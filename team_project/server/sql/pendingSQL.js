@@ -13,13 +13,18 @@ module.exports = {
   WHERE u1.org_code = ?`,
 
   UPDATE_STATUS: `
-  UPDATE survey_submission
-  SET status = ?
-  WHERE submit_code = ?`,
+  UPDATE survey_submission s
+  JOIN child c ON s.child_code = c.child_code
+  JOIN users u ON c.user_code = u.user_code
+  SET 
+    s.status = ?,
+    u.manager_code = ?
+  WHERE s.submit_code = ?`,
 
   SEARCH_MANAGERS: `
   SELECT
-  	user_id
+    user_code
+    ,	user_id
 	  , name
     , phone 
   FROM users

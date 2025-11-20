@@ -335,7 +335,7 @@ export default {
       const res = {
         submit_code: this.pendingItem.submit_code,
         status: 'CA3',
-        manager_id: this.selectedManager,
+        manager_code: this.selectedManager,
       };
 
       const result = await changeStatusApi(res);
