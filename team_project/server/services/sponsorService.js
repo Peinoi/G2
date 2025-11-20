@@ -41,7 +41,6 @@ async function sponsorProgramAdd(clientData, attachments) {
     clientData.donation_type, // (6) Vue에서 '지정'/'자율'로 설정되어 넘어옴
     clientData.donation_unit, // (7) Vue에서 '/' 구분자 문자열 또는 null로 설정되어 넘어옴
     clientData.goal_amount, // (8) Vue에서 순수 숫자로 설정되어 넘어옴
-    clientData.current_amount, // (9) Vue에서 0으로 설정되어 넘어옴
     clientData.writer, // (10) Vue에서 'admin' 등 임시값으로 설정되어 넘어옴
     clientData.create_date, // (11) Vue에서 현재 날짜로 설정되어 넘어옴
     clientData.approval_status, // (12) Vue에서 '승인전'으로 설정되어 넘어옴
@@ -120,34 +119,68 @@ async function payments(payData) {
 
   return sponsorInsertResult;
 }
-// 나의 후원 내역 조회
+// 전체 후원 내역 조회
 async function mygivingList() {
   //  programCode를 인수로 받습니다.
   const sponsorFindDB = await sponsorMapper.mygivingSQL();
-  console.log("asdassfaeebhsrenfd");
+  console.log("전체 후원 내역 조회");
   return sponsorFindDB;
 }
-
-// 프로그램 등록
+// 전체 활동 내역 조회
+async function activityList() {
+  //  programCode를 인수로 받습니다.
+  const sponsorFindDB = await sponsorMapper.activitySQL();
+  console.log("활동 내역조회");
+  return sponsorFindDB;
+}
+// 활동보고서 등록
 async function activityAdd(clientData) {
-  console.log("클라이언트 데이터");
-  console.log(clientData);
-
   const programDataArray = [
     clientData.writer,
     clientData.title,
-    clientData.status,
     clientData.content,
     clientData.used_amount,
     clientData.program_code,
   ];
 
-  // 배열화된 데이터를 매퍼로 전달하여 쿼리 실행
-  const sponsorInsertResult = await sponsorMapper.activityAddSQL(
-    programDataArray
-  );
+  // 1) 활동 보고서 insert
+  const result = await sponsorMapper.activityAddSQL(programDataArray);
+  const activity_code = result.programResult.insertId;
 
-  return sponsorInsertResult;
+  // 2) 사용 내역 insert (배열 반복)
+  for (const h of clientData.history) {
+    await sponsorMapper.activityHistoryAddSQL([
+      activity_code,
+      h.usage_item,
+      h.recipient,
+      h.amount,
+      h.used_at,
+    ]);
+  }
+
+  return { activity_code };
+}
+//결제에 따른 현재 모금액 변경
+async function current_amountUpdate(current_amount, programCode) {
+  console.log("현재 금액 합산" + current_amount + programCode);
+  return await sponsorMapper.current_amountUpdate(current_amount, programCode);
+}
+
+// 총괄표 전체 목록 조회 또는 조건부 조회
+async function summaryStatementList() {
+  let sponsorFindDB;
+  sponsorFindDB = await sponsorMapper.summaryStatement();
+  return sponsorFindDB;
+}
+
+// 총괄표 단건 조회
+async function summaryStatementListSelect(activity_code) {
+  //  activity_code 인수로 받습니다.
+  const sponsorFindDB = await sponsorMapper.summaryStatementSelect(
+    activity_code
+  ); // programSearch로 변경
+
+  return sponsorFindDB;
 }
 
 module.exports = {
@@ -163,4 +196,8 @@ module.exports = {
   payments,
   mygivingList,
   activityAdd,
+  activityList,
+  current_amountUpdate,
+  summaryStatementList,
+  summaryStatementListSelect,
 };

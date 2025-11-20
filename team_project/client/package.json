@@ -21,6 +21,7 @@
     "serve": "node --no-deprecation ./node_modules/@vue/cli-service/bin/vue-cli-service.js serve"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-vue": "^7.3.0",
     "@fullcalendar/core": "^5.11.3",
     "@fullcalendar/daygrid": "^5.11.3",
     "@fullcalendar/interaction": "^5.11.3",
@@ -30,6 +31,7 @@
     "axios": "^1.13.2",
     "bootstrap": "5.3.2",
     "chart.js": "4.4.0",
+    "ckeditor5": "^47.2.0",
     "core-js": "3.33.0",
     "cors": "^2.8.5",
     "pinia": "^3.0.4",
