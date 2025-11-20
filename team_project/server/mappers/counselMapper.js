@@ -60,6 +60,55 @@ async function listCounselByRole(role, userId) {
   }
 }
 
+// 상담 상세들을 "index 기반" 평탄화해서 history 에 쓸 수 있게 변환
+function normalizeDetailsForHistory(detailsRows = []) {
+  return detailsRows.map((d) => ({
+    counsel_date: d.counsel_date || null,
+    title: (d.title || "").trim(),
+    content: (d.content || "").trim(),
+  }));
+}
+
+// before/after 의 상세들을 detail1_*, detail2_* ... 형식으로 평탄화해서
+// beforeRow/afterRow 에 merge 해주는 헬퍼
+function mergeDetailsIntoHistoryRows(
+  beforeDetails,
+  afterDetails,
+  beforeRow,
+  afterRow
+) {
+  const beforeNorm = normalizeDetailsForHistory(beforeDetails);
+  const afterNorm = normalizeDetailsForHistory(afterDetails);
+
+  const maxLen = Math.max(beforeNorm.length, afterNorm.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const idx = i + 1;
+    const before = beforeNorm[i] || {
+      counsel_date: null,
+      title: "",
+      content: "",
+    };
+    const after = afterNorm[i] || {
+      counsel_date: null,
+      title: "",
+      content: "",
+    };
+
+    const prefix = `detail${idx}_`;
+
+    beforeRow[`${prefix}date`] = before.counsel_date;
+    beforeRow[`${prefix}title`] = before.title;
+    beforeRow[`${prefix}content`] = before.content;
+
+    afterRow[`${prefix}date`] = after.counsel_date;
+    afterRow[`${prefix}title`] = after.title;
+    afterRow[`${prefix}content`] = after.content;
+  }
+
+  return { beforeRow, afterRow };
+}
+
 // 저장 / 수정 / 재수정
 async function saveCounsel(body, files = []) {
   const conn = await pool.getConnection();
@@ -95,30 +144,43 @@ async function saveCounsel(body, files = []) {
       counsel_code = res.insertId;
       needApprovalRequest = true; // 👉 처음 작성이므로 승인요청 생성
 
-      // ⚠️ 최초 작성은 beforeRow가 없으므로 히스토리 기록은 생략(원하면 나중에 추가 가능)
+      // ⚠️ 최초 작성은 beforeRow가 없으므로 히스토리 기록은 생략
     } else {
       // 🔹 기존 상담 있음
       counsel_code = exist[0].counsel_code;
       const currentStatus = (exist[0].status || "").trim().toUpperCase();
 
       // ⭐ 1-1) 수정 전 상태 읽기 (기존 상담이 있을 때만)
-      const beforeDetails = await conn.query(sql.getCounselDetailsByCounsel, [
-        counsel_code,
-      ]);
+      const beforeDetailsAll = await conn.query(
+        sql.getCounselDetailsByCounsel,
+        [counsel_code]
+      );
       const beforePriorityRows = await conn.query(
         sql.getCurrentPriorityBySubmit,
         [submitCode]
       );
 
-      const beforeMain = beforeDetails[0] || {};
+      const beforeMain = beforeDetailsAll[0] || {};
+      const beforeSubDetails = beforeDetailsAll.slice(1); // 🔥 추가 상담 기록들만
+
       const beforePriority = beforePriorityRows[0]?.level || null;
 
+      // 기본 필드 (우선순위 + 메인 상담)
       beforeRow = {
         priority: beforePriority,
         main_counsel_date: beforeMain.counsel_date || null,
         main_title: beforeMain.title || "",
         main_content: beforeMain.content || "",
       };
+
+      // 🔥 “추가 상담 기록들”만 history 비교 대상에 포함
+      // detail1_date, detail1_title, detail1_content ... 이런 식으로 key 생성
+      beforeRow = mergeDetailsIntoHistoryRows(
+        beforeSubDetails, // before 쪽 상세
+        [], // after는 나중에 채울 거라 지금은 빈 배열
+        beforeRow,
+        {} // afterRow 는 여기선 무시
+      ).beforeRow;
 
       if (currentStatus === "CB1") {
         await conn.query(sql.updateCounselNote, [
@@ -149,7 +211,7 @@ async function saveCounsel(body, files = []) {
     // 2) 기존 상담 상세 삭제
     await conn.query(sql.deleteCounselDetails, [counsel_code]);
 
-    // 3) 상담 상세 입력들
+    // 3) 상담 상세 입력들 (추가 기록들)
     for (const rec of records || []) {
       await conn.query(sql.insertCounselDetail, [
         counsel_code,
@@ -159,6 +221,7 @@ async function saveCounsel(body, files = []) {
       ]);
     }
 
+    // 3-1) 메인 상담 내용
     if (mainForm && (mainForm.title || mainForm.content)) {
       await conn.query(sql.insertCounselDetail, [
         counsel_code,
@@ -211,7 +274,7 @@ async function saveCounsel(body, files = []) {
 
     // ⭐ 7) 수정 후(after) 상태 읽고 history 기록 (기존 상담이 있던 경우에만)
     if (exist.length > 0) {
-      const afterDetails = await conn.query(sql.getCounselDetailsByCounsel, [
+      const afterDetailsAll = await conn.query(sql.getCounselDetailsByCounsel, [
         counsel_code,
       ]);
       const afterPriorityRows = await conn.query(
@@ -219,24 +282,46 @@ async function saveCounsel(body, files = []) {
         [submitCode]
       );
 
-      const afterMain = afterDetails[0] || {};
+      const afterMain = afterDetailsAll[0] || {};
+      const afterSubDetails = afterDetailsAll.slice(1); // 🔥 추가 상담 기록들만
+
       const afterPriority = afterPriorityRows[0]?.level || null;
 
-      const afterRow = {
+      // 기본 필드
+      let afterRow = {
         priority: afterPriority,
         main_counsel_date: afterMain.counsel_date || null,
         main_title: afterMain.title || "",
         main_content: afterMain.content || "",
       };
 
+      // 🔥 상세들까지 펼쳐서 afterRow 에도 merge (역시 추가 기록만)
+      const merged = mergeDetailsIntoHistoryRows(
+        [], // before 쪽은 이미 beforeRow에 들어가 있으니 비워둠
+        afterSubDetails, // after 쪽 상세
+        {}, // beforeRow는 여기선 안 씀
+        afterRow
+      );
+      afterRow = merged.afterRow;
+
+      // 비교해야 할 모든 필드 목록
+      const fieldSet = new Set([
+        "priority",
+        "main_counsel_date",
+        "main_title",
+        "main_content",
+        ...Object.keys(beforeRow).filter((k) => k.startsWith("detail")),
+        ...Object.keys(afterRow).filter((k) => k.startsWith("detail")),
+      ]);
+
       await logHistoryDiff(conn, {
         tableName: "counsel_note",
         tablePk: counsel_code,
-        modifier, // 프론트에서 body.modifier로 넘어온 user_code
-        historyType: "BD2", // ⭐ 상담 수정 타입 코드 (조사지 BD1, 상담 BD2, 계획 BD3, 결과 BD4 이런 식)
+        modifier, // 프론트에서 body.modifier 로 넘어온 user_code
+        historyType: "BD2", // 상담 수정 타입 코드
         beforeRow,
         afterRow,
-        fields: ["priority", "main_counsel_date", "main_title", "main_content"],
+        fields: Array.from(fieldSet),
       });
     }
 
@@ -338,22 +423,6 @@ async function approveCounsel(submitCode) {
       throw new Error("해당 제출코드의 상담이 존재하지 않습니다.");
     }
     const counselCode = exist[0].counsel_code;
-
-    // 2) support_plan 생성 (이미 있으면 안 만들기)
-    const spExist = await conn.query(sql.getSupportPlanBySubmit, [submitCode]);
-
-    if (!spExist.length) {
-      // survey_submission 에서 assi_by 조회
-      const assiRows = await conn.query(sql.getAssigneeBySubmit, [submitCode]);
-      const assiBy = assiRows[0]?.assi_by || null;
-
-      // support_plan INSERT
-      await conn.query(sql.insertSupportPlan, [
-        submitCode, // submit_code
-        "CC2", // status
-        assiBy, // assi_by (담당자 코드)
-      ]);
-    }
 
     // 3) request_approval 상태 BA2로 업데이트
     const result = await conn.query(sql.updateApprovalApprove, [counselCode]);

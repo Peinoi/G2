@@ -9,21 +9,157 @@
           </h2>
         </div>
 
-        <div class="header-action">
-          <span class="role-pill">
-            역할: {{ roleLabel }} ({{ rawAuthCode || "-" }})
-          </span>
-          <span
-            v-if="!currentUserId && selectedRole !== 4"
-            class="role-warning"
+        <!-- 🔘 일반 이용자 + submitCode로 필터된 상태에서만 노출 -->
+        <div
+          v-if="selectedRole === 1 && filterSubmitCode"
+          class="header-action"
+        >
+          <MaterialButton
+            color="dark"
+            size="sm"
+            variant="outlined"
+            @click="clearSubmitFilter"
           >
-            로그인 정보를 찾을 수 없습니다.
-          </span>
+            전체 계획 목록 보기
+          </MaterialButton>
         </div>
       </header>
 
+      <!-- 🔼 담당자 전용 테이블 (다른 목록) -->
+      <div v-if="isAssigneeRole">
+        <!-- 담당자용 필터 -->
+        <div class="filter-row">
+          <form class="filter-form" @submit.prevent="onSearchAssignee">
+            <!-- 검색 인풋 -->
+            <div class="filter-field filter-field--search">
+              <input
+                v-model="assigneeSearchText"
+                type="text"
+                class="search-input"
+                placeholder="지원자, 보호자 검색"
+                @keyup.enter="onSearchAssignee"
+              />
+            </div>
+
+            <!-- 정렬 셀렉트 -->
+            <div class="filter-field filter-field--select select-wrapper">
+              <select
+                v-model="assigneeSortOption"
+                class="select-input"
+                @change="onFilterChangeAssignee"
+              >
+                <option value="SUBMIT_RECENT">조사지 제출일 최신순</option>
+                <option value="SUBMIT_OLD">조사지 제출일 오래된순</option>
+                <option value="NAME">이름순</option>
+              </select>
+            </div>
+
+            <!-- 검색 버튼 -->
+            <div class="filter-field filter-field--button">
+              <MaterialButton type="submit" color="dark" size="sm">
+                검색
+              </MaterialButton>
+            </div>
+          </form>
+        </div>
+
+        <!-- 상태 표시 (담당자용 목록) -->
+        <div v-if="assigneeLoading" class="text-gray-500 text-sm">
+          불러오는 중...
+        </div>
+        <div v-else-if="assigneeError" class="text-red-600 text-sm">
+          {{ assigneeError }}
+        </div>
+        <div v-else-if="!assigneePlans.length" class="empty-state">
+          우선순위가 승인된 지원자가 없습니다.
+        </div>
+
+        <!-- 담당자용 목록 -->
+        <div v-else class="table-wrapper">
+          <div class="table-card">
+            <table class="nice-table">
+              <thead>
+                <tr>
+                  <th class="th-cell text-center w-14">No</th>
+                  <th class="th-cell">지원자 이름</th>
+                  <th class="th-cell">보호자 이름</th>
+                  <th class="th-cell">조사지 제출일</th>
+                  <th class="th-cell text-center w-28"></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="(row, idx) in assigneePaginatedPlans"
+                  :key="row.planCode || row.submitCode || idx"
+                  class="table-row-item"
+                  @click="goCounselDetail(row)"
+                >
+                  <!-- No 컬럼 (페이징 반영) -->
+                  <td class="td-cell text-center">
+                    {{ (assigneeCurrentPage - 1) * assigneePageSize + idx + 1 }}
+                  </td>
+
+                  <!-- 지원자 이름 -->
+                  <td class="td-cell">
+                    {{ row.childName ? row.childName : "본인" }}
+                  </td>
+
+                  <!-- 보호자 이름 -->
+                  <td class="td-cell">
+                    {{ row.writerName || "-" }}
+                  </td>
+
+                  <!-- 조사지 제출일 -->
+                  <td class="td-cell">
+                    {{ formatDate(row.submitAt) }}
+                  </td>
+
+                  <!-- 작업 -->
+                  <td class="td-cell">
+                    <div class="flex items-center justify-center">
+                      <MaterialButton
+                        color="dark"
+                        size="sm"
+                        @click.stop="handleWrite(row)"
+                      >
+                        작성하기
+                      </MaterialButton>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 페이지네이션 (담당자용) -->
+          <div v-if="assigneeTotalPages > 1" class="mt-6 text-center">
+            <MaterialPagination color="dark" size="md" class="pagination">
+              <MaterialPaginationItem
+                prev
+                :disabled="assigneeCurrentPage === 1"
+                @click="changeAssigneePage(assigneeCurrentPage - 1)"
+              />
+              <MaterialPaginationItem
+                v-for="page in assigneeTotalPages"
+                :key="page"
+                :label="String(page)"
+                :active="page === assigneeCurrentPage"
+                @click="changeAssigneePage(page)"
+              />
+              <MaterialPaginationItem
+                next
+                :disabled="assigneeCurrentPage === assigneeTotalPages"
+                @click="changeAssigneePage(assigneeCurrentPage + 1)"
+              />
+            </MaterialPagination>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🔽 기존 지원계획 목록 (모든 역할용, 일반이 아닌 경우에만 필터) -->
       <!-- 🔍 검색 / 필터 / 정렬 (일반 이용자 제외) -->
-      <div v-if="selectedRole !== 1" class="filter-row">
+      <div v-if="selectedRole !== 1" class="filter-row mt-3">
         <form class="filter-form" @submit.prevent="onSearch">
           <!-- 검색 인풋 -->
           <div class="filter-field filter-field--search">
@@ -36,7 +172,7 @@
             />
           </div>
 
-          <!-- 상태 셀렉트 (바꾸면 바로 적용 / 검색어는 안 건드림) -->
+          <!-- 상태 셀렉트 -->
           <div class="filter-field filter-field--select select-wrapper">
             <select
               v-model="statusFilter"
@@ -53,7 +189,7 @@
             </select>
           </div>
 
-          <!-- 정렬 셀렉트 (바꾸면 바로 적용 / 검색어는 안 건드림) -->
+          <!-- 정렬 셀렉트 -->
           <div class="filter-field filter-field--select select-wrapper">
             <select
               v-model="sortOption"
@@ -68,7 +204,7 @@
             </select>
           </div>
 
-          <!-- 검색 버튼 (눌렀을 때만 검색어 적용) -->
+          <!-- 검색 버튼 -->
           <div class="filter-field filter-field--button">
             <MaterialButton type="submit" color="dark" size="sm">
               검색
@@ -77,30 +213,24 @@
         </form>
       </div>
 
-      <!-- 상태 표시 -->
+      <!-- 상태 표시 (기존 지원계획 목록) -->
       <div v-if="loading" class="text-gray-500 text-sm">불러오는 중...</div>
       <div v-else-if="error" class="text-red-600 text-sm">{{ error }}</div>
       <div v-else-if="!plans.length" class="empty-state">
         등록된 지원계획이 없습니다.
       </div>
 
-      <!-- 목록 -->
+      <!-- 기존 지원계획 목록 -->
       <div v-else class="table-wrapper">
         <div class="table-card">
           <table class="nice-table">
             <thead>
               <tr>
                 <th class="th-cell text-center w-14">No</th>
-
-                <!-- 🔹 지원자 / 보호자 분리 -->
                 <th class="th-cell">지원자 이름</th>
                 <th class="th-cell">보호자 이름</th>
-
                 <th class="th-cell">담당자</th>
-
-                <!-- 🔥 시스템(4)일 때만 기관명 컬럼 추가 -->
                 <th v-if="selectedRole === 4" class="th-cell">기관명</th>
-
                 <th class="th-cell">조사지 제출일</th>
                 <th class="th-cell">계획 작성일</th>
                 <th class="th-cell text-center">상태</th>
@@ -120,12 +250,12 @@
                   {{ (currentPage - 1) * pageSize + idx + 1 }}
                 </td>
 
-                <!-- 🔹 지원자 이름: childName 있으면 자녀, 없으면 '본인' -->
+                <!-- 지원자 이름 -->
                 <td class="td-cell">
                   {{ row.childName ? row.childName : "본인" }}
                 </td>
 
-                <!-- 🔹 보호자 이름 -->
+                <!-- 보호자 이름 -->
                 <td class="td-cell">
                   {{ row.writerName || "-" }}
                 </td>
@@ -135,16 +265,17 @@
                   {{ row.assiName || "-" }}
                 </td>
 
-                <!-- 🔥 시스템(4)일 때만 기관명 노출 -->
+                <!-- 시스템(4)일 때만 기관명 -->
                 <td v-if="selectedRole === 4" class="td-cell">
                   {{ row.orgName || "-" }}
                 </td>
 
+                <!-- 조사지 제출일 -->
                 <td class="td-cell">
                   {{ formatDate(row.submitAt) }}
                 </td>
 
-                <!-- 🔹 CC1 / CC2 이면 계획 작성일 숨기기 -->
+                <!-- 계획 작성일 (작성전이면 -) -->
                 <td class="td-cell">
                   {{
                     isBeforeWriteStatus(row.status)
@@ -179,15 +310,7 @@
                   <div class="flex items-center justify-center">
                     <template v-if="isAssigneeRole">
                       <MaterialButton
-                        v-if="['CC1', 'CC2'].includes(normStatus(row.status))"
-                        color="dark"
-                        size="sm"
-                        @click.stop="handleWrite(row)"
-                      >
-                        작성하기
-                      </MaterialButton>
-                      <MaterialButton
-                        v-else-if="normStatus(row.status) === 'CC3'"
+                        v-if="normStatus(row.status) === 'CC3'"
                         color="dark"
                         size="sm"
                         @click.stop="handleEdit(row)"
@@ -213,7 +336,7 @@
           </table>
         </div>
 
-        <!-- 🔹 페이지네이션 -->
+        <!-- 페이지네이션 (기존 목록) -->
         <div v-if="totalPages > 1" class="mt-6 text-center">
           <MaterialPagination color="dark" size="md" class="pagination">
             <MaterialPaginationItem
@@ -284,12 +407,15 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialPagination from "@/components/MaterialPagination.vue";
 import MaterialPaginationItem from "@/components/MaterialPaginationItem.vue";
 
 const router = useRouter();
+const route = useRoute();
+
+const filterSubmitCode = ref(route.query.submitCode || null);
 
 const currentUserId = ref(null);
 const rawAuthCode = ref(""); // AA1~AA4
@@ -310,27 +436,8 @@ function mapAuthToRole(code) {
   }
 }
 
-const roleLabel = computed(() => {
-  switch (selectedRole.value) {
-    case 1:
-      return "일반 이용자";
-    case 2:
-      return "담당자";
-    case 3:
-      return "관리자";
-    case 4:
-      return "시스템";
-    default:
-      return "알 수 없음";
-  }
-});
-
 // 담당자 역할 여부
 const isAssigneeRole = computed(() => Number(selectedRole.value) === 2);
-
-const plans = ref([]);
-const loading = ref(false);
-const error = ref("");
 
 const formatDate = (v) => {
   if (!v) return "-";
@@ -384,6 +491,123 @@ function statusPillClass(code) {
   }
 }
 
+/* ==============================
+ * 🔼 담당자 전용 목록 상태/로직
+ * ============================== */
+const assigneePlans = ref([]);
+const assigneeLoading = ref(false);
+const assigneeError = ref("");
+
+const assigneeSearchText = ref("");
+const assigneeAppliedSearchText = ref("");
+const assigneeSortOption = ref("SUBMIT_RECENT"); // SUBMIT_RECENT | SUBMIT_OLD | NAME
+
+const assigneePageSize = 5;
+const assigneeCurrentPage = ref(1);
+
+const assigneeFilteredPlans = computed(() => {
+  let rows = [...assigneePlans.value];
+
+  // 1) 검색
+  const q = assigneeAppliedSearchText.value.trim().toLowerCase();
+  if (q) {
+    rows = rows.filter((row) => {
+      const targets = [row.childName, row.writerName];
+      return targets.some((v) =>
+        String(v || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+  }
+
+  // 2) 정렬
+  if (assigneeSortOption.value === "SUBMIT_RECENT") {
+    rows.sort((a, b) => {
+      const aDate = a.submitAt ?? "";
+      const bDate = b.submitAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return bDate.localeCompare(aDate);
+      }
+      return Number(b.planCode || 0) - Number(a.planCode || 0);
+    });
+  } else if (assigneeSortOption.value === "SUBMIT_OLD") {
+    rows.sort((a, b) => {
+      const aDate = a.submitAt ?? "";
+      const bDate = b.submitAt ?? "";
+      if (aDate && bDate && aDate !== bDate) {
+        return aDate.localeCompare(bDate);
+      }
+      return Number(a.planCode || 0) - Number(b.planCode || 0);
+    });
+  } else if (assigneeSortOption.value === "NAME") {
+    rows.sort((a, b) => {
+      const an = a.childName || "본인";
+      const bn = b.childName || "본인";
+      return an.localeCompare(bn, "ko");
+    });
+  }
+
+  return rows;
+});
+
+const assigneeTotalPages = computed(() =>
+  Math.max(
+    1,
+    Math.ceil(assigneeFilteredPlans.value.length / assigneePageSize) || 1
+  )
+);
+
+const assigneePaginatedPlans = computed(() => {
+  const start = (assigneeCurrentPage.value - 1) * assigneePageSize;
+  return assigneeFilteredPlans.value.slice(start, start + assigneePageSize);
+});
+
+function changeAssigneePage(page) {
+  if (page < 1 || page > assigneeTotalPages.value) return;
+  assigneeCurrentPage.value = page;
+}
+
+// 🔍 담당자용 검색 버튼 / 엔터
+function onSearchAssignee() {
+  assigneeAppliedSearchText.value = assigneeSearchText.value;
+  assigneeCurrentPage.value = 1;
+}
+
+// 🔽 담당자용 정렬 변경
+function onFilterChangeAssignee() {
+  assigneeCurrentPage.value = 1;
+}
+
+// 담당자용 목록 조회 (다른 API 사용)
+const loadAssigneeList = async () => {
+  assigneeLoading.value = true;
+  assigneeError.value = "";
+  try {
+    const params = {
+      userId: currentUserId.value,
+      role: selectedRole.value,
+    };
+    // 👉 실제 API 엔드포인트에 맞게 수정해서 사용하면 됨
+    const { data } = await axios.get("/api/plans/assignee", { params });
+    assigneePlans.value = Array.isArray(data?.result) ? data.result : [];
+    assigneeCurrentPage.value = 1;
+  } catch (e) {
+    console.error(e);
+    assigneeError.value = e.message || "담당자용 목록 조회 중 오류";
+    assigneePlans.value = [];
+  } finally {
+    assigneeLoading.value = false;
+  }
+};
+
+/* ==============================
+ * 🔽 기존 지원계획 목록 상태/로직
+ * ============================== */
+const plans = ref([]);
+const loading = ref(false);
+const error = ref("");
+
 // 🔍 검색 / 상태 / 정렬 상태
 const searchText = ref(""); // 인풋에 직접 타이핑하는 값
 const appliedSearchText = ref(""); // 실제로 필터에 사용하는 값
@@ -401,7 +625,14 @@ const searchPlaceholder = computed(() => {
 const filteredPlans = computed(() => {
   let rows = [...plans.value];
 
-  // 1) 검색 (버튼/엔터로 확정된 appliedSearchText만 사용)
+  // 받은 submitcode로 필터 - 다른 화면에서 넘어오면
+  if (filterSubmitCode.value) {
+    rows = rows.filter(
+      (row) => String(row.submitCode) === String(filterSubmitCode.value)
+    );
+  }
+
+  // 1) 검색
   const q = appliedSearchText.value.trim().toLowerCase();
   if (q) {
     rows = rows.filter((row) => {
@@ -442,14 +673,12 @@ const filteredPlans = computed(() => {
 
   // 3) 정렬
   if (sortOption.value === "WRITTEN_RECENT") {
-    // 계획 작성일 최신순 (writtenAt DESC)
     rows.sort((a, b) => {
       const aDate = a.writtenAt ?? "";
       const bDate = b.writtenAt ?? "";
       if (aDate && bDate && aDate !== bDate) {
         return bDate.localeCompare(aDate);
       }
-      // 작성일 없으면 submitAt 기준 보조정렬
       const aSub = a.submitAt ?? "";
       const bSub = b.submitAt ?? "";
       if (aSub && bSub && aSub !== bSub) {
@@ -458,7 +687,6 @@ const filteredPlans = computed(() => {
       return Number(b.planCode) - Number(a.planCode);
     });
   } else if (sortOption.value === "WRITTEN_OLD") {
-    // 계획 작성일 오래된순 (writtenAt ASC)
     rows.sort((a, b) => {
       const aDate = a.writtenAt ?? "";
       const bDate = b.writtenAt ?? "";
@@ -473,7 +701,6 @@ const filteredPlans = computed(() => {
       return Number(a.planCode) - Number(b.planCode);
     });
   } else if (sortOption.value === "SUBMIT_RECENT") {
-    // 조사지 제출일 최신순 (submitAt DESC)
     rows.sort((a, b) => {
       const aDate = a.submitAt ?? "";
       const bDate = b.submitAt ?? "";
@@ -483,7 +710,6 @@ const filteredPlans = computed(() => {
       return Number(b.planCode) - Number(a.planCode);
     });
   } else if (sortOption.value === "SUBMIT_OLD") {
-    // 조사지 제출일 오래된순 (submitAt ASC)
     rows.sort((a, b) => {
       const aDate = a.submitAt ?? "";
       const bDate = b.submitAt ?? "";
@@ -493,7 +719,6 @@ const filteredPlans = computed(() => {
       return Number(a.planCode) - Number(b.planCode);
     });
   } else if (sortOption.value === "NAME") {
-    // 지원자 이름 가나다순
     rows.sort((a, b) => {
       const an = a.childName || "본인";
       const bn = b.childName || "본인";
@@ -504,7 +729,7 @@ const filteredPlans = computed(() => {
   return rows;
 });
 
-// 페이징
+// 페이징 (기존 목록)
 const currentPage = ref(1);
 const pageSize = 10;
 
@@ -522,17 +747,18 @@ function changePage(page) {
   currentPage.value = page;
 }
 
-// 🔍 검색 버튼 / 엔터 눌렀을 때만 검색어 적용
+// 🔍 검색 버튼 / 엔터 눌렀을 때만 검색어 적용 (기존 목록)
 function onSearch() {
   appliedSearchText.value = searchText.value;
   currentPage.value = 1;
 }
 
-// 🔽 상태/정렬 변경 시: 검색어는 그대로 두고 페이지만 초기화
+// 🔽 상태/정렬 변경 시 (기존 목록)
 function onFilterChange() {
   currentPage.value = 1;
 }
 
+// 기존 지원계획 목록 조회
 const loadList = async () => {
   loading.value = true;
   error.value = "";
@@ -543,7 +769,7 @@ const loadList = async () => {
     };
     const { data } = await axios.get("/api/plans", { params });
     plans.value = Array.isArray(data?.result) ? data.result : [];
-    currentPage.value = 1; // 조회할 때 첫 페이지로
+    currentPage.value = 1;
   } catch (e) {
     console.error(e);
     error.value = e.message || "지원계획 목록 조회 중 오류";
@@ -553,6 +779,26 @@ const loadList = async () => {
   }
 };
 
+function clearSubmitFilter() {
+  // 1) 필터 값 초기화
+  filterSubmitCode.value = null;
+
+  // 2) 페이지도 처음으로
+  currentPage.value = 1;
+
+  // 3) URL query에서 submitCode 제거 (새로 들어와도 전체 목록 보이게)
+  const newQuery = { ...route.query };
+  delete newQuery.submitCode;
+
+  router.replace({
+    name: route.name,
+    query: newQuery,
+  });
+}
+
+/* ==============================
+ * 공통 액션
+ * ============================== */
 const handleWrite = (row) => {
   router.push({
     name: "plan-write",
@@ -584,6 +830,10 @@ function goDetail(row) {
   });
 }
 
+function goCounselDetail(row) {
+  const url = `/counsel/detail/${row.submitCode}?role=${selectedRole.value}`;
+  window.open(url, "_blank");
+}
 // 반려 모달
 const rejectReasonModalOpen = ref(false);
 const rejectReasonText = ref("");
@@ -649,7 +899,13 @@ onMounted(() => {
     selectedRole.value = mapAuthToRole("AA1");
   }
 
+  // 기존 목록은 항상 조회
   loadList();
+
+  // 👉 담당자라면 담당자 전용 목록도 별도로 조회
+  if (selectedRole.value === 2) {
+    loadAssigneeList();
+  }
 });
 </script>
 
@@ -711,34 +967,30 @@ section {
 
 .filter-form {
   display: flex;
-  flex-wrap: wrap; /* 화면 좁으면 자동 줄바꿈 */
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: stretch;
   width: 100%;
 }
 
-/* 공통 필드 래퍼 */
 .filter-field {
   display: flex;
 }
 
-/* 🔹 검색 인풋은 가능한 한 넓게 차지 */
 .filter-field--search {
-  flex: 1 1 260px; /* 남는 공간 다 먹고, 최소 260px */
-  min-width: 0; /* 줄여질 때 깨지지 않게 */
+  flex: 1 1 260px;
+  min-width: 0;
 }
 
-/* 🔹 셀렉트들은 내용 크기만큼 */
 .filter-field--select {
   flex: 0 0 auto;
 }
 
-/* 🔹 버튼도 내용 크기만큼 */
 .filter-field--button {
   flex: 0 0 auto;
 }
 
-/* 검색 인풋 (pill 스타일) */
+/* 검색 인풋 */
 .search-input {
   width: 100%;
   border-radius: 999px;
@@ -761,7 +1013,7 @@ section {
   min-width: 150px;
 }
 
-/* 셀렉트 인풋 (pill) */
+/* 셀렉트 인풋 */
 .select-input {
   width: 100%;
   border-radius: 999px;
@@ -872,7 +1124,7 @@ section {
   border: 1px solid transparent;
 }
 
-/* 상태별 톤 (무채색 계열) */
+/* 상태별 톤 */
 .status-pill--before {
   background-color: #f3f4f6;
   color: #4b5563;

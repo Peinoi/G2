@@ -552,7 +552,7 @@ function openPlanDetail() {
 
 // 목록으로
 function goBack() {
-  router.push({ name: "resultList" });
+  router.back();
 }
 
 // 수정 화면으로 이동

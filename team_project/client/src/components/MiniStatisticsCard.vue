@@ -30,7 +30,7 @@
 
 <script>
 export default {
-  name: 'MiniStatisticsCard',
+  name: "MiniStatisticsCard",
   props: {
     title: String,
     value: String,
@@ -38,7 +38,7 @@ export default {
     icon: String,
     color: {
       type: String,
-      default: 'primary',
+      default: "primary",
     },
   },
 };

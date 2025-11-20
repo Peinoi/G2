@@ -244,7 +244,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useAuthStore } from "../store/authLogin";
+import { useAuthStore } from "@/store/authLogin";
 import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";

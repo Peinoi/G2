@@ -16,13 +16,11 @@ async function writeFieldHistory(
     afterValue,
   }
 ) {
-  // 둘 다 null/undefined 이면 기록 안 함
   if (beforeValue == null && afterValue == null) return;
 
   const beforeStr = beforeValue == null ? "" : String(beforeValue);
   const afterStr = afterValue == null ? "" : String(afterValue);
 
-  // 값이 같으면 기록 안 함
   if (beforeStr === afterStr) return;
 
   await conn.query(historySql.insertHistory, [
@@ -30,7 +28,7 @@ async function writeFieldHistory(
     field,
     beforeStr,
     afterStr,
-    modifier || null, // FK: users.user_code
+    modifier || null,
     tablePk,
     historyType,
   ]);

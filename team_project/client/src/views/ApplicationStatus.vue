@@ -45,9 +45,9 @@
             >
               <td>{{ idx + 1 }}</td>
 
-              <td>{{ row.child_name }}</td>
-              <td>{{ row.parent_name }}</td>
-              <td>{{ row.manager_name || "-" }}</td>
+              <td>{{ row.child_name || "본인" }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.assi_name || "-" }}</td>
               <td>{{ row.org_name || "-" }}</td>
 
               <!-- 지원 신청일 (조사지 상세 이동) -->
@@ -63,12 +63,12 @@
               </td>
 
               <!-- 지원 계획 상태 -->
-              <td class="as-link" @click="goPlanDetail(row.plan_code)">
+              <td class="as-link" @click="goPlanDetail(row.submit_code)">
                 {{ convertPlanStatus(row.plan_status) }}
               </td>
 
               <!-- 지원 결과 상태 -->
-              <td class="as-link" @click="goResultDetail(row.result_code)">
+              <td class="as-link" @click="goResultDetail(row.submit_code)">
                 {{ convertResultStatus(row.result_status) }}
               </td>
             </tr>
@@ -116,7 +116,7 @@ const convertPriority = (code) => {
 const convertPlanStatus = (code) => {
   switch (code) {
     case "CC1":
-      return "임시저장";
+      return "작성 전";
     case "CC2":
       return "작성 전";
     case "CC3":
@@ -134,7 +134,7 @@ const convertPlanStatus = (code) => {
 const convertResultStatus = (code) => {
   switch (code) {
     case "CD1":
-      return "임시저장";
+      return "작성 전";
     case "CD2":
       return "작성 전";
     case "CD3":
@@ -151,17 +151,28 @@ const convertResultStatus = (code) => {
 // 이동 함수
 const goSurveyDetail = (submitCode) => {
   if (!submitCode) return;
-  router.push(`/survey/detail/${submitCode}`);
+  router.push(`/survey/submission/${submitCode}`);
 };
 
-const goPlanDetail = (planCode) => {
-  if (!planCode) return;
-  router.push(`/plans/detail/${planCode}`);
+const goPlanDetail = (submitCode) => {
+  if (!submitCode) return;
+
+  router.push({
+    name: "planList",
+    query: {
+      submitCode: submitCode,
+    },
+  });
 };
 
-const goResultDetail = (resultCode) => {
-  if (!resultCode) return;
-  router.push(`/results/detail/${resultCode}`);
+const goResultDetail = (submitCode) => {
+  if (!submitCode) return;
+  router.push({
+    name: "resultList",
+    query: {
+      submitCode: submitCode,
+    },
+  });
 };
 
 // 데이터 조회
@@ -170,7 +181,10 @@ const fetchMyApplications = async () => {
 
   try {
     const res = await axios.get("/api/applications/mine", {
-      params: { loginId: auth.userId },
+      params: {
+        loginId: auth.userId, // users.user_id
+        role: auth.role, // "AA1" (일반 사용자)
+      },
     });
 
     console.log("[ApplicationStatus] raw response:", res.data);

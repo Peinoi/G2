@@ -8,6 +8,12 @@ module.exports = {
       Number(userId)
     );
   },
+
+  // 🔹 담당자 상단 테이블용 목록
+  listAssigneePlanCandidates(userId) {
+    return supportPlanMapper.listAssigneePlanCandidates(Number(userId));
+  },
+
   // 지원자 정보 불러오기
   getPlanBasic(submitCode) {
     return supportPlanMapper.getPlanBasic(Number(submitCode));

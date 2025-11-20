@@ -66,6 +66,31 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ✅ 담당자 전용 상단 테이블 목록
+// GET /api/plans/assignee?userId=123
+router.get("/assignee", async (req, res) => {
+  try {
+    const userId = Number(req.query.userId || 0);
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId가 필요합니다.",
+      });
+    }
+
+    const result = await supportPlanService.listAssigneePlanCandidates(userId);
+
+    res.json({ success: true, result: toSafeJson(result) });
+  } catch (e) {
+    console.error("[GET /plans/assignee]", e);
+    res.status(500).json({
+      success: false,
+      message: e.message || "담당자용 지원계획 대상 목록 조회 중 오류",
+    });
+  }
+});
+
 // 지원자 정보 띄우기
 router.get("/:submitCode", async (req, res) => {
   try {
