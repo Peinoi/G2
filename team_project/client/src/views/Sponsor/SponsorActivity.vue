@@ -7,11 +7,12 @@
       @select-program="selectProgramForEdit"
     />
 
-    <ActivityAdd
-      v-show="!showList"
-      @goToList="goToList"
-      :initialProgram="selectedProgram"
-    />
+   <ActivityAdd
+  v-show="!showList"
+  :initialProgram="selectedProgram"
+  :readOnly="isReadOnly"
+  @goToList="goToList"
+/>
   </div>
 </template>
 
@@ -24,10 +25,12 @@ import ActivityAdd from "@/components/Sponsor/Activity/ActivityAdd.vue";
 import { ref } from "vue";
 let programListRef = ref(null);
 let showList = ref(true); // 화면 상태 관리
-let selectedProgram = ref(null); //  선택된 프로그램 정보를 저장할 ref
+const selectedProgram = ref(null);
+const isReadOnly = ref(false);
 // '후원 프로그램 등록' 버튼 클릭 시
 const goToAdd = () => {
   selectedProgram.value = null; // 등록 시에는 초기화
+  isReadOnly.value = false;
   showList.value = false; // ProgramAdd 화면 표시
 };
 
@@ -42,9 +45,10 @@ const goToList = async () => {
 };
 
 // ProgramList에서 항목 클릭 시 호출될 함수
-const selectProgramForEdit = (programData) => {
-  selectedProgram.value = programData; // 선택된 데이터 저장
-  showList.value = false; // ProgramAdd 화면 표시 (수정 모드 진입)
+const selectProgramForEdit = (program) => {
+  selectedProgram.value = program;
+  isReadOnly.value = true;   // 상세 보기 모드 확정!!
+  showList.value = false;
 };
 
 // const menu = useMenuStore();

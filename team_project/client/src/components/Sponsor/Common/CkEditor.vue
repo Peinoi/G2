@@ -1,8 +1,16 @@
 <template>
-  <ckeditor v-model="data" :editor="ClassicEditor" :config="config" />
+  <ckeditor 
+    v-model="data" 
+    :editor="ClassicEditor" 
+    :config="config" 
+    :disabled="props.readOnly" />
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, defineProps } from "vue";
+
+const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+});
 import {
   ClassicEditor,
   Essentials,

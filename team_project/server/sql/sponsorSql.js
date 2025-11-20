@@ -261,7 +261,7 @@ select
     p.goal_amount
 from support_activity s left join
 support_program p on s.program_code = p.program_code
-where s.program_code = ?
+where s.activity_code = ?
 ;
 `;
 
@@ -399,6 +399,8 @@ WHERE sp.program_code = ?
 ORDER BY de.used_at ASC;
 
 `;
+
+
 
 module.exports = {
   sponsor_all,

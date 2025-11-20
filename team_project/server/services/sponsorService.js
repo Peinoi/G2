@@ -182,6 +182,9 @@ async function summaryStatementListSelect(programCode) {
 
   return sponsorFindDB;
 }
+async function activitySelectOne(activityCode) {
+  return await sponsorMapper.activity_SelectSQL(activityCode);
+}
 
 module.exports = {
   sponsorUsersList,
@@ -199,5 +202,5 @@ module.exports = {
   activityList,
   current_amountUpdate,
   summaryStatementList,
-  summaryStatementListSelect,
+  summaryStatementListSelect,activitySelectOne
 };

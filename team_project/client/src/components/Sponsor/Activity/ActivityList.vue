@@ -57,7 +57,8 @@ import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
 import { ref, onBeforeMount, computed } from "vue";
-const emit = defineEmits(["go-to-add", "selectProgram"]);
+
+const emit = defineEmits(["go-to-add", "select-program"]);
 
 let sponsorList = ref([]); // 전체 조회 조건 조회
 let programList = ref([]); // 검색창 프로그램 명 리스트 불러오기
@@ -125,34 +126,16 @@ const finalList = computed(() => {
   return sponsorList.value.filter((item) => item.program_name.includes(kw));
 });
 // client/comments/Sponsor/ProgramList.vue
+const selectProgram = async (item) => {
+  const res = await axios.get(`/api/sponsor/activity/${item.activity_code}`);
 
-const selectProgram = async (program) => {
-  console.log("선택된 프로그램:", program);
+  emit("select-program", {
+  ...res.data.activity[0],
+  history: res.data.history
+});
 
-  let result;
-  try {
-    result = await axios.get(`/api/sponsor/${program.program_code}`);
-  } catch (err) {
-    console.error("단건 조회 API 호출 실패:", err);
-    alert("프로그램 상세 정보를 불러오는 데 실패했습니다.");
-    return;
-  }
-
-  // 1. 응답 데이터 처리
-  // ProgramList.vue에서는 sponsorRows[0]와 attachments를 분리하여 받아야 합니다.
-  const programDetail = result.data.serviceSponsor.sponsorRows[0];
-  const attachments = result.data.serviceSponsor.attachments; // ✨ 첨부파일 데이터 추출
-
-  // 2. 상위 컴포넌트로 데이터와 함께 이벤트 발생
-  if (programDetail) {
-    // 프로그램 상세 정보에 첨부파일 목록을 합쳐서 전달합니다.
-    const fullDetail = {
-      ...programDetail,
-      attachments: attachments, // ✨ 첨부파일 목록을 추가
-    };
-    emit("select-program", fullDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
-  }
 };
+
 </script>
 
 <!-- ============================================================= -->

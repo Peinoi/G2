@@ -52,7 +52,7 @@ const {
   activityList,
   current_amountUpdate,
   summaryStatementList,
-  summaryStatementListSelect,
+  summaryStatementListSelect,activitySelectOne
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -164,6 +164,25 @@ router.get("/summaryStatementList/:no", async (req, res) => {
     });
   }
 });
+
+router.get("/activity/:activityCode", async (req, res) => {
+  try {
+    const code = req.params.activityCode;
+
+    const { activity, history } = await activitySelectOne(code);
+
+    res.json({
+      success: true,
+      activity,
+      history
+    });
+
+  } catch (e) {
+    console.error("🔥 활동보고서 단건 조회 오류:", e);
+    res.status(500).json({ message: "활동보고서 조회 실패" });
+  }
+});
+
 
 
 router.post("/", upload.array("attachments"), async (req, res) => {
