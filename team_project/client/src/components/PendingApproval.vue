@@ -1,5 +1,7 @@
 <template>
   <div class="apv-page">
+    <h3 class="fw-bold text-start text-dark mb-4">담당자 배정 목록</h3>
+
     <div class="apv-toolbar">
       <div class="apv-filters">
         <select v-model="stateInput" class="apv-select">
@@ -338,6 +340,8 @@ export default {
 /* [Fix] 부모 컴포넌트의 넓은 영역을 채우기 위한 스타일 */
 /* ---------------------------------------------------- */
 .apv-page {
+  font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕',
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
@@ -381,13 +385,26 @@ export default {
   transition: all 0.2s;
 }
 .apv-btn-outline {
-  background: none;
-  border-color: #dee2e6;
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  padding: 8px 15px;
+  height: 38px;
+  line-height: 20px;
   color: #495057;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.apv-btn-outline:hover {
+  background: #f0f0f0;
+  border-color: #c0c0c0;
+  color: #333;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .apv-table-wrap {
   overflow-x: auto;
+  min-height: 560px;
 }
 
 .apv-table {

@@ -254,8 +254,8 @@ export const pendingMenu = [
   },
   {
     label: '담당자 배정 목록',
-    path: '/pendinguserlist',
-    collapseRef: 'PendingUserList',
+    path: '/pendingapproval',
+    collapseRef: 'PendingApproval',
     role: ['AA2', 'AA3', 'AA4'],
   },
 ];

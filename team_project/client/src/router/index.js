@@ -511,7 +511,7 @@ router.beforeEach((to, from, next) => {
   const historyPages = ['HistoryList'];
 
   // 대기자 목록 그룹
-  const pendingPages = ['PendingList', 'PendingUserList'];
+  const pendingPages = ['PendingList', 'PendingApproval'];
 
   // 신청현황 그룹
   const appStatusPages = ['ApplicationStatus'];
