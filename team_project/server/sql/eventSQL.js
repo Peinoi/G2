@@ -66,6 +66,8 @@ const selectEventList = `
     AND (? IS NULL OR e.event_end_date <= ?)
     -- 이벤트명
     AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
+    -- 등록 상태가 승인인 이벤트만 조회
+    AND e.register_status = 'BA2'
   GROUP BY e.event_code
   ORDER BY e.event_code DESC
 `;
@@ -87,7 +89,9 @@ const selectEventApplyResult = `
     a.file_path,
     org.org_name AS org_name,
     u.name AS main_manager_name,
-    e.register_status
+    e.register_status,
+    er.event_result_code,
+    er.result_status
   FROM event e
   LEFT JOIN sub_event se ON e.event_code = se.event_code
   LEFT JOIN (
@@ -99,6 +103,7 @@ const selectEventApplyResult = `
   ) a ON e.event_code = a.linked_record_pk
   LEFT JOIN organization org ON e.org_code = org.org_code
   LEFT JOIN users u ON e.user_code = u.user_code
+  LEFT JOIN event_result er ON er.event_code = e.event_code
   WHERE 1=1
     -- 모집상태
     AND (? IS NULL OR e.recruit_status = ?)
@@ -111,7 +116,7 @@ const selectEventApplyResult = `
     -- 이벤트명
     AND (? IS NULL OR e.event_name LIKE CONCAT('%', ?, '%'))
     -- 이벤트 등록자명
-    AND e.user_code = ?
+    AND ( ? = 'AA3' OR e.user_code = ?)
   GROUP BY e.event_code
   ORDER BY e.event_code DESC
 `;
@@ -161,7 +166,7 @@ INSERT INTO manager (
 ) VALUES (?, ?, ?, ?)
 `;
 
-// 매니저 조회
+// 해당 이벤트 매니저 조회
 const selectManager = `
 SELECT
     u.user_id,
@@ -178,6 +183,15 @@ WHERE m.manager_category_code IS NOT NULL
   AND m.manager_type IN ('DA1','DA2')
   AND m.manager_category = 'DB2'
   AND m.manager_category_code = ?
+`;
+
+// 매니저 전체 조회
+const selectManagerAll = `
+  SELECT 
+    user_code
+   ,name
+  FROM users
+  WHERE role = 'AA2'   
 `;
 
 // 이벤트 단건조회
@@ -304,18 +318,6 @@ WHERE user_code = ?
   AND event_code = ?
   AND (sub_event_code = ? OR (sub_event_code IS NULL AND ? IS NULL))
 `;
-
-// 이벤트 수정
-const updateEvent = `
-UPDATE event
-SET ?
-WHERE event_code = ?
-`;
-
-// 이벤트 삭제
-const deleteEvent = `
-DELETE FROM event
-WHERE event_code = ?`;
 
 // 세부 이벤트 조회
 const selectSubEventList = `
@@ -541,11 +543,24 @@ const getRejectReasonByResult = `
   LIMIT 1
 `;
 
+// 이벤트 상태 업데이트
 const updateEventResultStatus = `
     UPDATE event_result
     SET result_status = ?
     WHERE event_result_code = ?
   `;
+
+// 이벤트 수정
+const updateEvent = `
+UPDATE event
+SET ?
+WHERE event_code = ?
+`;
+
+// 이벤트 삭제
+const deleteEvent = `
+DELETE FROM event
+WHERE event_code = ?`;
 
 module.exports = {
   selectEventMainpage,
@@ -582,4 +597,5 @@ module.exports = {
   getRejectReasonByResult,
   updateEventResultStatus,
   selectResultAttachList,
+  selectManagerAll,
 };

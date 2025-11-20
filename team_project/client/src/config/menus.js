@@ -70,16 +70,10 @@ export const sponsorMenu = [
 
 export const eventMenu = [
   {
-    label: "이벤트 메인페이지",
-    path: "/event",
-    collapseRef: "EventMain",
-    role: ["AA1", "AA2"],
-  },
-  {
     label: "이벤트 목록",
     path: "/event/list",
     collapseRef: "EventList",
-    role: ["AA1", "AA2"],
+    role: ["AA1", "AA2", "AA3"],
   },
   {
     label: "이벤트 신청 내역",
@@ -91,7 +85,7 @@ export const eventMenu = [
     label: "이벤트 등록",
     path: "/event/add",
     collapseRef: "EventAdd",
-    role: ["AA2", "AA3"],
+    role: ["AA2"],
   },
   {
     label: "결과보고서 등록",
@@ -181,10 +175,10 @@ export const appReqMenu = [
     role: ["AA3", "AA4"],
   },
   {
-    label: '권한 이전',
-    path: '/authorityTransfer',
-    collapseRef: 'AuthorityTransfer',
-    role: ['AA3'],
+    label: "권한 이전",
+    path: "/authorityTransfer",
+    collapseRef: "AuthorityTransfer",
+    role: ["AA3"],
   },
 ];
 
@@ -238,25 +232,25 @@ export const infoMenu = [
 
 export const historyMenu = [
   {
-    label: '히스토리',
-    path: '/historyList',
-    collapseRef: 'HistoryList',
-    role: ['AA3', 'AA4'],
+    label: "히스토리",
+    path: "/historyList",
+    collapseRef: "HistoryList",
+    role: ["AA3", "AA4"],
   },
 ];
 
 export const pendingMenu = [
   {
-    label: '대기자 목록',
-    path: '/pendinglist',
-    collapseRef: 'PendingList',
-    role: ['AA2', 'AA3', 'AA4'],
+    label: "대기자 목록",
+    path: "/pendinglist",
+    collapseRef: "PendingList",
+    role: ["AA2", "AA3", "AA4"],
   },
   {
-    label: '담당자 배정 목록',
-    path: '/pendinguserlist',
-    collapseRef: 'PendingUserList',
-    role: ['AA2', 'AA3', 'AA4'],
+    label: "담당자 배정 목록",
+    path: "/pendinguserlist",
+    collapseRef: "PendingUserList",
+    role: ["AA2", "AA3", "AA4"],
   },
 ];
 

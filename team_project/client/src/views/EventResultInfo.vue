@@ -34,16 +34,27 @@
         </div>
       </div>
 
+      <!-- 첨부파일 -->
       <div v-if="result.attachments?.length" class="block-card">
         <div class="field-block">
           <div class="field-label">첨부파일</div>
           <ul class="file-list">
             <li v-for="file in result.attachments" :key="file.server_filename">
-              <a :href="file.file_path" :download="file.original_filename">
+              <span class="file-name" @click="previewFile(file)">
                 {{ file.original_filename }}
-              </a>
+              </span>
             </li>
           </ul>
+        </div>
+
+        <!-- 이미지 미리보기 모달 -->
+        <div v-if="previewImage" class="preview-modal" @click="closePreview">
+          <img :src="previewImage" class="preview-img" />
+        </div>
+
+        <!-- 하단 이전 버튼 -->
+        <div class="bottom-buttons">
+          <button class="back-btn" @click="goBack">이전으로</button>
         </div>
       </div>
     </div>
@@ -74,6 +85,36 @@ const getLoginUserCode = () => {
   }
 };
 
+// 미리보기 이미지
+const previewImage = ref("");
+
+// 파일 미리보기
+const previewFile = (file) => {
+  const ext = file.original_filename.split(".").pop().toLowerCase();
+
+  // 이미지면 모달로 보기
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    previewImage.value = file.file_path;
+    return;
+  }
+
+  // PDF면 새 창 미리보기
+  if (ext === "pdf") {
+    window.open(file.file_path, "_blank");
+    return;
+  }
+
+  // 그 외 파일은 다운로드
+  window.location.href = file.file_path;
+};
+
+const closePreview = () => {
+  previewImage.value = "";
+};
+
+// 대표 이미지 설정
+const mainImage = ref("");
+
 // API 호출
 const fetchResult = async () => {
   try {
@@ -87,7 +128,14 @@ const fetchResult = async () => {
       result.value = res.data.data;
     } else {
       alert("결과보고서 조회 실패");
+      return;
     }
+
+    // 대표 이미지
+    const img = result.value.attachments.find((x) =>
+      /\.(jpg|jpeg|png|gif)$/i.test(x.original_filename)
+    );
+    mainImage.value = img ? img.file_path : "";
   } catch (err) {
     console.error("fetchResult error:", err);
     alert("서버 오류 발생");
@@ -109,6 +157,7 @@ const statusClass = (status) => {
 
 const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 
+// 이전 버튼
 const goBack = () => router.back();
 
 onMounted(fetchResult);

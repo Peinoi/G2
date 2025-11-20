@@ -132,6 +132,7 @@ const resetFilters = () => {
     event_start_date: "",
     event_end_date: "",
     event_name: "",
+    register_status: "",
   };
   fetchEvents();
 };

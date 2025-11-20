@@ -6,15 +6,6 @@
         ← 목록으로
       </MaterialButton>
 
-      <!-- 결과보고서 등록 버튼 (매니저일 때만 표시) -->
-      <MaterialButton
-        v-if="isEventManager"
-        color="primary"
-        @click="goResultInsert"
-      >
-        결과보고서 등록
-      </MaterialButton>
-
       <div class="flex items-center gap-2">
         <!-- 일반 사용자 신청 버튼 -->
         <MaterialButton v-if="canApply" @click="applySimple"
@@ -140,12 +131,6 @@ const route = useRoute();
 const router = useRouter();
 const calendarRef = ref(null);
 
-// 작성자(매니저) 여부 체크
-const isEventManager = computed(() => {
-  const loginUser = getLoginUserCode();
-  return loginUser && loginUser === event.value.user_code;
-});
-
 const eventCode = Number(route.params.eventCode || 0);
 const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
 
@@ -170,14 +155,6 @@ const canReEdit = computed(
 );
 
 const isAdmin = computed(() => role.value === 3);
-
-// 결과보고서 등록 화면 이동
-const goResultInsert = () => {
-  router.push({
-    name: "EventResultAdd",
-    params: { eventCode }, // 이벤트 코드 전달
-  });
-};
 
 // 상태 Pill 클래스
 const statusClass = (status) => {

@@ -11,7 +11,6 @@ import SignUp from "../views/SignUp.vue";
 import Test from "../views/Test.vue";
 import Sponsor from "../views/Sponsor/Sponsor.vue";
 import SponsorProgramList from "../views/Sponsor/ProgramList.vue";
-import EventMain from "../views/EventMain.vue";
 import EventList from "../views/EventList.vue";
 import EventForm from "../views/EventForm.vue";
 import EventInfo from "../views/EventInfo.vue";
@@ -377,12 +376,6 @@ const router = createRouter({
       name: "resultDetail",
       component: () => import("../views/ResultDetail.vue"),
     },
-    // 이벤트 메인페이지
-    {
-      path: "/event",
-      name: "EventMain",
-      component: EventMain,
-    },
     // 이벤트 목록
     {
       path: "/event/list",
@@ -409,7 +402,7 @@ const router = createRouter({
     },
     // 이벤트 결과보고서 등록
     {
-      path: "/event/result-add/:eventCode",
+      path: "/event/result-add",
       name: "EventResultAdd",
       component: () => import("../views/EventResultAdd.vue"),
     },
@@ -421,7 +414,7 @@ const router = createRouter({
     },
     // 이벤트 계획 상세 보기 (역할별)
     {
-      path: "/event/apply-info",
+      path: "/event/apply-info/:eventCode",
       name: "EventApplyInfo",
       component: () => import("../views/EventApplyInfo.vue"),
     },
@@ -481,7 +474,6 @@ router.beforeEach((to, from, next) => {
 
   // event 그룹
   const eventPages = [
-    "EventMain",
     "EventList",
     "EventApplyList",
     "EventAdd",

@@ -52,6 +52,7 @@ async function selectEventList(filters) {
       filters.event_end_date,
       filters.event_name,
       filters.event_name,
+      filters.register_status,
     ];
 
     const rows = await conn.query(eventSQL.selectEventList, params);
@@ -93,6 +94,7 @@ async function selectEventApplyResult(filters) {
       filters.event_end_date,
       filters.event_name,
       filters.event_name,
+      filters.role,
       filters.user_code,
     ];
 
@@ -101,8 +103,12 @@ async function selectEventApplyResult(filters) {
 
     for (const event of rows) {
       event.register_status_name = await commonCodeService.getCodeName(
-        "DF",
+        "BA",
         event.register_status
+      );
+      event.result_status_name = await commonCodeService.getCodeName(
+        "BA",
+        event.result_status
       );
     }
 
@@ -324,6 +330,23 @@ async function addEventFull(data) {
   } catch (err) {
     if (conn) await conn.rollback();
     console.error("[eventMapper.js || 이벤트 전체 등록 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// 전체 매니저 조회
+async function getAllManagers() {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    console.error(eventSQL.selectManagerAll);
+    const rows = await conn.query(eventSQL.selectManagerAll);
+    console.log("[eventMapper.js || 전체 매니저 조회 성공]", rows);
+    return rows;
+  } catch (err) {
+    console.error("[eventMapper.js || 전체 매니저 조회 실패]", err.message);
     throw err;
   } finally {
     if (conn) conn.release();
@@ -774,6 +797,10 @@ async function rejectEventPlan(eventCode, reason) {
       throw new Error("유효한 eventCode가 아닙니다.");
     }
 
+    // 1) event 상태 BA3(반려)로 변경
+    await conn.query(eventSQL.updateEventStatus, ["BA3", eventId]);
+
+    // 2) request_approval 상태 BA3(반려)로 변경
     const result = await conn.query(eventSQL.updateApprovalRejectForPlan, [
       reason || "",
       eventId,
@@ -1081,4 +1108,5 @@ module.exports = {
   rejectEventResult,
   getResultRejectionReason,
   resubmitResult,
+  getAllManagers,
 };

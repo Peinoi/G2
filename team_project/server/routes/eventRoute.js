@@ -74,6 +74,7 @@ router.get("/list", async (req, res) => {
       event_start_date: req.query.event_start_date || null,
       event_end_date: req.query.event_end_date || null,
       event_name: req.query.event_name || null,
+      register_status: req.query.register_status || null,
     };
 
     const events = await eventService.getEventList(filters);
@@ -105,6 +106,7 @@ router.get("/applyResult", async (req, res) => {
       event_start_date: req.query.event_start_date || null,
       event_end_date: req.query.event_end_date || null,
       event_name: req.query.event_name || null,
+      role: req.query.role || null,
       user_code: req.query.user_code || null,
     };
 
@@ -382,6 +384,26 @@ router.delete("/sub/:sub_event_code", async (req, res) => {
   }
 });
 
+// ==========================
+// 전체 매니저 조회
+// GET /event/manager
+// ==========================
+router.get("/manager", async (req, res) => {
+  try {
+    const managers = await eventService.getManagerAll();
+    console.log("API returned managers:", managers);
+    res.status(200).json({
+      status: "success",
+      data: managers,
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || 전체 매니저 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "전체 매니저 조회 중 에러 발생",
+    });
+  }
+});
 // ==========================
 // 이벤트 단건 조회
 // GET /event/:event_code

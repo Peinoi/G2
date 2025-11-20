@@ -66,6 +66,17 @@ async function createEventFull(data) {
   }
 }
 
+// 전체 매니저 조회
+async function getManagerAll() {
+  try {
+    const managers = await eventMapper.getAllManagers();
+    return managers;
+  } catch (err) {
+    console.error("[eventService.js || 전체 매니저 조회 실패]", err.message);
+    throw err;
+  }
+}
+
 // 이벤트 + 세부 이벤트 등록
 async function createEvent(data) {
   try {
@@ -300,4 +311,5 @@ module.exports = {
   rejectEventResult,
   getResultRejectionReason,
   resubmitResult,
+  getManagerAll,
 };

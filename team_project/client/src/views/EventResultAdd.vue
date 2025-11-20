@@ -7,9 +7,19 @@
         <h3>기본 정보</h3>
         <div class="grid-2">
           <div>
-            <label>연결 이벤트 코드</label>
-            <input type="text" v-model="form.event_code" readonly />
+            <label>연결 이벤트 선택</label>
+            <select v-model="form.event_code" required>
+              <option value="">이벤트 선택</option>
+              <option
+                v-for="ev in myEvents"
+                :value="ev.event_code"
+                :key="ev.event_code"
+              >
+                {{ ev.event_name }} ({{ ev.event_code }})
+              </option>
+            </select>
           </div>
+
           <div>
             <label>작성일</label>
             <input type="date" v-model="formattedReportDate" readonly />
@@ -145,26 +155,37 @@ import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
 import dateFormat from "@/utils/dateFormat";
 
+// 라우터
 const route = useRoute();
 const router = useRouter();
 
+// 로그인 사용자 정보
 const user = JSON.parse(localStorage.getItem("user") || "{}");
 const user_code = user.user_code;
-const userName = user.name || ""; // 필요에 따라
-
+const userName = user.name || "";
 const isAdmin = user.position === "ADMIN" || user.role === "admin"; // 권한 체크 샘플
 
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
+// 상태
 const isUpdated = ref(false);
 const showRejectPrompt = ref(false);
 const rejectReason = ref("");
 const rejectionInfo = ref(null);
 
+// 이벤트 목록
+const myEvents = ref([]);
+
+// DB 첨부파일 관리
+const existingAttachments = ref([]); // DB에 저장된 첨부파일 목록
+const newFiles = ref([]); // 업로드할 새 파일들
+const attachmentDeleteList = ref([]);
+
+// Form 데이터
 const form = ref({
   event_result_code: "",
-  event_code: route.params.eventCode, // event 연결 코드
+  event_code: "",
   result_status: "BA1",
   result_subject: "",
   result_content: "",
@@ -172,13 +193,20 @@ const form = ref({
   user_code: user_code,
 });
 
-const existingAttachments = ref([]); // DB에 저장된 첨부파일 목록
-const newFiles = ref([]); // 업로드할 새 파일들
-
+// 작성일 포맷
 const formattedReportDate = computed(() =>
   dateFormat(form.value.report_register_date, "yyyy-MM-dd")
 );
 
+// 상태 라벨
+const statusLabel = (code) => {
+  const map = { BA1: "요청", BA2: "승인", BA3: "반려" };
+  return map[code] || code;
+};
+
+// --------------------
+// 파일 핸들링
+// --------------------
 const handleFileChange = (e) => {
   const files = Array.from(e.target.files);
   newFiles.value.push(...files);
@@ -190,15 +218,24 @@ const removeExistingAttachment = (file, idx) => {
   existingAttachments.value.splice(idx, 1);
 };
 
-const attachmentDeleteList = ref([]);
+// --------------------
+// 이벤트 목록 로드
+// --------------------
+const loadMyEvents = async () => {
+  try {
+    const res = await axios.get("/api/event/applyResult", {
+      params: { user_code },
+    });
 
-// 상태 라벨
-const statusLabel = (code) => {
-  const map = { BA1: "요청", BA2: "승인", BA3: "반려" };
-  return map[code] || code;
+    myEvents.value = res.data.data || [];
+  } catch (err) {
+    console.error("내 이벤트 목록 조회 실패", err);
+  }
 };
 
-// 조회 (수정 모드이면)
+// --------------------
+// 결과보고서 조회 (수정 모드)
+// --------------------
 const getResult = async (resultCode) => {
   try {
     const res = await axios.get(`/api/event/result/${resultCode}`);
@@ -223,23 +260,29 @@ const getResult = async (resultCode) => {
   }
 };
 
-onBeforeMount(() => {
+// --------------------
+// 페이지 로드 시 실행
+// --------------------
+onBeforeMount(async () => {
+  await loadMyEvents();
+
   const resultNo = route.query.resultNo;
   if (resultNo) {
-    getResult(resultNo);
+    await getResult(resultNo);
   } else {
     form.value.report_register_date = new Date();
   }
 });
 
-// 제출 (등록/수정)
+// --------------------
+// 등록/수정 제출
+// --------------------
 const submitForm = async () => {
   try {
     const formData = new FormData();
     const payload = {
       ...form.value,
       report_register_date: formattedReportDate.value,
-      // 서버에서 attachments 처리하므로 attachment metadata는 formData로 보냄
       deletedAttachments: attachmentDeleteList.value.map(
         (a) => a.attachment_code || a.id || a.server_filename
       ),
@@ -269,7 +312,9 @@ const submitForm = async () => {
   }
 };
 
+// --------------------
 // 승인
+// --------------------
 const approve = async () => {
   try {
     const code = form.value.event_result_code;
@@ -283,7 +328,9 @@ const approve = async () => {
   }
 };
 
+// --------------------
 // 반려
+// --------------------
 const submitReject = async () => {
   try {
     const code = form.value.event_result_code;
