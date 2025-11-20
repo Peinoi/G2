@@ -49,6 +49,10 @@ const {
   payments,
   mygivingList,
   activityAdd,
+  activityList,
+  current_amountUpdate,
+  summaryStatementList,
+  summaryStatementListSelect,
 } = require("../services/sponsorService.js"); // sponsorUsers 추가
 
 // [수정] 전체 목록 조회 및 조건 검색 처리 (클라이언트의 search()와 연동)
@@ -86,6 +90,74 @@ router.get("/mygiving", async (req, res) => {
     });
   } catch (err) {
     console.error("[ mygiving.js || 후원 내역 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "에러 발생",
+    });
+  }
+});
+// 전체 활동 내역 조회
+router.get("/activity", async (req, res) => {
+  try {
+    //조회 서비스 호출
+    const serviceSponsor = await activityList();
+    console.log(serviceSponsor);
+    console.log(`[ mygiving.js || 전체 활동 내역 조회  성공]`);
+    res.status(200).json({
+      status: "success",
+      serviceSponsor,
+    });
+  } catch (err) {
+    console.error("[ mygiving.js || 전체 활동 내역 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "에러 발생",
+    });
+  }
+});
+// 총괄표 전체 활동 내역 조회
+router.get("/summaryStatementList", async (req, res) => {
+  try {
+    //조회 서비스 호출
+    const serviceSponsor = await summaryStatementList();
+    console.log(serviceSponsor);
+    console.log(
+      `[ summaryStatementList.js ||총괄표 전체 활동 내역 조회  성공]`
+    );
+    res.status(200).json({
+      status: "success",
+      serviceSponsor,
+    });
+  } catch (err) {
+    console.error(
+      "[ summaryStatementList.js ||총괄표 전체 활동 내역 조회 실패]",
+      err.message
+    );
+    res.status(500).json({
+      status: "error",
+      message: "에러 발생",
+    });
+  }
+});
+// 총괄표 단건 활동 내역 조회
+router.get("/summaryStatementList/:no", async (req, res) => {
+  try {
+    //조회 서비스 호출
+    const activity_code = req.params.no;
+    const serviceSponsor = await summaryStatementListSelect(activity_code);
+    console.log(serviceSponsor);
+    console.log(
+      `[ summaryStatementListSelect.js ||총괄표 단건 활동 내역 조회  성공]`
+    );
+    res.status(200).json({
+      status: "success",
+      serviceSponsor,
+    });
+  } catch (err) {
+    console.error(
+      "[ summaryStatementListSelect.js ||총괄표 단건 활동 내역 조회 실패]",
+      err.message
+    );
     res.status(500).json({
       status: "error",
       message: "에러 발생",
@@ -347,7 +419,8 @@ router.post("/:programCode/:user_id/payments", async (req, res) => {
     const data = req.body;
     console.log("결제 데이터", data);
     const result = await payments(data);
-
+    //결제 금액 업데이트
+    await current_amountUpdate(data.transaction_amount, data.program_code);
     res.json({ success: true, result });
   } catch (e) {
     console.error("[POST /:programCode/request-approval]", e);

@@ -188,6 +188,8 @@ const getLoginUserCode = () => {
 // 이벤트 조회
 const fetchEvent = async () => {
   try {
+    console.log("eventCode >>>", eventCode);
+
     const userCode = getLoginUserCode();
     const res = await axios.get(`/api/event/${eventCode}`, {
       params: { user_code: userCode },
@@ -304,7 +306,7 @@ const handleReject = async () => {
 };
 
 // 화면 이동
-const goBack = () => router.push({ name: "EventList" });
+const goBack = () => router.push({ name: "EventPlanApprovals" });
 const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션

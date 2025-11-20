@@ -293,7 +293,7 @@ function changePage(nextPage) {
 // 각 행 클릭 시 이벤트 결과 상세로 이동
 function goDetail(item) {
   router.push({
-    name: "event-result-detail",
+    name: "EventResultInfo",
     params: {
       resultCode: item.result_code, // SQL alias 와 맞춤
     },

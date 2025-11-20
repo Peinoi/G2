@@ -74,7 +74,7 @@ const sponsor_program = `
     create_date,
     approval_status
 )    
-values (?,?,?,?,?,?,?,?,?,?,?,?)
+values (?,?,?,?,?,?,?,?,0,?,?,?)
  `;
 
 //수정
@@ -196,7 +196,7 @@ const updateSupportResultStatus = `
     WHERE program_code = ?
   `;
 
-// 후원 결제
+// 후원 결제 삽입
 const payments = `
     insert into support_transaction (
     transaction_type,
@@ -211,6 +211,7 @@ const payments = `
     );
   
   `;
+//후원 결제 조회
 const mygiving = `
   SELECT
     p.program_name,
@@ -222,13 +223,49 @@ const mygiving = `
     t.transaction_amount,
     t.program_code,
     p.writer,
-    t.deposit_date
+    t.deposit_date,
+    t.userID
 FROM
     support_transaction t
 INNER JOIN
     support_program p ON t.program_code = p.program_code;
     `;
 
+//활동 보고서 조회
+const activity_select = `
+select
+	p.program_name,
+	s.activity_code,
+    s.writer,
+    s.title,
+    s.content,
+    s.create_date,
+    s.used_amount, -- 전체 사용 금액 sum()
+    s.program_code,
+    p.goal_amount
+from support_activity s left join
+support_program p on s.program_code = p.program_code
+;
+`;
+//활동 보고서 단건 조회
+const activity_select_one = `
+select
+	p.program_name,
+	s.activity_code,
+    s.writer,
+    s.title,
+    s.content,
+    s.create_date,
+    s.used_amount, -- 전체 사용 금액 sum()
+    s.program_code,
+    p.goal_amount
+from support_activity s left join
+support_program p on s.program_code = p.program_code
+where s.program_code = ?
+;
+`;
+
+//활동 보고서 삽입
 const activity = `
 insert into 
 	support_activity(
@@ -240,6 +277,121 @@ insert into
         program_code
     )
     values(?,?,?,CURDATE(),?,?);
+`;
+
+//활동 보고서 추가 사항 삽입
+const activity_history = `
+   insert into  donation_expenditure(
+    activity_code,
+    usage_item,
+    recipient,
+    amount,
+    used_at)
+    values(?,?,?,?,?)
+;
+`;
+//활동 보고서 내역 합계 금액
+const activity_history_sum = `
+SELECT
+    sum(d.amount)
+FROM
+    support_activity s
+right JOIN
+    donation_expenditure d ON s.activity_code = d.activity_code
+where s.activity_code = ? ;
+`;
+
+//활동 보고서 내역 조회
+const activity_history_select = `
+SELECT
+    d.id,
+    d.activity_code,
+    d.usage_item,
+    d.recipient,
+    d.amount,
+    d.used_at
+FROM
+    support_activity s
+right JOIN
+    donation_expenditure d ON s.activity_code = d.activity_code
+where s.activity_code = ?;
+`;
+
+// 현재금액 조회
+const current_amount = `
+select program_code,
+current_amount from support_program where program_code = ?;
+`;
+//금액 변경
+const update_current_amount = `
+update 
+support_program 
+set 
+current_amount = ? where program_code = ?;
+`;
+
+// 총괄 내역서
+const summaryStatement = `
+SELECT 
+    o.org_name,
+    sp.program_name ,
+    sp.start_date,
+    sp.end_date,
+    sp.goal_amount ,
+    sp.current_amount ,
+    IFNULL(SUM(de.amount), 0) as useAmount ,
+    (sp.current_amount - IFNULL(SUM(de.amount), 0))  as remainder
+	,sa.activity_code
+FROM support_program sp
+LEFT JOIN users u
+    ON sp.writer = u.user_id     
+LEFT JOIN organization o
+    ON u.user_code = o.user_code
+LEFT JOIN support_activity sa
+    ON sp.program_code = sa.program_code
+LEFT JOIN donation_expenditure de
+    ON sa.activity_code = de.activity_code
+GROUP BY 
+    o.org_name,
+    sp.program_name,
+    sp.start_date,
+    sp.end_date,
+    sp.goal_amount,
+    sp.current_amount
+    ,sa.activity_code
+    ;
+`;
+
+// 총괄 내역서 단건
+const summaryStatementSelect = `
+SELECT 
+    o.org_name,
+    sp.program_name ,
+    sp.start_date,
+    sp.end_date,
+    sp.goal_amount ,
+    sp.current_amount ,
+    IFNULL(SUM(de.amount), 0) as useAmount ,
+    (sp.current_amount - IFNULL(SUM(de.amount), 0))  as remainder
+	,sa.activity_code
+FROM support_program sp
+LEFT JOIN users u
+    ON sp.writer = u.user_id     
+LEFT JOIN organization o
+    ON u.user_code = o.user_code
+LEFT JOIN support_activity sa
+    ON sp.program_code = sa.program_code
+LEFT JOIN donation_expenditure de
+    ON sa.activity_code = de.activity_code
+WHERE  sp.program_code = ?
+GROUP BY 
+    o.org_name,
+    sp.program_name,
+    sp.start_date,
+    sp.end_date,
+    sp.goal_amount,
+    sp.current_amount,sa.activity_code
+    ;
 `;
 
 module.exports = {
@@ -259,4 +411,13 @@ module.exports = {
   payments,
   mygiving,
   activity,
+  activity_select,
+  activity_history,
+  activity_history_sum,
+  activity_history_select,
+  current_amount,
+  update_current_amount,
+  activity_select_one,
+  summaryStatement,
+  summaryStatementSelect,
 };

@@ -10,21 +10,43 @@
           data-bs-interval="2000"
         >
           <div class="carousel-inner">
-            <div class="carousel-item active">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
+            <!-- ✅ 이벤트 + 후원 합친 배너 사용 -->
+            <template v-if="bannerSlides.length">
+              <div
+                v-for="(item, idx) in bannerSlides"
+                :key="item._bannerKey || item.event_code || item.program_code"
+                class="carousel-item"
+                :class="{ active: idx === 0 }"
+                @click="handleBannerClick(item)"
+                style="cursor: pointer"
+              >
+                <div class="banner-ratio">
+                  <img
+                    :src="item.file_path"
+                    :alt="item.title || item.event_name || item.program_name"
+                  />
+                </div>
               </div>
-            </div>
-            <div class="carousel-item">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/2.png" alt="후원 배너" />
+            </template>
+
+            <!-- ❌ 배너가 하나도 없을 때: 기본 이미지 -->
+            <template v-else>
+              <div class="carousel-item active">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/1.png" alt="이벤트 배너" />
+                </div>
               </div>
-            </div>
-            <div class="carousel-item">
-              <div class="banner-ratio">
-                <img src="@/assets/img/banner/3.png" alt="공지 배너" />
+              <div class="carousel-item">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/2.png" alt="후원 배너" />
+                </div>
               </div>
-            </div>
+              <div class="carousel-item">
+                <div class="banner-ratio">
+                  <img src="@/assets/img/banner/3.png" alt="공지 배너" />
+                </div>
+              </div>
+            </template>
           </div>
 
           <button
@@ -142,6 +164,10 @@ export default {
       loadingApply: false,
       loadingEvent: false,
       loadingSponsor: false,
+      // 배너용 이벤트
+      bannerEvents: [],
+      // 배너용 후원
+      bannerSponsors: [],
     };
   },
   created() {
@@ -177,6 +203,17 @@ export default {
       if (this.userRole === "AA1") return "작성하기";
       if (["AA2", "AA3", "AA4"].includes(this.userRole)) return "목록 바로가기";
       return "";
+    },
+    bannerSlides() {
+      const merged = [...this.bannerEvents, ...this.bannerSponsors];
+      if (!merged.length) return [];
+
+      // 새로고침마다 랜덤 섞고, 첫 번째만 active 표시
+      const shuffled = [...merged].sort(() => Math.random() - 0.5);
+      return shuffled.map((item, idx) => ({
+        ...item,
+        _active: idx === 0,
+      }));
     },
   },
   methods: {
@@ -309,6 +346,10 @@ export default {
       try {
         const res = await axios.get("/api/event/list");
         const raw = res.data?.data ?? [];
+
+        // 🔹 캐러셀 배너용 이벤트 세팅
+        this.setupBannerEvents(raw);
+
         const sorted = raw
           .sort((a, b) => b.event_code - a.event_code)
           .slice(0, 4);
@@ -332,6 +373,7 @@ export default {
       } catch (e) {
         console.error("[Dashboard] 이벤트 목록 조회 실패:", e);
         this.eventRows = [];
+        this.bannerEvents = []; // 배너도 초기화
       } finally {
         this.loadingEvent = false;
       }
@@ -345,6 +387,10 @@ export default {
         const res = await axios.get("/api/sponsor");
         // 라우터에서 { status, serviceSponsor } 로 내려주니까 여기!
         const raw = res.data?.serviceSponsor ?? [];
+
+        // 🔹 배너용 후원(진행/예정) 세팅
+        await this.setupBannerSponsors(raw);
+
         const sorted = raw
           .sort((a, b) => b.program_code - a.program_code)
           .slice(0, 4);
@@ -370,6 +416,162 @@ export default {
         this.sponsorRows = [];
       } finally {
         this.loadingSponsor = false;
+      }
+    },
+    // 배너용 헬퍼
+    setupBannerEvents(events) {
+      if (!Array.isArray(events)) {
+        this.bannerEvents = [];
+        return;
+      }
+
+      // 오늘 날짜(시/분/초 제거)
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      const todayDate = new Date(todayStr + "T00:00:00");
+
+      const parseDateOnly = (str) => {
+        if (!str) return null;
+        const datePart = String(str).split(" ")[0];
+        return new Date(datePart + "T00:00:00");
+      };
+
+      const candidates = events.filter((e) => {
+        // 이미지 없는 이벤트는 배너에서 제외
+        if (!e.file_path) return false;
+
+        const recruitStart = parseDateOnly(e.recruit_start_date);
+        const recruitEnd = parseDateOnly(e.recruit_end_date);
+        if (!recruitStart || !recruitEnd) return false;
+
+        const isUpcoming = todayDate < recruitStart; // 모집 예정
+        const isRecruiting =
+          todayDate >= recruitStart && todayDate <= recruitEnd; // 모집 중
+
+        return isUpcoming || isRecruiting;
+      });
+
+      if (!candidates.length) {
+        this.bannerEvents = [];
+        return;
+      }
+
+      const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 2);
+
+      this.bannerEvents = selected.map((item) => ({
+        ...item,
+        _bannerType: "event",
+        _bannerKey: `event-${item.event_code}`,
+        title: item.event_name,
+      }));
+    },
+
+    // 배너용 후원 (상세 API 호출해서 file_path 채우기)
+    async setupBannerSponsors(programs) {
+      if (!Array.isArray(programs)) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      const todayDate = new Date(todayStr + "T00:00:00");
+
+      const parseDateOnly = (str) => {
+        if (!str) return null;
+        const datePart = String(str).split(" ")[0];
+        return new Date(datePart + "T00:00:00");
+      };
+
+      // 1) 날짜 기준으로 "진행중/예정"만 먼저 필터링
+      const timeFiltered = programs.filter((p) => {
+        const start = parseDateOnly(p.start_date);
+        const end = parseDateOnly(p.end_date);
+        if (!start || !end) return false;
+
+        const isUpcoming = todayDate < start; // 진행 예정
+        const isOngoing = todayDate >= start && todayDate <= end; // 진행 중
+        return isUpcoming || isOngoing;
+      });
+
+      if (!timeFiltered.length) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      // 2) 너무 많이 호출하지 않도록 상위 몇 개만 상세 조회 (예: 5개)
+      const targetForDetail = timeFiltered.slice(0, 5);
+
+      // 3) 각 프로그램에 대해 상세 API 호출해서 file_path 있는 것만 추림
+      const detailResults = await Promise.all(
+        targetForDetail.map(async (p) => {
+          try {
+            // ⚠️ 여기 경로는 SponsorDetail에서 쓰는 상세 API와 맞춰줘야 함
+            const res = await axios.get(`/api/sponsor/${p.program_code}`);
+
+            // 응답 구조는 실제 백엔드에 맞게 조정
+            const detail =
+              res.data?.serviceSponsor || res.data?.data || res.data || {};
+
+            // 첨부파일 리스트에서 첫 번째 이미지 사용 (필요 시 키 이름 맞추기)
+            const attachments =
+              detail.attachments || detail.attachmentList || detail.files || [];
+            const first = Array.isArray(attachments) ? attachments[0] : null;
+
+            const filePath =
+              first?.file_path || first?.filePath || first?.path || null;
+
+            if (!filePath) {
+              // 이미지 없으면 배너 후보에서 제외
+              return null;
+            }
+
+            return {
+              ...p,
+              file_path: filePath,
+            };
+          } catch (e) {
+            console.error(
+              "[Dashboard] 후원 배너 상세 조회 실패:",
+              p.program_code,
+              e
+            );
+            return null;
+          }
+        })
+      );
+
+      // 4) 실제로 이미지가 있는 프로그램들만 사용
+      const withImage = detailResults.filter(Boolean);
+
+      if (!withImage.length) {
+        this.bannerSponsors = [];
+        return;
+      }
+
+      // 5) 랜덤 섞어서 최대 2개만 배너에 사용
+      const shuffled = [...withImage].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 2);
+
+      this.bannerSponsors = selected.map((item) => ({
+        ...item,
+        _bannerType: "sponsor",
+        _bannerKey: `sponsor-${item.program_code}`,
+        title: item.program_name,
+      }));
+    },
+
+    // 배너 클릭 핸들러
+    handleBannerClick(item) {
+      if (!item) return;
+
+      if (item._bannerType === "event") {
+        if (!item.event_code) return;
+        this.$router.push(`/event/info/${item.event_code}`);
+      } else if (item._bannerType === "sponsor") {
+        if (!item.program_code) return;
+        this.$router.push(`/sponsordetail/${item.program_code}`);
       }
     },
   },
@@ -400,7 +602,8 @@ export default {
 .banner-ratio > img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff; /* 비율 남는 공간 검정 (원하면 변경 가능) */
 }
 
 /* 카드와 배너 간격 */

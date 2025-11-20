@@ -2,14 +2,22 @@ const signUserMapper = require('../mappers/signUserMapper');
 
 // 전체 목록 조회 test
 async function checkId(id) {
-  const result = await signUserMapper.findUserId(id);
-  return result;
+  try {
+    const result = await signUserMapper.findUserId(id);
+    return result;
+  } catch (err) {
+    console.error('[ checkId 오류 ] : ', err);
+  }
 }
 
 // 개인 회원
 async function addUser(userData) {
-  const result = await signUserMapper.addUser(userData);
-  return result;
+  try {
+    const result = await signUserMapper.addUser(userData);
+    return result;
+  } catch (err) {
+    console.error('[ addUser 오류 ] : ', err);
+  }
 }
 
 // 기관 회원
@@ -34,7 +42,6 @@ async function addOrg(userData) {
     return result;
   } catch (err) {
     console.error('[ addOrg 오류 ] : ', err);
-    throw err;
   }
 }
 
@@ -45,21 +52,24 @@ async function login(data) {
     return result;
   } catch (err) {
     console.error('[ login Service 오류 ]', err);
-    throw err;
   }
 }
 
 // id, pw 찾기
 async function findIdPw(type, data) {
-  switch (type) {
-    case 'findId':
-      return await signUserMapper.findId(data);
-    case 'findPw':
-      return await signUserMapper.findPw(data);
-    case 'findResetPw':
-      return await signUserMapper.updatePw(data);
-    default:
-      return { ok: false, message: 'service findIdPw type 오류' };
+  try {
+    switch (type) {
+      case 'findId':
+        return await signUserMapper.findId(data);
+      case 'findPw':
+        return await signUserMapper.findPw(data);
+      case 'findResetPw':
+        return await signUserMapper.updatePw(data);
+      default:
+        return { ok: false, message: 'service findIdPw type 오류' };
+    }
+  } catch (err) {
+    console.error('[ service findIdPw 오류 ]', err);
   }
 }
 

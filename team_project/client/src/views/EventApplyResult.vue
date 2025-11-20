@@ -11,7 +11,8 @@
             <th class="px-3 py-2 text-left w-48">이벤트명</th>
             <th class="px-3 py-2 text-left w-36">이벤트 요청일</th>
             <th class="px-3 py-2 text-left w-36">메인 매니저</th>
-            <th class="px-3 py-2 text-left w-24">계획/결과 진행</th>
+            <th class="px-3 py-2 text-left w-24">계획 상태</th>
+            <th class="px-3 py-2 text-left w-24">결과 상태</th>
             <th class="px-3 py-2 text-left w-32">진행계획</th>
             <th class="px-3 py-2 text-left w-32">진행결과</th>
           </tr>
@@ -27,16 +28,36 @@
             <td class="px-3 py-2">{{ row.event_name }}</td>
             <td class="px-3 py-2">{{ formatDate(row.event_register_date) }}</td>
             <td class="px-3 py-2">{{ row.main_manager_name || "-" }}</td>
-            <td class="px-3 py-2">{{ row.register_status_name || "-" }}</td>
+            <td class="px-3 py-2">
+              <span
+                :class="['status-badge', statusBadgeClass(row.register_status)]"
+              >
+                {{ row.register_status_name || "-" }}
+              </span>
+            </td>
+            <td class="px-3 py-2">
+              <span
+                v-if="row.event_result_code"
+                :class="['status-badge', statusBadgeClass(row.result_status)]"
+              >
+                {{ row.result_status_name || "-" }}
+              </span>
+              <span v-else>-</span>
+            </td>
             <td class="px-3 py-2">
               <button class="view-btn" @click="viewPlan(row.event_code)">
                 보기
               </button>
             </td>
             <td class="px-3 py-2">
-              <button class="view-btn" @click="viewResult(row.event_code)">
+              <button
+                v-if="row.event_result_code"
+                class="view-btn"
+                @click="viewResult(row.event_result_code)"
+              >
                 보기
               </button>
+              <span v-else>-</span>
             </td>
           </tr>
 
@@ -70,6 +91,17 @@ const getLoginUserCode = () => {
   }
 };
 
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+
 // 날짜 포맷 함수 (YYYY-MM-DD)
 const formatDate = (v) => (v ? String(v).slice(0, 10) : "-");
 
@@ -82,8 +114,14 @@ const loadEvents = async () => {
       return;
     }
 
+    const params = { role: getLoginRole(), user_code: getLoginUserCode() };
+    const role = getLoginRole();
+    if (role !== "AA3") {
+      params.user_code = user_code;
+    }
+
     const res = await axios.get("/api/event/applyResult", {
-      params: { user_code }, // 로그인한 회원 코드
+      params, // role=AA3이면 params 비어있어서 전체, 아니면 user_code만
     });
 
     console.log(res.data);
@@ -93,14 +131,31 @@ const loadEvents = async () => {
   }
 };
 
+// 상태 뱃지
+const statusBadgeClass = (code) => {
+  switch (code) {
+    case "BA1":
+      return "badge-request"; // 요청
+    case "BA2":
+      return "badge-approve"; // 승인
+    case "BA3":
+      return "badge-reject"; // 반려
+    default:
+      return "badge-default";
+  }
+};
+
 // 진행계획 보기
 const viewPlan = (event_code) => {
-  router.push({ path: "/event/apply-info", query: { code: event_code } });
+  router.push({ name: "EventApplyInfo", params: { eventCode: event_code } });
 };
 
 // 진행결과 보기
-const viewResult = (event_code) => {
-  router.push({ path: "/event/result-info", query: { code: event_code } });
+const viewResult = (event_result_code) => {
+  router.push({
+    name: "EventResultInfo",
+    params: { resultCode: event_result_code },
+  });
 };
 
 onMounted(loadEvents);
@@ -118,5 +173,33 @@ onMounted(loadEvents);
 }
 .view-btn:hover {
   background: #125ea8;
+}
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* 요청 */
+.badge-request {
+  background-color: #3730a3; /* 보라 */
+}
+
+/* 승인 */
+.badge-approve {
+  background-color: #166534; /* 초록 */
+}
+
+/* 반려 */
+.badge-reject {
+  background-color: #b91c1c; /* 빨강 */
+}
+
+/* 기본 */
+.badge-default {
+  background-color: #6b7280; /* 회색 */
 }
 </style>
