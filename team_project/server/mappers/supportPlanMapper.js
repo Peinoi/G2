@@ -1,3 +1,4 @@
+// server/mappers/supportPlanMapper.js
 const pool = require("../configs/db");
 const sql = require("../sql/supportPlanSql");
 const { logHistoryDiff } = require("../utils/historyUtil");
@@ -13,7 +14,45 @@ function decodeOriginalName(file) {
   return file?.originalname || "";
 }
 
-//목록
+// 🔹 계획 아이템들을 history 비교용 필드로 펼치는 헬퍼
+//  - beforeItems[0] / afterItems[0] : 메인 계획 (이미 goal_p / publicContent_p / privateContent_p 로 따로 처리 중)
+//  - index 1부터는 "추가 계획" → item1_*, item2_* ... 로 history 필드로 만듦
+function mergePlanItemsIntoHistory(
+  beforeItems = [],
+  afterItems = [],
+  beforeRow = {},
+  afterRow = {}
+) {
+  const maxLen = Math.max(beforeItems.length, afterItems.length);
+
+  for (let idx = 1; idx < maxLen; idx++) {
+    const before = beforeItems[idx] || {};
+    const after = afterItems[idx] || {};
+    const n = idx; // 두 번째 아이템부터 item1_*, item2_* ...
+
+    const keyGoal = `item${n}_goal`;
+    const keyPublic = `item${n}_public`;
+    const keyPrivate = `item${n}_private`;
+
+    if (beforeRow) {
+      beforeRow[keyGoal] = before.item_title || "";
+      beforeRow[keyPublic] = before.content_for_user || "";
+      beforeRow[keyPrivate] = before.content_for_org || "";
+    }
+
+    if (afterRow) {
+      afterRow[keyGoal] = after.item_title || "";
+      afterRow[keyPublic] = after.content_for_user || "";
+      afterRow[keyPrivate] = after.content_for_org || "";
+    }
+  }
+
+  return { beforeRow, afterRow };
+}
+
+// ---------------------------------------------------------------------
+// 목록
+// ---------------------------------------------------------------------
 async function listSupportPlansByRole(role, userId) {
   const conn = await pool.getConnection();
   try {
@@ -61,8 +100,29 @@ async function listSupportPlansByRole(role, userId) {
     conn.release();
   }
 }
+// 담당자용 목록
+async function listAssigneePlanCandidates(userId) {
+  const conn = await pool.getConnection();
+  try {
+    const rows = await conn.query(sql.listAssigneePlanCandidates, [userId]);
 
-//기본정보
+    const mapped = rows.map((r) => ({
+      submitCode: r.submit_code,
+      childCode: r.child_code,
+      childName: r.child_name || null,
+      writerName: r.writer_name || null,
+      submitAt: r.submit_at,
+    }));
+
+    return safeJSON(mapped);
+  } finally {
+    conn.release();
+  }
+}
+
+// ---------------------------------------------------------------------
+// 기본정보
+// ---------------------------------------------------------------------
 async function getPlanBasic(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -86,7 +146,7 @@ async function getPlanBasic(submitCode) {
       // 보호자 = 작성자
       guardianName: writerName,
 
-      // ⭐ 담당자 추가
+      // 담당자
       assigneeName: row.assignee_name || null,
 
       // 장애유형
@@ -100,7 +160,7 @@ async function getPlanBasic(submitCode) {
   }
 }
 
-// 🔹 계획서 저장 (최초 저장 / 제출)
+// 계획 저장
 async function savePlanWithItems(formJson, files) {
   const { submitCode, mainForm, planItems } = formJson;
 
@@ -112,11 +172,6 @@ async function savePlanWithItems(formJson, files) {
     const assiRow = await conn.query(sql.getAssigneeBySubmit, [submitCode]);
     const assiInfo = assiRow[0];
     const assiByFromSubmit = assiInfo ? assiInfo.assi_by : null;
-
-    // 1) 기존 support_plan 있는지 확인
-    const [existing] = await conn.query(sql.getSupportPlanBySubmitCode, [
-      submitCode,
-    ]);
 
     // YYYY-MM → YYYY-MM-01 형태로 저장
     const planFrom =
@@ -130,39 +185,19 @@ async function savePlanWithItems(formJson, files) {
     const writtenAt = mainForm.planDate || new Date();
     const status = "CC3"; // 작성 완료(제출)
 
-    let planCode;
-    let assiBy = null;
+    // 🔥 핵심 변경: submit_code로 기존 것을 찾지 않고
+    // 항상 새 support_plan 행을 INSERT
+    const assiBy = assiByFromSubmit || null;
 
-    if (existing && existing.plan_code) {
-      // 🔁 이미 support_plan 있으면 update
-      planCode = existing.plan_code;
-      // 기존에 assi_by가 있으면 유지, 없으면 submit에서 가져온 값 사용
-      assiBy = existing.assi_by || assiByFromSubmit || null;
-
-      await conn.query(sql.updateSupportPlanByCode, [
-        planFrom,
-        planTo,
-        status,
-        writtenAt,
-        planCode,
-      ]);
-
-      // 기존 item 싹 지우고 다시 insert
-      await conn.query(sql.deleteSupportPlanItemsByPlanCode, [planCode]);
-    } else {
-      // 🆕 support_plan 새로 생성
-      assiBy = assiByFromSubmit || null;
-
-      const result = await conn.query(sql.insertSupportPlan, [
-        submitCode,
-        planFrom,
-        planTo,
-        status,
-        writtenAt,
-        assiBy,
-      ]);
-      planCode = result.insertId;
-    }
+    const result = await conn.query(sql.insertSupportPlan, [
+      submitCode,
+      planFrom,
+      planTo,
+      status,
+      writtenAt,
+      assiBy,
+    ]);
+    const planCode = result.insertId;
 
     // 2) 메인 계획 + 추가 계획들을 support_plan_item에 insert
     const allItems = [
@@ -229,7 +264,9 @@ async function savePlanWithItems(formJson, files) {
   }
 }
 
+// ---------------------------------------------------------------------
 // 상세 조회
+// ---------------------------------------------------------------------
 async function getPlanDetail(planCode) {
   const conn = await pool.getConnection();
   try {
@@ -288,7 +325,10 @@ async function getPlanDetail(planCode) {
   }
 }
 
-// 🔹 지원계획 수정 + 항목 + 첨부 업데이트
+// ---------------------------------------------------------------------
+// 지원계획 수정 + 항목 + 첨부 + 히스토리
+//  - 메인 + 추가 계획까지 모두 history에 반영
+// ---------------------------------------------------------------------
 async function updatePlanWithItems(formJson, files) {
   const conn = await pool.getConnection();
   try {
@@ -303,31 +343,15 @@ async function updatePlanWithItems(formJson, files) {
     }
 
     // ⭐ 1) 수정 전 상태 조회 (beforeRow)
-    const beforePlan = await conn.query(
-      `
-      SELECT
-        plan_from,
-        plan_to
-      FROM support_plan
-      WHERE plan_code = ?
-    `,
-      [planId]
-    );
+    const beforePlan = await conn.query(sql.getSupportPlanPeriodByCode, [
+      planId,
+    ]);
 
-    const beforeItems = await conn.query(
-      `
-      SELECT
-        item_title,
-        content_for_user,
-        content_for_org
-      FROM support_plan_item
-      WHERE plan_code = ?
-      ORDER BY plan_item_code ASC
-    `,
-      [planId]
-    );
+    const beforeItems = await conn.query(sql.getSupportPlanItemsByPlanCode, [
+      planId,
+    ]);
 
-    const beforeRow = {
+    let beforeRow = {
       plan_from: beforePlan[0]?.plan_from || null,
       plan_to: beforePlan[0]?.plan_to || null,
       goal_p: beforeItems[0]?.item_title || "",
@@ -346,7 +370,7 @@ async function updatePlanWithItems(formJson, files) {
       planTo = `${mainForm.expectedEnd}-01`;
     }
 
-    // 1) support_plan 기간 업데이트
+    // 2) support_plan 기간 업데이트
     await conn.query(sql.updateSupportPlanPeriodByCode, [
       planFrom,
       planTo,
@@ -409,31 +433,15 @@ async function updatePlanWithItems(formJson, files) {
     }
 
     // ⭐ 2) 수정 후 상태 조회 (afterRow)
-    const afterPlan = await conn.query(
-      `
-      SELECT
-        plan_from,
-        plan_to
-      FROM support_plan
-      WHERE plan_code = ?
-    `,
-      [planId]
-    );
+    const afterPlan = await conn.query(sql.getSupportPlanPeriodByCode, [
+      planId,
+    ]);
 
-    const afterItems = await conn.query(
-      `
-      SELECT
-        item_title,
-        content_for_user,
-        content_for_org
-      FROM support_plan_item
-      WHERE plan_code = ?
-      ORDER BY plan_item_code ASC
-    `,
-      [planId]
-    );
+    const afterItems = await conn.query(sql.getSupportPlanItemsByPlanCode, [
+      planId,
+    ]);
 
-    const afterRow = {
+    let afterRow = {
       plan_from: afterPlan[0]?.plan_from || null,
       plan_to: afterPlan[0]?.plan_to || null,
       goal_p: afterItems[0]?.item_title || "",
@@ -441,7 +449,28 @@ async function updatePlanWithItems(formJson, files) {
       privateContent_p: afterItems[0]?.content_for_org || "",
     };
 
-    // ⭐ 3) 히스토리 기록
+    // 🔥 메인 외에 "추가 계획"들까지 history 비교 대상에 포함
+    const merged = mergePlanItemsIntoHistory(
+      beforeItems,
+      afterItems,
+      beforeRow,
+      afterRow
+    );
+    beforeRow = merged.beforeRow;
+    afterRow = merged.afterRow;
+
+    // 비교해야 할 모든 필드 목록
+    const fieldSet = new Set([
+      "plan_from",
+      "plan_to",
+      "goal_p",
+      "publicContent_p",
+      "privateContent_p",
+      ...Object.keys(beforeRow).filter((k) => k.startsWith("item")),
+      ...Object.keys(afterRow).filter((k) => k.startsWith("item")),
+    ]);
+
+    // ⭐ 3) 히스토리 기록 (변경된 필드만 INSERT)
     await logHistoryDiff(conn, {
       tableName: "support_plan",
       tablePk: planId,
@@ -449,13 +478,7 @@ async function updatePlanWithItems(formJson, files) {
       historyType: "BD3", // 계획 수정 타입 코드
       beforeRow,
       afterRow,
-      fields: [
-        "plan_from",
-        "plan_to",
-        "goal_p",
-        "publicContent_p",
-        "privateContent_p",
-      ],
+      fields: Array.from(fieldSet),
     });
 
     await conn.commit();
@@ -468,13 +491,15 @@ async function updatePlanWithItems(formJson, files) {
   }
 }
 
-// 🔹 계획서 임시 저장 (작성 화면)
+// ---------------------------------------------------------------------
+// 계획서 임시 저장 (작성 화면) - 히스토리 X
+// ---------------------------------------------------------------------
 async function savePlanTemp(formJson, files = []) {
   const {
     submitCode,
     mainForm,
     planItems,
-    removedAttachCodes = [], // 🔥 추가 : 작성 화면에서 삭제한 첨부들
+    removedAttachCodes = [], // 작성 화면에서 삭제한 첨부들
   } = formJson;
 
   const conn = await pool.getConnection();
@@ -550,7 +575,7 @@ async function savePlanTemp(formJson, files = []) {
       ]);
     }
 
-    // 3) 🔥 작성 화면에서 삭제한 기존 첨부 삭제
+    // 3) 작성 화면에서 삭제한 기존 첨부 삭제
     if (Array.isArray(removedAttachCodes) && removedAttachCodes.length > 0) {
       for (const code of removedAttachCodes) {
         const id = Number(code);
@@ -589,7 +614,9 @@ async function savePlanTemp(formJson, files = []) {
   }
 }
 
-// 🔹 작성 화면에서 "불러오기" 할 때 사용하는 데이터
+// ---------------------------------------------------------------------
+// 작성 화면에서 "불러오기" 할 때 사용하는 데이터
+// ---------------------------------------------------------------------
 async function getPlanFormDataBySubmit(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -655,7 +682,9 @@ async function getPlanFormDataBySubmit(submitCode) {
   }
 }
 
-// 🔹 지원계획 승인 (CC4 + request_approval BA2 + support_result 생성)
+// ---------------------------------------------------------------------
+// 지원계획 승인 (CC4 + request_approval BA2 + support_result 생성)
+// ---------------------------------------------------------------------
 async function approveSupportPlan(planCode) {
   const conn = await pool.getConnection();
   try {
@@ -702,7 +731,9 @@ async function approveSupportPlan(planCode) {
   }
 }
 
-// 🔹 지원계획 반려 (CC7 + request_approval BA3 + 사유)
+// ---------------------------------------------------------------------
+// 지원계획 반려 (CC7 + request_approval BA3 + 사유)
+// ---------------------------------------------------------------------
 async function rejectSupportPlan(planCode, reason) {
   const conn = await pool.getConnection();
   try {
@@ -734,7 +765,9 @@ async function rejectSupportPlan(planCode, reason) {
   }
 }
 
-// 🔹 지원계획(plan)에 대한 반려 사유,일자 조회
+// ---------------------------------------------------------------------
+// 지원계획(plan)에 대한 반려 사유,일자 조회
+// ---------------------------------------------------------------------
 async function getRejectionReason(planCode) {
   const conn = await pool.getConnection();
   try {
@@ -752,7 +785,9 @@ async function getRejectionReason(planCode) {
   }
 }
 
-//재승인 신청
+// ---------------------------------------------------------------------
+// 재승인 신청
+// ---------------------------------------------------------------------
 async function resubmitPlan(planCode, requesterCode) {
   const conn = await pool.getConnection();
   try {
@@ -802,4 +837,5 @@ module.exports = {
   approveSupportPlan,
   getRejectionReason,
   resubmitPlan,
+  listAssigneePlanCandidates,
 };

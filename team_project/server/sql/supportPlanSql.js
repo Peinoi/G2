@@ -1,3 +1,4 @@
+// server/sql/supportPlanSql.js
 module.exports = {
   //시스템
   listSupportPlanAll: `
@@ -105,6 +106,34 @@ module.exports = {
   WHERE org.org_code = ?
   ORDER BY sp.plan_code DESC
 `,
+
+  // 🔹 담당자 상단 테이블용 (counsel_note.status = 'CB5')
+  listAssigneePlanCandidates: `
+    SELECT
+      ss.submit_code,
+      ss.child_code,
+      ss.submit_at,
+      c.child_name           AS child_name,
+      writer.name            AS writer_name
+    FROM survey_submission ss
+    JOIN counsel_note cn
+      ON cn.submit_code = ss.submit_code
+    LEFT JOIN child c
+      ON c.child_code = ss.child_code
+    JOIN users writer
+      ON writer.user_code = ss.written_by
+    WHERE
+      ss.assi_by = ?
+      AND cn.status = 'CB5'
+    GROUP BY
+      ss.submit_code,
+      ss.child_code,
+      ss.submit_at,
+      c.child_name,
+      writer.name
+    ORDER BY
+      ss.submit_at DESC
+  `,
 
   //기본정보
   getPlanBasicBySubmitCode: `
@@ -247,6 +276,16 @@ GROUP BY
     ORDER BY attach_code ASC
   `,
 
+  // 🔹 plan_code 기준으로 계획 기간만 조회 (history before/after용)
+  getSupportPlanPeriodByCode: `
+    SELECT
+      plan_from,
+      plan_to
+    FROM support_plan
+    WHERE plan_code = ?
+    LIMIT 1
+  `,
+
   // 🔹 plan_code 기준으로 계획 기간만 수정 (수정 화면에서 사용)
   updateSupportPlanPeriodByCode: `
     UPDATE support_plan
@@ -262,6 +301,7 @@ GROUP BY
     WHERE attach_code = ?
       AND linked_table_name = 'support_plan'
   `,
+
   //임시저장 불러오기
   getSupportPlanHeaderBySubmit: `
     SELECT
@@ -277,7 +317,7 @@ GROUP BY
     LIMIT 1
   `,
 
-  // 🔹 임시저장 상태의 첨부 한 건 삭제
+  // 🔹 임시저장 상태의 첨부 한 건 삭제 (예전 로직용 - 현재는 안 쓸 수도 있음)
   deleteTempAttachmentByCode: `
   DELETE FROM attachment
   WHERE linked_table_name = 'support_plan_temp'
@@ -291,6 +331,7 @@ GROUP BY
     WHERE plan_code = ?
     LIMIT 1
   `,
+
   // 지원계획 상태변경
   updateSupportPlanStatus: `
     UPDATE support_plan
@@ -367,6 +408,7 @@ GROUP BY
       AND approval_type = 'AE4'
       AND state = 'BA1'
   `,
+
   // 반려사유 + 반려일자
   getRejectReasonByPlan: `
   SELECT

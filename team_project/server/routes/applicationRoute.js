@@ -13,15 +13,19 @@ const applicationService = require("../services/applicationService");
 router.get("/mine", async (req, res) => {
   try {
     const loginId = req.query.loginId || "";
+    const role = req.query.role || "";
 
-    if (!loginId) {
+    if (!loginId || !role) {
       return res.status(400).json({
         status: "error",
-        message: "loginId가 전달되지 않았습니다.",
+        message: "loginId 또는 role이 전달되지 않았습니다.",
       });
     }
 
-    const list = await applicationService.getMyApplications({ loginId });
+    const list = await applicationService.getMyApplications({
+      loginId,
+      role,
+    });
 
     return res.status(200).json({
       status: "success",
@@ -32,8 +36,7 @@ router.get("/mine", async (req, res) => {
 
     return res.status(500).json({
       status: "error",
-      message:
-        err.message || "나의 지원 신청 현황 조회 중 오류가 발생했습니다.",
+      message: err.message || "신청 현황 조회 중 오류가 발생했습니다.",
     });
   }
 });

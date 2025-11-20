@@ -13,6 +13,42 @@ function decodeOriginalName(file) {
   return file?.originalname || "";
 }
 
+// 🔹 결과 아이템들을 history 비교용 필드로 펼치는 헬퍼
+//  - items[0] : 메인 결과 → 이미 goal / publicContent / privateContent 으로 처리
+//  - index 1부터: 추가 결과 → item1_*, item2_* ... 로 history 필드 생성
+function mergeResultItemsIntoHistory(
+  beforeItems = [],
+  afterItems = [],
+  beforeRow = {},
+  afterRow = {}
+) {
+  const maxLen = Math.max(beforeItems.length, afterItems.length);
+
+  for (let idx = 1; idx < maxLen; idx++) {
+    const before = beforeItems[idx] || {};
+    const after = afterItems[idx] || {};
+    const n = idx; // 두 번째 아이템부터 item1_*, item2_* ...
+
+    const keyGoal = `item${n}_goal`;
+    const keyPublic = `item${n}_public`;
+    const keyPrivate = `item${n}_private`;
+
+    if (beforeRow) {
+      beforeRow[keyGoal] = before.item_title || "";
+      beforeRow[keyPublic] = before.content_for_user || "";
+      beforeRow[keyPrivate] = before.content_for_org || "";
+    }
+
+    if (afterRow) {
+      afterRow[keyGoal] = after.item_title || "";
+      afterRow[keyPublic] = after.content_for_user || "";
+      afterRow[keyPrivate] = after.content_for_org || "";
+    }
+  }
+
+  return { beforeRow, afterRow };
+}
+
 //목록
 async function listSupportResultsByRole(role, userId) {
   const conn = await pool.getConnection();
@@ -34,7 +70,7 @@ async function listSupportResultsByRole(role, userId) {
       const orgCode = orgRows[0]?.org_code;
 
       if (!orgCode) {
-        // 기관 정보 없으면 빈 배열 반환 (혹은 에러 던져도 됨)
+        // 기관 정보 없으면 빈 배열 반환
         rows = [];
       } else {
         // 2) 기관 기준 목록 조회
@@ -56,7 +92,7 @@ async function listSupportResultsByRole(role, userId) {
       childName: r.child_name,
       writerName: r.writer_name,
       assiName: r.assi_name,
-      orgName: r.org_name ?? null, // 기관명 쓰고 싶으면 추가
+      orgName: r.org_name ?? null,
     }));
 
     return safeJSON(mapped);
@@ -81,13 +117,12 @@ async function getResultBasic(submitCode) {
     return safeJSON({
       submitCode: row.submit_code,
 
-      // ✅ 기본정보 카드에서 사용하는 필드들
+      // 기본정보 카드
       childName: row.child_name || "", // 지원자 이름
       guardianName: row.guardian_name || "", // 보호자 이름
       assigneeName: row.assignee_name || "", // 담당자 이름
       disabilityType: row.disability_type || "", // 장애유형
 
-      // 필요하면 나머지도 그대로 유지 가능
       ssnFront: row.ssn,
       counselSubmitAt: row.counsel_submit_at,
       planSubmitAt: row.plan_submit_at,
@@ -103,6 +138,7 @@ async function getResultBasic(submitCode) {
  *  - 상태: CD4(검토중) 로 저장 (임시: CD1, 초기 자동생성: CD3)
  *  - support_result_item 갈아끼우고
  *  - 첨부파일 'support_result' 로 저장
+ *  - 최초/제출 저장이므로 여기서는 히스토리 기록 ❌
  */
 async function saveResultWithItems(formJson, files = []) {
   const { submitCode, mainForm, resultItems } = formJson;
@@ -232,6 +268,7 @@ async function saveResultWithItems(formJson, files = []) {
  *  - 상태: CD1
  *  - result_items 갈아끼우기
  *  - 첨부파일 임시저장/삭제 반영
+ *  - 임시저장이라 히스토리 기록 ❌
  */
 async function saveResultTemp(formJson, files = []) {
   const {
@@ -501,7 +538,7 @@ async function getResultDetail(resultCode) {
   }
 }
 
-// 결과 수정
+// 결과 수정 (+ 히스토리: BD4)
 async function updateResultWithItems(formJson, files) {
   const conn = await pool.getConnection();
   try {
@@ -515,18 +552,19 @@ async function updateResultWithItems(formJson, files) {
       throw new Error("resultCode가 유효하지 않습니다.");
     }
 
-    // 0) 수정 전 상태 가져오기 (헤더 + 메인 item)
-    const headers = await conn.query(sql.getSupportResultDetailByCode, [
+    // ⭐ 1) 수정 전 상태 가져오기 (헤더 + 전체 item)
+    const headersBefore = await conn.query(sql.getSupportResultDetailByCode, [
       resultId,
     ]);
-    const headerBefore = headers[0];
+    const headerBefore = headersBefore[0];
+
     const itemsBefore = await conn.query(
       sql.getSupportResultItemsByResultCode,
       [resultId]
     );
     const mainBefore = itemsBefore[0] || {};
 
-    const beforeState = {
+    let beforeRow = {
       actual_from: headerBefore?.actual_from || null,
       actual_to: headerBefore?.actual_to || null,
       goal: mainBefore?.item_title || "",
@@ -545,14 +583,14 @@ async function updateResultWithItems(formJson, files) {
       actualTo = `${mainForm.actualEnd}-01`;
     }
 
-    // 1) support_result 기간만 업데이트 (status, written_at은 수정하지 않음)
+    // 2) support_result 기간만 업데이트 (status, written_at은 수정하지 않음)
     await conn.query(sql.updateSupportResultPeriodByCode, [
       actualFrom,
       actualTo,
       resultId,
     ]);
 
-    // 2) 기존 item 전부 삭제
+    // 3) 기존 item 전부 삭제
     await conn.query(sql.deleteSupportResultItemsByResultCode, [resultId]);
 
     // written_at
@@ -560,7 +598,7 @@ async function updateResultWithItems(formJson, files) {
       (mainForm?.resultDate && mainForm.resultDate.slice(0, 10)) ||
       new Date().toISOString().slice(0, 10);
 
-    // 2-1) 메인 결과 insert
+    // 3-1) 메인 결과 insert
     await conn.query(sql.insertSupportResultItem, [
       resultId,
       mainForm?.goal || "",
@@ -569,7 +607,7 @@ async function updateResultWithItems(formJson, files) {
       writtenAt,
     ]);
 
-    // 2-2) 추가 결과들 insert
+    // 3-2) 추가 결과들 insert
     if (Array.isArray(resultItems)) {
       for (const item of resultItems) {
         await conn.query(sql.insertSupportResultItem, [
@@ -582,16 +620,36 @@ async function updateResultWithItems(formJson, files) {
       }
     }
 
-    //  수정 후 상태 객체
-    const afterState = {
-      actual_from: actualFrom,
-      actual_to: actualTo,
-      goal: mainForm?.goal || "",
-      publicContent: mainForm?.publicContent || "",
-      privateContent: mainForm?.privateContent || "",
+    // 4) 수정 후 상태 다시 조회 (헤더 + 전체 item)
+    const headersAfter = await conn.query(sql.getSupportResultDetailByCode, [
+      resultId,
+    ]);
+    const headerAfter = headersAfter[0];
+
+    const itemsAfter = await conn.query(sql.getSupportResultItemsByResultCode, [
+      resultId,
+    ]);
+    const mainAfter = itemsAfter[0] || {};
+
+    let afterRow = {
+      actual_from: headerAfter?.actual_from || null,
+      actual_to: headerAfter?.actual_to || null,
+      goal: mainAfter?.item_title || "",
+      publicContent: mainAfter?.content_for_user || "",
+      privateContent: mainAfter?.content_for_org || "",
     };
 
-    // 3) 첨부 삭제
+    // 🔥 추가 결과들까지 history 비교 대상에 포함
+    const merged = mergeResultItemsIntoHistory(
+      itemsBefore,
+      itemsAfter,
+      beforeRow,
+      afterRow
+    );
+    beforeRow = merged.beforeRow;
+    afterRow = merged.afterRow;
+
+    // 5) 첨부 삭제
     if (Array.isArray(removedAttachCodes) && removedAttachCodes.length > 0) {
       for (const code of removedAttachCodes) {
         const id = Number(code);
@@ -600,14 +658,14 @@ async function updateResultWithItems(formJson, files) {
       }
     }
 
-    // 4) 새로 업로드된 파일들 attachment에 insert
+    // 6) 새로 업로드된 파일들 attachment에 insert
     if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
         const originalName = decodeOriginalName(file);
         const serverName = file.filename;
         const filePath = `/uploads/results/${serverName}`;
 
-        await conn.query(sql.insertAttachment, [
+        await conn.query(sql.insertAttachmentForResult, [
           originalName,
           serverName,
           filePath,
@@ -617,21 +675,25 @@ async function updateResultWithItems(formJson, files) {
       }
     }
 
-    // 🔹 5) 히스토리 기록 (실제 변경된 필드만)
+    // 🔹 7) 히스토리 기록 (실제 변경된 필드만)
+    const fieldSet = new Set([
+      "actual_from",
+      "actual_to",
+      "goal",
+      "publicContent",
+      "privateContent",
+      ...Object.keys(beforeRow).filter((k) => k.startsWith("item")),
+      ...Object.keys(afterRow).filter((k) => k.startsWith("item")),
+    ]);
+
     await logHistoryDiff(conn, {
       tableName: "support_result",
       tablePk: resultId,
       modifier: modifier || null, // 프론트에서 넘겨줘야 함
       historyType: "BD4",
-      beforeRow: beforeState,
-      afterRow: afterState,
-      fields: [
-        "actual_from",
-        "actual_to",
-        "goal",
-        "publicContent",
-        "privateContent",
-      ],
+      beforeRow,
+      afterRow,
+      fields: Array.from(fieldSet),
     });
 
     await conn.commit();
@@ -746,13 +808,13 @@ async function resubmitResult(resultCode, requesterCode) {
   try {
     await conn.beginTransaction();
 
-    // 1) 현재 support_plan 확인 (상태/submit_code 등 필요하면 여기서 확인)
+    // 1) 현재 support_result 확인
     const [result] = await conn.query(sql.getSupportResultByCode, [resultCode]);
     if (!result) {
-      throw new Error("해당 plan_code의 지원계획을 찾을 수 없습니다.");
+      throw new Error("해당 result_code의 지원결과를 찾을 수 없습니다.");
     }
 
-    // 2) support_plan 상태를 CC6(재승인요청)으로 변경
+    // 2) support_result 상태를 CD6(재승인요청)으로 변경
     await conn.query(sql.updateSupportResultStatus, ["CD6", resultCode]);
 
     // 3) request_approval에 새 승인요청 INSERT
@@ -762,7 +824,7 @@ async function resubmitResult(resultCode, requesterCode) {
       "AE5", // approval_type
       "BA1", // state: 요청
       "support_result",
-      resultCode, // linked_record_pk = result_Code
+      resultCode, // linked_record_pk = result_code
     ]);
 
     await conn.commit();

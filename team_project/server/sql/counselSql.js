@@ -361,21 +361,4 @@ module.exports = {
     WHERE submit_code = ?
     LIMIT 1
   `,
-
-  // 🔹 해당 submit_code로 이미 support_plan이 있는지 확인
-  getSupportPlanBySubmit: `
-    SELECT *
-    FROM support_plan
-    WHERE submit_code = ?
-    LIMIT 1
-  `,
-
-  // 🔹 support_plan 기본 INSERT
-  insertSupportPlan: `
-    INSERT INTO support_plan (
-      submit_code,
-      status,
-      assi_by
-    ) VALUES (?, ?, ?)
-  `,
 };
