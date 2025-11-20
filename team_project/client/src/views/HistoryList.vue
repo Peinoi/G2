@@ -21,8 +21,7 @@
             @change="onFilterChange"
           >
             <option value="all">전체</option>
-            <option value="table_name">테이블명</option>
-            <option value="change_item">변경 항목</option>
+            <option value="revision_date">수정일시</option>
             <option value="modifier_name">수정자</option>
           </select>
 
@@ -264,9 +263,9 @@ const getChangeItemLabel = (row) => {
     is_active: "가입 상태",
     org_code: "소속 기관",
 
-    main_title: "상담 제목",
-    main_content: "상담 내용",
-    main_counsel_date: "상담 일자",
+    main_title: "제목",
+    main_content: "내용",
+    main_counsel_date: "일자",
     plan_from: "예상 지원 시작일",
     plan_to: "예상 지원 종료일",
 
@@ -280,6 +279,78 @@ const getChangeItemLabel = (row) => {
     publicContent: "일반용 내용",
     privateContent: "기관용 내용",
     prionity: "우선순위",
+
+    detail_title: "추가 제목",
+    detail1_title: "추가-1 제목",
+    detail2_title: "추가-2 제목",
+    detail3_title: "추가-3 제목",
+    detail4_title: "추가-4 제목",
+    detail5_title: "추가-5 제목",
+    detail6_title: "추가-6 제목",
+    detail7_title: "추가-7 제목",
+    detail8_title: "추가-8 제목",
+    detail9_title: "추가-9 제목",
+    detail10_title: "추가-10 제목",
+
+    detail_content: "추가 내용",
+    detail1_content: "추가-1 내용",
+    detail2_content: "추가-2 내용",
+    detail3_content: "추가-3 내용",
+    detail4_content: "추가-4 내용",
+    detail5_content: "추가-5 내용",
+    detail6_content: "추가-6 내용",
+    detail7_content: "추가-7 내용",
+    detail8_content: "추가-8 내용",
+    detail9_content: "추가-9 내용",
+    detail10_content: "추가-10 내용",
+
+    detail_date: "추가 일자",
+    detail1_date: "추가-1 일자",
+    detail2_date: "추가-2 일자",
+    detail3_date: "추가-3 일자",
+    detail4_date: "추가-4 일자",
+    detail5_date: "추가-5 일자",
+    detail6_date: "추가-6 일자",
+    detail7_date: "추가-7 일자",
+    detail8_date: "추가-8 일자",
+    detail9_date: "추가-9 일자",
+    detail10_date: "추가-10 일자",
+
+    item_private: "추가 관리자 내용",
+    item1_private: "추가-1 관리자 내용",
+    item2_private: "추가-2 관리자 내용",
+    item3_private: "추가-3 관리자 내용",
+    item4_private: "추가-4 관리자 내용",
+    item5_private: "추가-5 관리자 내용",
+    item6_private: "추가-6 관리자 내용",
+    item7_private: "추가-7 관리자 내용",
+    item8_private: "추가-8 관리자 내용",
+    item9_private: "추가-9 관리자 내용",
+    item10_private: "추가-10 관리자 내용",
+
+    item_public: "추가 이용자 내용",
+    item1_public: "추가-1 이용자 내용",
+    item2_public: "추가-2 이용자 내용",
+    item3_public: "추가-3 이용자 내용",
+    item4_public: "추가-4 이용자 내용",
+    item5_public: "추가-5 이용자 내용",
+    item6_public: "추가-6 이용자 내용",
+    item7_public: "추가-7 이용자 내용",
+    item8_public: "추가-8 이용자 내용",
+    item9_public: "추가-9 이용자 내용",
+    item10_public: "추가-10 이용자 내용",
+
+    item_goal: "추가 목표",
+    item1_goal: "추가-1 목표",
+    item2_goal: "추가-2 목표",
+    item3_goal: "추가-3 목표",
+    item4_goal: "추가-4 목표",
+    item5_goal: "추가-5 목표",
+    item6_goal: "추가-6 목표",
+    item7_goal: "추가-7 목표",
+    item8_goal: "추가-8 목표",
+    item9_goal: "추가-9 목표",
+    item10_goal: "추가-10 목표",
   };
 
   if (commonColumnLabelMap[baseColumn]) {
