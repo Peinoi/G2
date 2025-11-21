@@ -10,7 +10,7 @@
       <div class="program-summary">
         <h3>선택한 프로그램</h3>
         <p v-if="programName">
-          <strong>프로그램 이름:</strong> {{ programName }}
+          <strong>프로그램 이름:</strong> <strong>{{ programName }}</strong>
         </p>
         <p v-else style="color: red">프로그램 정보를 불러올 수 없습니다.</p>
       </div>
@@ -45,10 +45,12 @@
 
         <div class="input-group">
           <label for="method">결제 수단 </label>
-
-          <button>카카오 페이</button>
+          <div class="payment-method-box kakao-pay">
+            <span class="icon">💳</span>
+            <span class="method-name">카카오 페이</span>
+            <span class="status">(자동 선택)</span>
+          </div>
         </div>
-
         <div class="total-amount">
           최종 결제 금액: <strong>{{ formatCurrency(sponsorAmount) }}원</strong>
         </div>
@@ -68,6 +70,7 @@
 </template>
 
 <script setup>
+// ... (script setup 내용은 변경 없음)
 import axios from "axios";
 import { ref, computed, onMounted, watch } from "vue"; // watch import
 
@@ -226,6 +229,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 기존 스타일 유지 */
 .payment-container {
   max-width: 600px;
   margin: 30px auto;
@@ -286,17 +290,50 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* 실시간 계좌 이체 고정 스타일 */
-.payment-method-fixed {
+/* 🚀 새로 추가/수정된 결제 수단 정보 박스 스타일 */
+.payment-method-box {
+  width: 100%;
   padding: 12px;
-  border: 1px solid #007bff;
-  background-color: #e6f0ff;
   border-radius: 6px;
   font-size: 16px;
   font-weight: 600;
-  color: #007bff;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
+
+.payment-method-box.kakao-pay {
+  background-color: #fff9e6; /* 밝은 노란색 배경 */
+  border-color: #fee500; /* 카카오페이 경계선 */
+  color: #3c1e1e;
+}
+
+.payment-method-box .icon {
+  font-size: 1.2em;
+  margin-right: 10px;
+}
+
+.payment-method-box .method-name {
+  flex-grow: 1;
+  font-weight: 700;
+}
+
+.payment-method-box .status {
+  font-size: 14px;
+  color: #888;
+  font-weight: normal;
+  background-color: #f2f2f2;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* 라벨 스타일은 기본으로 복구 */
+.input-group label[for="method"] {
+  display: block;
+}
+/* 🚀 새로 추가/수정된 결제 수단 정보 박스 스타일 끝 */
 
 .total-amount {
   text-align: right;

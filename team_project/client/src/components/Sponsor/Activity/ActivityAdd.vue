@@ -53,10 +53,7 @@
         </div>
 
         <!-- 등록 모드에서만 보임 -->
-        <material-button
-          v-if="!props.readOnly"
-          @click="addExpenditure"
-        >
+        <material-button v-if="!props.readOnly" @click="addExpenditure">
           추가
         </material-button>
       </div>
@@ -68,7 +65,6 @@
         class="at-expenditure-item"
       >
         <div class="at-row at-expenditure-row">
-
           <div class="at-field-group at-field-half">
             <label class="at-label">사용 항목</label>
             <material-input
@@ -91,7 +87,6 @@
         </div>
 
         <div class="at-row at-expenditure-row">
-
           <div class="at-field-group at-field-half">
             <label class="at-label">지급 금액 (원)</label>
             <material-input
@@ -137,7 +132,13 @@
       </material-button>
 
       <!-- 닫기 버튼은 항상 보임 -->
-      <material-button class="at-btn" @click="goList">닫기</material-button>
+      <material-button
+        color="success"
+        size="md"
+        variant="outline"
+        @click="goList"
+        >닫기</material-button
+      >
     </div>
   </div>
 </template>
@@ -148,7 +149,15 @@ import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
 import MyEditor from "@/components/Sponsor/Common/CkEditor.vue";
 import numberFormat from "@/utils/numberFormat";
-import { ref, onBeforeMount, watch, defineEmits, defineProps, nextTick } from "vue";
+
+import {
+  ref,
+  onBeforeMount,
+  watch,
+  defineEmits,
+  defineProps,
+  nextTick,
+} from "vue";
 
 const props = defineProps({
   initialProgram: { type: Object, default: null },
@@ -228,20 +237,21 @@ const formatAmount = (item) => {
   item.amountFormatted = raw ? numberFormat(raw) : "";
 };
 
-
 const goList = () => {
   // 내부 값 초기화
   programCode.value = "";
   title.value = "";
   content.value = "";
-  expenditureList.value = [{
-    id: Date.now(),
-    usageItem: "",
-    recipient: "",
-    amount: null,
-    amountFormatted: "",
-    usedAt: "",
-  }];
+  expenditureList.value = [
+    {
+      id: Date.now(),
+      usageItem: "",
+      recipient: "",
+      amount: null,
+      amountFormatted: "",
+      usedAt: "",
+    },
+  ];
 
   emit("goToList");
 };
@@ -249,7 +259,10 @@ const goList = () => {
 // 제출
 const activityAdd = async () => {
   const user = JSON.parse(localStorage.getItem("user"));
-  const used_amount = expenditureList.value.reduce((s, i) => s + (i.amount || 0), 0);
+  const used_amount = expenditureList.value.reduce(
+    (s, i) => s + (i.amount || 0),
+    0
+  );
 
   const payload = {
     writer: user.user_id,
@@ -265,13 +278,14 @@ const activityAdd = async () => {
     })),
   };
 
-  await axios.post(`/api/sponsor/${programCode.value}/${user.user_id}/activity`, payload);
+  await axios.post(
+    `/api/sponsor/${programCode.value}/${user.user_id}/activity`,
+    payload
+  );
   alert("작성 완료");
   goList();
 };
 </script>
-
-
 
 <style scoped>
 /* AuthorityTransfer.vue의 스타일 테마를 기반으로 재구성 */

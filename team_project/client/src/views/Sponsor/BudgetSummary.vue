@@ -40,7 +40,7 @@
             @click="goDetail(r.program_code)"
             class="click-row"
           >
-            <td>{{ r.org_id }}</td>
+            <td>{{ r.org_name }}</td>
             <td>{{ r.program_name }}</td>
 
             <td>
@@ -389,7 +389,7 @@ const goDetail = (code) => {
   flex-wrap: wrap;
 }
 .apv-table td:nth-child(2) {
-  text-align: left !important;
+  text-align: center !important;
 }
 
 /* 금액 관련 컬럼 오른쪽 정렬 (4~7번째 컬럼) */
@@ -403,6 +403,29 @@ const goDetail = (code) => {
 .apv-table th:nth-child(5),
 .apv-table th:nth-child(6),
 .apv-table th:nth-child(7) {
-  text-align: right !important;
+  text-align: center !important;
+}
+
+/* 컬럼별 간격 조절 */
+.apv-table th:nth-child(1),
+.apv-table td:nth-child(1) {
+  width: 12%;
+}
+
+.apv-table th:nth-child(2),
+.apv-table td:nth-child(2) {
+  width: 13%;
+}
+
+.apv-table th:nth-child(3),
+.apv-table td:nth-child(3) {
+  width: 16%;
+}
+
+.apv-table td:nth-child(4),
+.apv-table td:nth-child(5),
+.apv-table td:nth-child(6),
+.apv-table td:nth-child(7) {
+  width: 13%;
 }
 </style>

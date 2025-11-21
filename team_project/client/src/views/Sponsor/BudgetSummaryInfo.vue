@@ -7,8 +7,16 @@
     <div v-if="header" class="summary-box">
       <div class="summary-header">
         <h3>{{ header.program_name }}</h3>
-        <button class="btn-back" @click="goDetail()">← 목록으로</button>
+        <!-- <button class="btn-back" @click="goDetail()">← 목록으로</button> -->
 
+        <MaterialButton
+          color="dark"
+          size="sm"
+          variant="outlined"
+          @click="goDetail()"
+        >
+          ← 목록으로
+        </MaterialButton>
       </div>
 
       <div class="summary-grid">
@@ -65,6 +73,8 @@ import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
 import { useRouter } from "vue-router";
+import MaterialButton from "@/components/MaterialButton.vue";
+
 const router = useRouter();
 const props = defineProps({
   programCode: String,
@@ -75,8 +85,10 @@ const header = ref(null);
 // 상세 조회 API
 const loadDetail = async (programCode) => {
   try {
-    const res = await axios.get(`/api/sponsor/summaryStatementList/${programCode}`);
-    console.log(programCode)
+    const res = await axios.get(
+      `/api/sponsor/summaryStatementList/${programCode}`
+    );
+    console.log(programCode);
     const data = res.data.serviceSponsor;
 
     if (data.length === 0) {

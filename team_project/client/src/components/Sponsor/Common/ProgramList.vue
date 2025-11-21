@@ -315,9 +315,12 @@ const Approval = async (program) => {
 
 <!-- ============================================================= -->
 <style scoped>
+* {
+  font-size: 15px;
+}
 /* === ManagerApprovals.vue 와 동일 스타일 적용 === */
 .apv-page {
-  max-width: 1100px;
+  max-width: 1700px;
   margin: 24px auto;
   padding: 0 16px 40px;
 }
@@ -558,5 +561,9 @@ const Approval = async (program) => {
     min-width: unset;
     width: 100%;
   }
+}
+.apv-table td:nth-child(6),
+.apv-table td:nth-child(7) {
+  text-align: right !important;
 }
 </style>

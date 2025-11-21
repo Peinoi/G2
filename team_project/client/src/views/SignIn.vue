@@ -17,7 +17,7 @@
                 class="bg-gradient-success shadow-success border-radius-lg py-3 pe-1"
               >
                 <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">
-                  나는 문어 꿈을 꾸는 문어
+                  장애 행복 복지 지원
                 </h4>
 
                 <!-- 소셜 로그인 버튼 -->
@@ -49,7 +49,7 @@
                   <material-input
                     id="userId"
                     type="text"
-                    label="나는 아이디"
+                    label="아이디를 입력해주세요"
                     name="userId"
                     v-model="userId"
                   />
@@ -58,7 +58,7 @@
                   <material-input
                     id="userPw"
                     type="password"
-                    label="나는 비밀번호"
+                    label="비밀번호를 입력해주세요"
                     name="userPw"
                     v-model="userPw"
                   />
@@ -74,21 +74,21 @@
                     fullWidth
                     type="button"
                     @click="login"
-                    >나는 버튼</material-button
+                    >로그인</material-button
                   >
                 </div>
                 <p class="mt-4 text-sm text-center">
-                  계정이 없어요?
+                  계정이 없으신가요?
                   <router-link
                     :to="{ name: 'SignUp' }"
                     class="text-success text-gradient font-weight-bold"
-                    >지금 당장 회원가입</router-link
+                  >
+                    회원가입</router-link
                   >
                 </p>
 
                 <!-- id / pw 찾기 아직 구현 못 함, 내일(18일) 구현하기 -->
                 <p class="mt-4 text-sm text-center">
-                  기억력에 문제 있어요?
                   <a
                     href="#"
                     @click.prevent="toggleIdModal"
@@ -114,9 +114,9 @@
       <!-- ID 찾기 모달 -->
       <div v-if="showFindIdModal" class="custom-modal-backdrop">
         <div class="custom-modal">
-          <h5 class="font-weight-bolder mb-3">나는 아이디 찾기</h5>
+          <h5 class="font-weight-bolder mb-3">아이디 찾기</h5>
 
-          <p class="text-sm text-secondary">멀 보노</p>
+          <!-- <p class="text-sm text-secondary">멀 보노</p> -->
 
           <material-input
             type="text"
@@ -150,7 +150,7 @@
           <div v-if="findPwStep === 1">
             <h5 class="font-weight-bolder mb-3">비밀번호 찾기 (1/2)</h5>
 
-            <p class="text-sm text-secondary">나는 문어</p>
+            <!-- <p class="text-sm text-secondary">나는 문어</p> -->
 
             <material-input
               type="text"
@@ -185,7 +185,7 @@
           <div v-else-if="findPwStep === 2">
             <h5 class="font-weight-bolder mb-3">비밀번호 재설정 (2/2)</h5>
 
-            <p class="text-sm text-secondary">꿈을 꾸는 문어</p>
+            <!-- <p class="text-sm text-secondary">꿈을 꾸는 문어</p> -->
 
             <material-input
               type="password"
@@ -212,7 +212,7 @@
         </div>
       </div>
     </div>
-    <footer class="footer position-absolute bottom-2 py-2 w-100">
+    <!-- <footer class="footer position-absolute bottom-2 py-2 w-100">
       <div class="container">
         <div class="row align-items-center justify-content-lg-between">
           <div class="col-12 col-md-6 my-auto">
@@ -268,7 +268,7 @@
           </div>
         </div>
       </div>
-    </footer>
+    </footer> -->
   </div>
 </template>
 

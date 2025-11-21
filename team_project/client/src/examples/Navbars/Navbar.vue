@@ -54,7 +54,10 @@
               </span>
             </li>
             <!-- 로그인 아이콘 -->
-            <li class="nav-item d-flex align-items-center">
+            <li
+              v-if="!piniaLogin.isLogin"
+              class="nav-item d-flex align-items-center"
+            >
               <div
                 :to="{ name: 'SignIn' }"
                 class="px-0 nav-link font-weight-bold lh-1"
@@ -62,6 +65,7 @@
                 :class="color ? color : 'text-body'"
                 style="cursor: pointer"
               >
+                로그인
                 <i
                   class="material-icons"
                   :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
@@ -70,7 +74,27 @@
                 </i>
               </div>
             </li>
-
+            <!-- 로그아웃 -->
+            <li
+              v-if="piniaLogin.isLogin"
+              class="nav-item d-flex align-items-center"
+            >
+              <div
+                :to="{ name: 'SignIn' }"
+                class="px-0 nav-link font-weight-bold lh-1"
+                @click="loginCheck"
+                :class="color ? color : 'text-body'"
+                style="cursor: pointer"
+              >
+                로그 아웃
+                <i
+                  class="material-icons"
+                  :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
+                >
+                  account_circle
+                </i>
+              </div>
+            </li>
             <!-- 로그인 상태일 때만 보이는 '회원정보' 아이콘 -->
             <li
               v-if="piniaLogin.isLogin"
@@ -82,6 +106,7 @@
                 @click="$router.push({ name: 'UserInfo' })"
                 style="cursor: pointer"
               >
+                회원 정보 관리
                 <i
                   class="material-icons"
                   :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
@@ -315,27 +340,169 @@ export default {
   },
 };
 </script>
-
 <style scoped>
+/* 1. 전체 네비게이션 바 컨테이너 스타일 */
+.navbar {
+  background-color: white !important;
+  box-shadow: none !important;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  z-index: 1000;
+}
+
+.container-fluid {
+  /* container-fluid를 Flex 컨테이너로 설정 */
+  display: flex;
+  align-items: center; /* 수직 중앙 정렬 */
+  justify-content: space-between; /* 항목들을 양 끝으로 분산 */
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* 2. 왼쪽 영역 (Breadcrumbs) */
+.navbar-left-area {
+  /* 고정된 너비를 제거하고 내용물 크기에 맞게 설정 */
+  /* 단, 왼쪽 영역이 너무 작을 경우를 대비해 최소한의 flex-shrink 설정 */
+  flex-basis: 170px; /* 기존 너비를 기준으로 공간 확보 */
+  min-width: 170px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* --- 3. 중앙 버튼 영역 (Middle Area) - 완벽한 중앙 정렬을 위해 수정 --- */
+
+.header-button-group {
+  /* Flexbox 설정 유지 */
+  display: flex;
+  justify-content: center; /* 내부 버튼들을 중앙 정렬 */
+  align-items: center;
+  gap: 1rem;
+
+  /* ✅ 중앙 정렬 핵심: 남은 공간을 최대한 차지 */
+  flex-grow: 1;
+
+  /* 중앙 영역 스타일 (기존 유지) */
+  background-color: #f0f2f5;
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  box-shadow: none;
+  max-width: fit-content; /* 내부 내용물 크기만큼만 사용 */
+  margin: 0 auto; /* ✅ 이 margin: auto가 flex-grow: 1과 결합하여 중앙 정렬을 보장합니다. */
+}
+
 .badge-link {
   text-decoration: none !important;
   cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
 
 .badge-link .badge {
-  padding: 0.5rem 1rem !important;
-  font-size: 0.75rem;
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.85rem;
   font-weight: 600;
+  border-radius: 0.5rem !important;
   transition: all 0.2s ease-in-out;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none !important;
+  background-image: none !important;
+  color: #344767 !important;
+  background-color: transparent !important;
 }
 
 .badge-link .badge:hover {
-  opacity: 0.8;
+  background-color: rgba(0, 0, 0, 0.2) !important;
 }
 
-.navbar-left-area {
-  width: 170px;
+.badge-link.router-link-active .badge,
+.badge-link.router-link-exact-active .badge {
+  background-color: white !important;
+  color: #344767 !important;
+  font-weight: 700;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-image: none !important;
+}
+
+/* --- 4. 오른쪽 영역 (Right Area) --- */
+
+/* 오른쪽 영역 컨테이너: flex-grow-0 유지 */
+.navbar-collapse {
+  flex-grow: 0 !important;
+  justify-content: flex-end;
+  /* 오른쪽 영역도 너비를 고정하여 중앙 영역과의 균형을 맞춥니다. */
+  flex-basis: auto;
   flex-shrink: 0;
+}
+
+.ms-auto.d-flex.align-items-center {
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.navbar-nav.justify-content-end {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.navbar-nav .nav-item {
+  margin-right: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-nav .nav-item:last-of-type {
+  margin-right: 0;
+}
+
+/* 로그아웃, 회원정보관리, 로그인 아이콘 (클릭 가능한 항목) 패딩 조정 */
+.nav-link.font-weight-bold {
+  padding: 0.5rem 1.25rem !important;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #344767 !important;
+}
+
+.nav-link.font-weight-bold[style*="cursor: pointer"]:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 'OOO 님' 텍스트 (로그인 중 사용자 이름 - 클릭 불가 요소) 패딩 유지 */
+.nav-item > span.nav-link {
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  opacity: 1;
+  color: #6c757d !important;
+  cursor: default !important;
+}
+
+/* Material Icons 스타일 정돈 */
+.nav-link.font-weight-bold i.material-icons {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-left: 0.25rem;
+  margin-right: 0;
+}
+
+.nav-item.ms-3 {
+  margin-left: 0.5rem !important;
+}
+.nav-item.ms-3 .nav-link.font-weight-bold i.material-icons {
+  margin-left: 0.5rem;
+}
+
+.nav-item.d-xl-none {
+  margin-left: 0.75rem !important;
+}
+
+.sidenav-toggler-inner i {
+  background-color: currentColor !important;
 }
 </style>

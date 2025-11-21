@@ -11,7 +11,7 @@
         v-bind="$attrs"
         :class="isBlur ? 'text-dark' : 'text-white'"
       >
-        Material Dashboard 2
+        24 장애 행복 복지 센터
       </router-link>
       <button
         class="navbar-toggler shadow-none ms-2"
@@ -30,7 +30,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navigation">
         <ul class="navbar-nav mx-auto">
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <router-link
               class="nav-link d-flex align-items-center me-2 active"
               aria-current="page"
@@ -43,8 +43,8 @@
               ></i>
               Dashboard
             </router-link>
-          </li>
-          <li class="nav-item">
+          </li> -->
+          <!-- <li class="nav-item">
             <router-link class="nav-link me-2" to="/profile">
               <i
                 class="fa fa-user opacity-6 me-1"
@@ -53,8 +53,8 @@
               ></i>
               Profile
             </router-link>
-          </li>
-          <li class="nav-item">
+          </li> -->
+          <!-- <li class="nav-item">
             <router-link class="nav-link me-2" to="/sign-up">
               <i
                 class="fas fa-user-circle opacity-6 me-1"
@@ -73,16 +73,16 @@
               ></i>
               Sign In
             </router-link>
-          </li>
+          </li> -->
         </ul>
         <ul class="navbar-nav d-lg-block d-none">
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <a
               href="https://www.creative-tim.com/product/vue-material-dashboard-2"
               class="btn btn-sm mb-0 me-1 bg-gradient-success"
               >Free download</a
             >
-          </li>
+          </li> -->
         </ul>
       </div>
     </div>

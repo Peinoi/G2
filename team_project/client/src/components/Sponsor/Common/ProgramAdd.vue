@@ -257,7 +257,7 @@
 
         <!-- 반려 버튼 | AA4이면 숨김 -->
         <button
-          class="secondary-button"
+          class="btn btn-danger"
           @click="openRejectModal()"
           v-if="userRole !== 'AA4'"
         >
