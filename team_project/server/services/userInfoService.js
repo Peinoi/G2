@@ -28,6 +28,16 @@ async function infoUpdate(type, data) {
   }
 }
 
+// pw 변경
+async function pwUpdate(data) {
+  try {
+    const result = await userInfoMapper.updatePw(data);
+    return result;
+  } catch (err) {
+    console.error('[ pwUpdate 실패 ] : ', err);
+  }
+}
+
 // 자녀 추가
 async function childAdd(userData) {
   try {
@@ -48,4 +58,4 @@ async function childDelete(data) {
   }
 }
 
-module.exports = { findInfo, childAdd, infoUpdate, childDelete };
+module.exports = { findInfo, childAdd, infoUpdate, pwUpdate, childDelete };

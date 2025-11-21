@@ -49,6 +49,11 @@ SET
    , email = ?
 WHERE user_id = ?`;
 
+const USER_UPDATE_PW = `
+UPDATE users
+SET password_hash = ?
+WHERE user_code = ?`;
+
 const ORG_UPDATE = `
 UPDATE users u
 INNER JOIN organization o ON o.org_name = ?
@@ -84,6 +89,7 @@ module.exports = {
   FIND_USER_INFO,
   FIND_ORG_INFO,
   USER_UPDATE,
+  USER_UPDATE_PW,
   ORG_UPDATE,
   CHILD_UPDATE,
   CHILD_ADD,
