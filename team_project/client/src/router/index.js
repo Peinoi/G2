@@ -1,40 +1,40 @@
 // index.js
-import { createRouter, createWebHistory } from "vue-router";
-import Dashboard from "../views/Dashboard.vue";
-import Tables from "../views/Tables.vue";
-import Billing from "../views/Billing.vue";
-import RTL from "../views/Rtl.vue";
-import Notifications from "../views/Notifications.vue";
-import Profile from "../views/Profile.vue";
-import SignIn from "../views/SignIn.vue";
-import SignUp from "../views/SignUp.vue";
-import Test from "../views/Test.vue";
-import Sponsor from "../views/Sponsor/Sponsor.vue";
-import SponsorProgramList from "../views/Sponsor/ProgramList.vue";
-import EventList from "../views/EventList.vue";
-import EventForm from "../views/EventForm.vue";
-import EventInfo from "../views/EventInfo.vue";
-import Organization from "../views/Organization.vue";
-import { useMenuStore } from "@/store/sidebar";
-import { sponsorMenu } from "@/config/menus";
-import { eventMenu } from "@/config/menus";
-import { surveyMenu } from "@/config/menus";
-import { spportMenu } from "@/config/menus";
-import { counselMenu } from "@/config/menus";
-import { appReqMenu } from "@/config/menus";
-import { historyMenu } from "@/config/menus";
-import { infoMenu } from "@/config/menus";
-import { pendingMenu } from "@/config/menus";
-import PendingApproval from "../components/PendingApproval.vue";
-import SponsorDetail from "@/components/Sponsor/Common/SponsorDetail.vue";
-import PaymentPage from "@/components/Sponsor/User/PaymentPage.vue";
-import { appStatusMenu } from "@/config/menus";
-import UserInfo from "../views/UserInfo.vue";
-import KakaoPayApprove from "../views/Sponsor/KakaoPayApprove.vue";
-import SponsorActivity from "../views/Sponsor/SponsorActivity.vue";
-import BudgetSummary from "../views/Sponsor/BudgetSummary.vue";
-import MyGiving from "../views/Sponsor/MyGiving.vue";
-
+import { createRouter, createWebHistory } from 'vue-router';
+import Dashboard from '../views/Dashboard.vue';
+import Tables from '../views/Tables.vue';
+import Billing from '../views/Billing.vue';
+import RTL from '../views/Rtl.vue';
+import Notifications from '../views/Notifications.vue';
+import Profile from '../views/Profile.vue';
+import SignIn from '../views/SignIn.vue';
+import SignUp from '../views/SignUp.vue';
+import Test from '../views/Test.vue';
+import Sponsor from '../views/Sponsor/Sponsor.vue';
+import SponsorProgramList from '../views/Sponsor/ProgramList.vue';
+import EventList from '../views/EventList.vue';
+import EventForm from '../views/EventForm.vue';
+import EventInfo from '../views/EventInfo.vue';
+import Organization from '../views/Organization.vue';
+import { useMenuStore } from '@/store/sidebar';
+import { sponsorMenu } from '@/config/menus';
+import { eventMenu } from '@/config/menus';
+import { surveyMenu } from '@/config/menus';
+import { spportMenu } from '@/config/menus';
+import { counselMenu } from '@/config/menus';
+import { appReqMenu } from '@/config/menus';
+import { historyMenu } from '@/config/menus';
+import { infoMenu } from '@/config/menus';
+import { pendingMenu } from '@/config/menus';
+import PendingApproval from '../components/PendingApproval.vue';
+import SponsorDetail from '@/components/Sponsor/Common/SponsorDetail.vue';
+import PaymentPage from '@/components/Sponsor/User/PaymentPage.vue';
+import { appStatusMenu } from '@/config/menus';
+import UserInfo from '../views/UserInfo.vue';
+import KakaoPayApprove from '../views/Sponsor/KakaoPayApprove.vue';
+import SponsorActivity from '../views/Sponsor/SponsorActivity.vue';
+import BudgetSummary from '../views/Sponsor/BudgetSummary.vue';
+import MyGiving from '../views/Sponsor/MyGiving.vue';
+import BudgetSummaryInfo from "../views/Sponsor/BudgetSummaryInfo.vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -104,10 +104,16 @@ const router = createRouter({
       component: SponsorActivity,
     },
     {
-      path: "/summary",
-      name: "BudgetSummary",
-      component: BudgetSummary,
-    },
+  path: '/budget-summary',
+  name: 'BudgetSummary',
+  component: BudgetSummary,
+},
+{
+  path: '/budget-summary/:programCode',
+  name: 'BudgetSummaryInfo',
+  component: BudgetSummaryInfo,
+  props: true,
+},
     {
       path: "/mygiving",
       name: "MyGiving",
@@ -457,13 +463,15 @@ router.beforeEach((to, from, next) => {
 
   // 후원 페이지 그룹
   const sponsorPages = [
-    "Sponsor",
-    "SponsorProgramList",
-    "SponsorDetail",
-    "PaymentPage",
-    "SponsorActivity",
-    "BudgetSummary",
-    "MyGiving",
+    'Sponsor',
+    'SponsorProgramList',
+    'SponsorDetail',
+    'PaymentPage',
+    'SponsorActivity',
+    'BudgetSummary',
+    'MyGiving',
+    'BudgetSummary',
+    'BudgetSummaryInfo'
   ];
 
   // event 그룹

@@ -523,8 +523,12 @@ onMounted(load);
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
+
 .org-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto 40px;
   padding: 0 16px;
 }

@@ -5,7 +5,7 @@
     <div class="apv-toolbar">
       <div class="apv-filters">
         <select v-model="stateInput" class="apv-select">
-          <option value="">단계</option>
+          <option value="">전체</option>
           <option value="미검토">미검토</option>
           <option value="검토완료">검토완료</option>
         </select>
@@ -78,7 +78,7 @@
         <tbody>
           <tr v-for="(item, index) in list" :key="item.id">
             <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ item.childName }}</td>
+            <td>{{ item.childName ? item.childName : item.writerName }}</td>
             <td>{{ item.submitAt }}</td>
             <td>{{ item.managerName }}</td>
             <td class="apv-actions-cell">
@@ -110,7 +110,7 @@
             </td>
           </tr>
           <tr v-if="filteredList.length === 0">
-            <td colspan="6" class="text-center">
+            <td colspan="5" class="text-center">
               조회된 대기자 목록이 없습니다.
             </td>
           </tr>
@@ -145,29 +145,60 @@
       </button>
     </div>
   </div>
+
+  <!-- 모달 -->
+  <!-- 매니저 선택 -->
+  <ManagersModal
+    v-if="showManagerModal"
+    :managers="managers"
+    :pendingItem="pendingItem"
+    @close="showManagerModal = false"
+    @select="openConfirmModal"
+  />
+
+  <!-- 최종 확인 -->
+  <ConfirmModal
+    v-if="showConfirmModal"
+    :pendingItem="pendingItem"
+    :selectedManager="selectedManager"
+    confirmMode="confirm"
+    @close="showConfirmModal = false"
+    @confirm="finalApproval"
+  />
+
+  <!-- 배정 완료 -->
+  <ConfirmModal
+    v-if="showDoneModal"
+    :pendingItem="pendingItem"
+    confirmMode="done"
+    @closeDone="showDoneModal = false"
+  />
 </template>
 
 <script>
 import {
   getPendingList,
+  searchManagers,
   changeStatus as changeStatusApi,
 } from '../api/pending';
+import ManagersModal from './Pending/ManagerSelectModal.vue';
+import ConfirmModal from './Pending/ConfirmModal.vue';
 
 export default {
   name: 'PendingApproval',
   data() {
     return {
-      // Input 필드에 바인딩되는 값 (데이터만 변경, computed에 영향 X)
+      // input 바인딩되는 값(데이터만 변경, computed에 영향 X)
       stateInput: '',
       searchChildInput: '',
       searchManagerInput: '',
 
-      // 실제 필터링에 사용되는 값 (fetchList에서만 변경)
+      // 실제 검색 값 (fetchList에서만 변경)
       stateActive: '',
-      applicantKeywordActive: '',
-      managerKeywordActive: '',
+      searchChildActive: '',
+      searchManagerActive: '',
 
-      // 페이징 관련 상태
+      // 페이징
       pageSize: 10,
       currentPage: 1,
 
@@ -177,22 +208,42 @@ export default {
         검토완료: { label: '승인완료', class: 'apv-state-CA3' },
       },
       allStatusKeys: ['검토완료'],
+
+      // 모달 관련
+      // -> 담당자 리스트
+      // -> 최종 확인
+      // -> 완료
+      showManagerModal: false,
+      showConfirmModal: false,
+      showDoneModal: false,
+
+      confirmMode: 'confirm',
+
+      managers: [],
+      selectedManager: '',
+      pendingItem: null,
     };
+  },
+  components: {
+    ManagersModal,
+    ConfirmModal,
   },
   computed: {
     filteredList() {
       return this.listRaw.filter((item) => {
-        // Active 값 변경 -> 필터링 재실행
-        const stateMatch =
+        // 검색 기능
+        const searchStatus =
           !this.stateActive || item.status === this.stateActive;
-        const applicantMatch =
-          !this.applicantKeywordActive ||
-          item.childName.includes(this.applicantKeywordActive.trim());
-        const managerMatch =
-          !this.managerKeywordActive ||
-          item.managerName.includes(this.managerKeywordActive.trim());
+        const searchChild =
+          !this.searchChildActive ||
+          (item.childName || item.writerName || '').includes(
+            this.searchChildActive.trim()
+          );
+        const searchManager =
+          !this.searchManagerActive ||
+          (item.managerName || '').includes(this.searchManagerActive.trim());
 
-        return stateMatch && applicantMatch && managerMatch;
+        return searchStatus && searchChild && searchManager;
       });
     },
 
@@ -219,14 +270,16 @@ export default {
     async fetchList() {
       // input -> Active -> computed
       this.stateActive = this.stateInput;
-      this.applicantKeywordActive = this.searchChildInput;
-      this.managerKeywordActive = this.searchManagerInput;
+      this.searchChildActive = this.searchChildInput;
+      this.searchManagerActive = this.searchManagerInput;
 
-      const result = await getPendingList();
+      const data = JSON.parse(localStorage.getItem('user'));
+      const result = await getPendingList(data.org_code);
 
       this.listRaw = result.map((item) => ({
         submit_code: item.submit_code,
         childName: item.child_name,
+        writerName: item.writer_name,
         submitAt: item.submit_at?.split(' ')[0],
         managerName: item.manager_name,
         status: this.changeCode('load', item.status),
@@ -239,8 +292,8 @@ export default {
     searchList() {
       // input → Active로 복사
       this.stateActive = this.stateInput;
-      this.applicantKeywordActive = this.searchChildInput;
-      this.managerKeywordActive = this.searchManagerInput;
+      this.searchChildActive = this.searchChildInput;
+      this.searchManagerActive = this.searchManagerInput;
 
       // 검색할 때마다 다시 1페이지부터
       this.currentPage = 1;
@@ -256,27 +309,50 @@ export default {
       return result;
     },
 
-    // 상태값
-    async changeStatus(item, key) {
-      const status = key == '미검토' ? '미검토' : key;
-      if (
-        !confirm(`${item.childName}님의 상태를 [${status}]로 변경하시겠습니까?`)
-      ) {
-        return;
-      }
-      item.status = key;
+    // 상태값, 모달창
+    async changeStatus(item) {
+      // org_code 추출
+      // -> 모달창 출력
+      const data = JSON.parse(localStorage.getItem('user'));
+      const managers = await searchManagers(data.org_code);
+      this.managers = managers;
+      this.pendingItem = item;
+
+      this.selectedManager = '';
+      this.showManagerModal = true;
+    },
+
+    // 컨펌 모달창 출력
+    // -> 선택한 담당자를 다음 모달로 넘김
+    openConfirmModal(managerName) {
+      this.selectedManager = managerName;
+
+      this.showManagerModal = false;
+      this.confirmMode = 'confirm';
+      this.showConfirmModal = true;
+    },
+
+    // 최종
+    // -> 자식에게 받아온 담당자를 서버에 전송
+    async finalApproval() {
       const res = {
-        submit_code: item.submit_code,
-        status: this.changeCode('change', item.status),
+        submit_code: this.pendingItem.submit_code,
+        status: 'CA3',
+        assi_by: this.selectedManager,
       };
 
       const result = await changeStatusApi(res);
+
+      this.showConfirmModal = false;
+
       if (!result.ok) {
-        alert('변경 실패');
+        alert('배정 실패');
         return;
       }
+
+      this.confirmMode = 'done';
+      this.showDoneModal = true;
       this.fetchList();
-      alert('변경 완료');
     },
 
     setPage(page) {
@@ -424,7 +500,7 @@ export default {
 /* 버튼 오버라이드 */
 .apv-btn-sm {
   padding: 3px 6px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .apv-btn-info {
@@ -432,6 +508,7 @@ export default {
   color: white;
 }
 .apv-btn-success {
+  height: 30px;
   background-color: #28a745;
   color: white;
 }

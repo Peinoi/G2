@@ -1,9 +1,13 @@
 <template>
   <div class="apv-page">
-    <h2 class="apv-title">후원 활동 보고서 관리</h2>
+    <h2 class="apv-title">후원 활동 보고서</h2>
 
     <div class="apv-toolbar apv-toolbar-top">
-      <button class="apv-btn apv-btn-primary" @click="programAdd()">
+      <button
+        class="apv-btn apv-btn-primary"
+        @click="programAdd()"
+        v-if="userRole !== 'AA1'"
+      >
         후원 활동 보고서 등록
       </button>
       <div class="search-box">
@@ -57,7 +61,11 @@ import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
 import { ref, onBeforeMount, computed } from "vue";
-const emit = defineEmits(["go-to-add", "selectProgram"]);
+const userJsonString = localStorage.getItem("user");
+const userObject = JSON.parse(userJsonString);
+const userRole = userObject.role;
+
+const emit = defineEmits(["go-to-add", "select-program"]);
 
 let sponsorList = ref([]); // 전체 조회 조건 조회
 let programList = ref([]); // 검색창 프로그램 명 리스트 불러오기
@@ -79,21 +87,21 @@ const getSponsorList = async (params = {}) => {
   // const list = JSON.parse(JSON.stringify(res));
   // sponsorList.value = JSON.parse(JSON.stringify(res));
   // console.log(list);
-  const userJsonString = localStorage.getItem("user");
+  //const userJsonString = localStorage.getItem("user");
 
-  let userId = null;
+  // let userId = null;
 
-  const userObject = JSON.parse(userJsonString);
+  // const userObject = JSON.parse(userJsonString);
 
-  userId = String(userObject.user_id);
+  // userId = String(userObject.user_id);
 
   let list = JSON.parse(JSON.stringify(res));
 
   // filter의 반환값을 list에 다시 할당 (재할당)
-  list = list.filter((item) => {
-    // 안정성을 위해 String() 변환을 유지
-    return String(item.writer) === userId;
-  });
+  // list = list.filter((item) => {
+  //   // 안정성을 위해 String() 변환을 유지
+  //   return String(item.writer) === userId;
+  // });
 
   sponsorList.value = list;
   // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
@@ -125,33 +133,13 @@ const finalList = computed(() => {
   return sponsorList.value.filter((item) => item.program_name.includes(kw));
 });
 // client/comments/Sponsor/ProgramList.vue
+const selectProgram = async (item) => {
+  const res = await axios.get(`/api/sponsor/activity/${item.activity_code}`);
 
-const selectProgram = async (program) => {
-  console.log("선택된 프로그램:", program);
-
-  let result;
-  try {
-    result = await axios.get(`/api/sponsor/${program.program_code}`);
-  } catch (err) {
-    console.error("단건 조회 API 호출 실패:", err);
-    alert("프로그램 상세 정보를 불러오는 데 실패했습니다.");
-    return;
-  }
-
-  // 1. 응답 데이터 처리
-  // ProgramList.vue에서는 sponsorRows[0]와 attachments를 분리하여 받아야 합니다.
-  const programDetail = result.data.serviceSponsor.sponsorRows[0];
-  const attachments = result.data.serviceSponsor.attachments; // ✨ 첨부파일 데이터 추출
-
-  // 2. 상위 컴포넌트로 데이터와 함께 이벤트 발생
-  if (programDetail) {
-    // 프로그램 상세 정보에 첨부파일 목록을 합쳐서 전달합니다.
-    const fullDetail = {
-      ...programDetail,
-      attachments: attachments, // ✨ 첨부파일 목록을 추가
-    };
-    emit("select-program", fullDetail); // 'select-program' 이벤트를 상세 데이터와 함께 발생시킵니다.
-  }
+  emit("select-program", {
+    ...res.data.activity[0],
+    history: res.data.history,
+  });
 };
 </script>
 
@@ -317,7 +305,7 @@ const selectProgram = async (program) => {
 .apv-table td {
   padding: 9px 10px;
   border-bottom: 1px solid #edf2f7;
-  text-align: left;
+  text-align: center;
 }
 
 .apv-table th {

@@ -46,6 +46,17 @@
           저장
         </material-button>
       </div>
+
+      <!-- 비밀번호 변경 -->
+      <div v-if="editMode" class="text-end mt-2">
+        <material-button
+          color="info"
+          class="pw-change-btn"
+          @click="$emit('openPwModal')"
+        >
+          비밀번호 변경
+        </material-button>
+      </div>
     </div>
   </div>
 </template>

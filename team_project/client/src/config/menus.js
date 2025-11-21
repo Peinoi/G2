@@ -15,7 +15,7 @@ export const sponsorMenu = [
     label: "전체 후원 내역",
     path: "/mygiving",
     collapseRef: "mygiving",
-    role: ["AA1", "AA2", "AA3"],
+    role: ["AA2", "AA3"],
   },
   {
     label: "활동 보고서",
@@ -25,15 +25,9 @@ export const sponsorMenu = [
   },
   {
     label: "후원 예산 총괄표",
-    path: "/summary",
+    path: "/budget-summary",
     collapseRef: "BudgetSummary",
     role: ["AA1", "AA2", "AA3", "AA4"],
-  },
-  {
-    label: "담당자 관리",
-    path: "/manager",
-    collapseRef: "tables",
-    role: ["AA2"],
   },
 ];
 

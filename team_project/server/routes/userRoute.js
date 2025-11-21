@@ -31,6 +31,20 @@ router.put('/updateInfo', async (req, res) => {
   }
 });
 
+// pw 변경
+router.put('/updatePw', async (req, res) => {
+  try {
+    const result = await userInfoService.pwUpdate(req.body.data);
+    res.json(result);
+  } catch (err) {
+    console.error('[ userRoute.js -> updatePw 라우터 오류 ]', err);
+    res.status(500).json({
+      ok: false,
+      message: '[ userRoute.js -> updatePw 라우터 오류 ]',
+    });
+  }
+});
+
 // 자녀 추가
 router.post('/childAdd', async (req, res) => {
   const userData = { ...req.body };
