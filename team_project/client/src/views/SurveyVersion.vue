@@ -240,6 +240,7 @@ table td {
   font-size: 14px;
   font-weight: 400;
   font-family: "Noto Sans KR", sans-serif;
+  text-align: center;
 }
 
 /* 뱃지 */

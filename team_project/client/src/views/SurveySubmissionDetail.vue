@@ -225,11 +225,10 @@ function goBack() {
   router.push("/survey-list");
 }
 
-// 관리자: 담당자 배정 페이지로 이동 (쿼리 유지)
+// 관리자: 담당자 배정 페이지로 이동
 function goAssignPage() {
   router.push({
-    path: `/assign-manager/${submitCode}`,
-    query: { role: role.value, userId: userId.value },
+    path: `/pendingapproval`,
   });
 }
 

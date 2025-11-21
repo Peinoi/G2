@@ -10,19 +10,6 @@
             상담 목록
           </h2>
         </div>
-
-        <!-- 🔹 역할 표시 (읽기 전용, localStorage 기반) -->
-        <div class="header-action">
-          <span class="role-pill">
-            역할: {{ roleLabel }} ({{ rawAuthCode || "-" }})
-          </span>
-          <span
-            v-if="!currentUserId && selectedRole !== 4"
-            class="role-warning"
-          >
-            로그인 정보를 찾을 수 없습니다.
-          </span>
-        </div>
       </header>
 
       <!-- 🔍 검색 / 필터 / 정렬 라인 -->
@@ -330,22 +317,6 @@ function mapAuthToRole(code) {
       return 1;
   }
 }
-
-// 숫자 역할 → 라벨
-const roleLabel = computed(() => {
-  switch (selectedRole.value) {
-    case 1:
-      return "일반 이용자";
-    case 2:
-      return "담당자";
-    case 3:
-      return "관리자";
-    case 4:
-      return "시스템";
-    default:
-      return "알 수 없음";
-  }
-});
 
 // 🔹 담당자 역할 여부 (2이면 true)
 const isAssigneeRole = computed(() => Number(selectedRole.value) === 2);

@@ -42,14 +42,14 @@ Coded by www.creative-tim.com
   </main>
 </template>
 <script>
-import Sidenav from './examples/Sidenav';
-import Configurator from '@/examples/Configurator.vue';
-import Navbar from '@/examples/Navbars/Navbar.vue';
-import AppFooter from '@/examples/Footer.vue';
-import { mapMutations, mapState } from 'vuex';
+import Sidenav from "./examples/Sidenav";
+import Configurator from "@/examples/Configurator.vue";
+import Navbar from "@/examples/Navbars/Navbar.vue";
+import AppFooter from "@/examples/Footer.vue";
+import { mapMutations, mapState } from "vuex";
 
 export default {
-  name: 'App',
+  name: "App",
   components: { Sidenav, Configurator, Navbar, AppFooter },
 
   setup() {
@@ -57,37 +57,36 @@ export default {
     // // return { sidebar };
   },
   methods: {
-    ...mapMutations(['toggleConfigurator', 'navbarMinimize']),
+    ...mapMutations(["toggleConfigurator", "navbarMinimize"]),
   },
   computed: {
     ...mapState([
-      'isRTL',
-      'color',
-      'isAbsolute',
-      'isNavFixed',
-      'navbarFixed',
-      'absolute',
-      'showSidenav',
-      'showNavbar',
-      'showFooter',
-      'showConfig',
-      'hideConfigButton',
+      "isRTL",
+      "color",
+      "isAbsolute",
+      "isNavFixed",
+      "navbarFixed",
+      "absolute",
+      "showSidenav",
+      "showNavbar",
+      "showFooter",
+      "showConfig",
+      "hideConfigButton",
     ]),
   },
   beforeMount() {
-    this.$store.state.isTransparent = 'bg-transparent';
+    this.$store.state.isTransparent = "bg-transparent";
 
-    const sidenav = document.getElementsByClassName('g-sidenav-show')[0];
+    const sidenav = document.getElementsByClassName("g-sidenav-show")[0];
 
     if (window.innerWidth > 1200) {
-      sidenav.classList.add('g-sidenav-pinned');
+      sidenav.classList.add("g-sidenav-pinned");
     }
   },
 };
 </script>
 
 <style>
-
 html,
 body {
   height: 100%;

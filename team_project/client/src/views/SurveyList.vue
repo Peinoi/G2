@@ -11,12 +11,20 @@
             조사지 제출 목록
           </h2>
         </div>
-
-        <!-- 🔹 로그인 정보 / 역할 표시 (읽기 전용) -->
-        <div class="header-meta">
-          <span class="role-pill"> 권한: {{ roleLabel }} ({{ role }}) </span>
-        </div>
       </header>
+
+      <!-- 기관 안내 스낵바 -->
+      <div class="snack-area" v-if="showOrgAlert">
+        <MaterialSnackbar
+          simple
+          title="기관을 먼저 등록하세요."
+          description=""
+          date=""
+          :icon="{ component: 'notifications', color: 'white' }"
+          color="danger"
+          :closeHandler="closeOrgAlert"
+        />
+      </div>
 
       <!-- 액션 버튼 영역 -->
       <div class="mb-3 flex justify-between items-center action-row">
@@ -26,7 +34,7 @@
             v-if="role === 1"
             color="dark"
             size="sm"
-            @click="$router.push('/survey/write')"
+            @click="onClickWrite"
           >
             조사지 작성하기
           </MaterialButton>
@@ -192,24 +200,23 @@ import axios from "axios";
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialPagination from "@/components/MaterialPagination.vue";
 import MaterialPaginationItem from "@/components/MaterialPaginationItem.vue";
+import MaterialSnackbar from "@/components/MaterialSnackbar.vue";
 
 const router = useRouter();
 
 const role = ref(1);
 
-/**
- * 🔹 userId: 로그인한 유저의 user_code
- */
+//로그인 사람 아이디, 기관코드, 권한
 const userId = ref(null);
-
-/**
- * 🔹 rawAuthCode: localStorage에 저장된 권한 코드(AA1~AA4)
- */
+const orgCode = ref(null);
 const rawAuthCode = ref("AA1");
 
 const list = ref([]);
 const loading = ref(false);
 const error = ref("");
+
+const showOrgAlert = ref(false);
+const orgAlertTimer = ref(null);
 
 // 🔍 검색 / 필터 / 정렬 상태
 const searchText = ref(""); // 입력창에 보이는 값
@@ -319,22 +326,6 @@ function mapAuthToRole(code) {
   }
 }
 
-/** 숫자 역할 → 라벨 텍스트 */
-const roleLabel = computed(() => {
-  switch (role.value) {
-    case 1:
-      return "일반 이용자";
-    case 2:
-      return "담당자";
-    case 3:
-      return "관리자";
-    case 4:
-      return "시스템";
-    default:
-      return "알 수 없음";
-  }
-});
-
 /** 목록 조회 */
 async function fetchList() {
   loading.value = true;
@@ -405,7 +396,38 @@ function goToDetail(submitCode) {
   });
 }
 
-/** 🔹 마운트 시 localStorage에서 로그인 정보 읽기 */
+// 조사지 작성하기
+function onClickWrite() {
+  if (!orgCode.value) {
+    // 이미 떠 있던 타이머 있으면 정리
+    if (orgAlertTimer.value) {
+      clearTimeout(orgAlertTimer.value);
+      orgAlertTimer.value = null;
+    }
+
+    showOrgAlert.value = true;
+
+    // 2.5초 후 자동으로 닫히게
+    orgAlertTimer.value = setTimeout(() => {
+      showOrgAlert.value = false;
+      orgAlertTimer.value = null;
+    }, 2500);
+
+    return;
+  }
+  router.push("/survey/write");
+}
+
+// 스낵바 X 버튼 눌렀을 때 닫기
+function closeOrgAlert() {
+  showOrgAlert.value = false;
+  if (orgAlertTimer.value) {
+    clearTimeout(orgAlertTimer.value);
+    orgAlertTimer.value = null;
+  }
+}
+
+//localStorage에서 로그인 정보 읽기
 onMounted(() => {
   try {
     const stored = localStorage.getItem("user");
@@ -415,20 +437,24 @@ onMounted(() => {
 
       const userCode = u.user_code ?? u.userCode ?? u.id;
       const auth = u.auth_code ?? u.authCode ?? u.role_code ?? u.role ?? "AA1";
+      const org = u.org_code ?? u.orgCode ?? null;
 
       userId.value = userCode ? Number(userCode) : null;
       rawAuthCode.value = auth;
       role.value = mapAuthToRole(String(auth).toUpperCase());
+      orgCode.value = org;
     } else {
       userId.value = null;
       rawAuthCode.value = "AA1";
       role.value = 1;
+      orgCode.value = null;
     }
   } catch (e) {
     console.error("localStorage 파싱 오류:", e);
     userId.value = null;
     rawAuthCode.value = "AA1";
     role.value = 1;
+    orgCode.value = null;
   }
 
   fetchList();
@@ -438,11 +464,12 @@ onMounted(() => {
 <style scoped>
 section {
   color: #111827;
+  font-size: 15px;
 }
 
 /* 안쪽 래퍼: 전체 폭 제한 + 살짝 간격 */
 .page-inner {
-  max-width: 72rem; /* 1152px 정도 */
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -478,14 +505,12 @@ section {
   padding: 0.25rem 0.75rem;
   border-radius: 999px;
   background-color: #f3f4f6;
-  font-size: 0.8rem;
   color: #374151;
   border: 1px solid #e5e7eb;
 }
 
 .role-sub {
   margin-top: 2px;
-  font-size: 0.72rem;
   color: #9ca3af;
 }
 
@@ -501,7 +526,6 @@ section {
   background-color: #f9fafb;
   padding: 1.75rem 1.25rem;
   color: #4b5563;
-  font-size: 0.9rem;
 }
 
 /* 공통 테이블 카드 */
@@ -524,8 +548,7 @@ section {
 /* 헤더 셀 */
 .th-cell {
   padding: 0.7rem 0.9rem;
-  text-align: left;
-  font-size: 0.75rem;
+  text-align: center;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -540,7 +563,6 @@ section {
   padding: 0.65rem 0.9rem;
   border-bottom: 1px solid #f3f4f6;
   color: #111827;
-  font-size: 0.9rem;
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -550,7 +572,6 @@ section {
 .td-cell.mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  font-size: 0.82rem;
   color: #4b5563;
 }
 
@@ -586,7 +607,6 @@ section {
   min-width: 4.2rem;
   padding: 0.12rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.72rem;
   font-weight: 500;
   border: 1px solid transparent;
 }
@@ -622,6 +642,7 @@ table td {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  text-align: center;
 }
 
 /* 비었을 때 (담당자 제외) */
@@ -629,7 +650,6 @@ table td {
   text-align: center;
   padding: 3rem 1rem;
   color: #9ca3af;
-  font-size: 0.9rem;
 }
 
 /* 페이지네이션 */
@@ -685,7 +705,6 @@ table td {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 0.9rem;
-  font-size: 0.875rem;
   background-color: #ffffff;
   outline: none;
 }
@@ -708,7 +727,6 @@ table td {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 1.1rem 0.45rem 0.8rem;
-  font-size: 0.8rem;
   background-color: #ffffff;
   outline: none;
   color: #374151;
@@ -717,5 +735,16 @@ table td {
 .select-input:focus {
   border-color: #111827;
   box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.16);
+}
+
+/* 🔔 스낵바 위치 (화면 위 중앙에 뙇) */
+.snack-area {
+  position: fixed;
+  top: 64px; /* 헤더 높이에 맞춰서 적당히 조절해줘도 됨 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 260px;
+  max-width: 420px;
 }
 </style>
