@@ -297,6 +297,7 @@ export default {
             joinDate: today,
             ...detail,
           };
+
           const result = await addOrg(payload);
 
           if (result.ok) {

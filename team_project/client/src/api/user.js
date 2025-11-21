@@ -22,6 +22,17 @@ export async function addUser(userData) {
   }
 }
 
+// 회원가입 -> 기관 조회
+export async function findAllOrg() {
+  try {
+    const res = await axios.post('/api/user/findOrg');
+    return res.data;
+  } catch (err) {
+    console.log('[ user.js 기관 조회 실패 ]', err);
+    throw err;
+  }
+}
+
 // 회원가입 -> 기관 회원
 export async function addOrg(orgData) {
   try {
