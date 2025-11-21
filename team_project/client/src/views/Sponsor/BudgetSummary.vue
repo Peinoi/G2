@@ -242,7 +242,7 @@ const goDetail = (code) => {
 .apv-table td {
   padding: 9px 10px;
   border-bottom: 1px solid #edf2f7;
-  text-align: left;
+  text-align: center;
 }
 
 .apv-table th {
