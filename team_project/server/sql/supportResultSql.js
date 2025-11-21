@@ -308,7 +308,11 @@ ORDER BY sr.result_code DESC
     MAX(sr.written_at)  AS result_written_at,
 
     -- ✅ 담당자 이름
-    MAX(ua.name)        AS assignee_name
+    MAX(ua.name)        AS assignee_name,
+
+    -- ✅ 우선순위 (case_priority.level)
+    MAX(cp.level)       AS level
+
   FROM survey_submission ss
   JOIN users u
     ON u.user_code = ss.written_by               -- 보호자(작성자)
@@ -321,8 +325,12 @@ ORDER BY sr.result_code DESC
   LEFT JOIN support_result sr
     ON sr.plan_code = sp.plan_code
   LEFT JOIN users ua
-    ON ua.user_code = sp.assi_by          -- 담당자
+    ON ua.user_code = sp.assi_by                 -- 담당자
+  LEFT JOIN case_priority cp
+    ON cp.submit_code = ss.submit_code           -- ⭐ 우선순위 조인
+
   WHERE ss.submit_code = ?
+
   GROUP BY
     ss.submit_code,
     guardian_name,

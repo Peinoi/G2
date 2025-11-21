@@ -154,6 +154,8 @@ async function getPlanBasic(submitCode) {
 
       // 상담지 제출일
       counselSubmitAt: row.counsel_submit_at || null,
+
+      level: row.level || null,
     });
   } finally {
     conn.release();

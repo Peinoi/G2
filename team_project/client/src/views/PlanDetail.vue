@@ -100,6 +100,12 @@
               }}</span>
             </div>
 
+            <!-- 4. 우선순위 -->
+            <div class="meta-item">
+              <span class="meta-label">우선순위</span>
+              <span class="meta-value">{{ basicInfo.priority || "-" }}</span>
+            </div>
+
             <!-- 5. 상담지 제출일 -->
             <div class="meta-item">
               <span class="meta-label">상담지 제출일</span>
@@ -347,6 +353,7 @@ const basicInfo = ref({
   assigneeName: "",
   disabilityType: "",
   counselSubmitAt: "",
+  priority: "",
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -413,6 +420,7 @@ async function loadBasicInfo() {
     assigneeName: res.assigneeName || "-",
     disabilityType: res.disabilityType || "-",
     counselSubmitAt: res.counselSubmitAt || "",
+    priority: res.level || "-",
   };
 }
 

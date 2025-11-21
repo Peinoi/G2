@@ -151,7 +151,10 @@ SELECT
   assi.name AS assignee_name,
 
   -- 상담지 제출일
-  MIN(cn.written_at) AS counsel_submit_at
+  MIN(cn.written_at) AS counsel_submit_at,
+
+  -- ⭐ 우선순위 (case_priority.level)
+  MAX(cp.level) AS level
 
 FROM survey_submission ss
 JOIN users writer
@@ -161,10 +164,13 @@ LEFT JOIN child
   ON child.child_code = ss.child_code
 
 LEFT JOIN users assi
-  ON assi.user_code = ss.assi_by   -- ⭐ 담당자 조인 추가
+  ON assi.user_code = ss.assi_by   -- 담당자
 
 LEFT JOIN counsel_note cn
   ON cn.submit_code = ss.submit_code
+
+LEFT JOIN case_priority cp
+  ON cp.submit_code = ss.submit_code   -- ⭐ 우선순위 조인
 
 WHERE ss.submit_code = ?
 

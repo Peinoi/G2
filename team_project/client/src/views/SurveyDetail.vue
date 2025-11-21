@@ -104,8 +104,26 @@
               </div>
 
               <div class="q-meta">
-                질문 유형:
-                <span class="q-type">{{ item.question_type }}</span>
+                <div>
+                  질문 유형:
+                  <span class="q-type">
+                    {{ questionTypeLabel(item.question_type) }}
+                  </span>
+                </div>
+
+                <!-- 옵션 값 출력 -->
+                <div v-if="normalizeOptions(item).length" class="q-options">
+                  <span class="q-options-label">질문 내용:</span>
+                  <ul class="q-options-list">
+                    <li
+                      v-for="(opt, oIdx) in normalizeOptions(item)"
+                      :key="oIdx"
+                      class="q-option-item"
+                    >
+                      {{ opt }}
+                    </li>
+                  </ul>
+                </div>
               </div>
             </li>
           </ul>
@@ -166,6 +184,58 @@ function goEdit() {
     name: "survey-edit",
     params: { id: survey.value.template_ver_code },
   });
+}
+
+/** 질문 유형 → 한글 라벨 매핑 */
+function questionTypeLabel(type) {
+  const t = (type ?? "").toString().trim().toUpperCase();
+  switch (t) {
+    case "RADIO":
+      return "단일선택";
+    case "CHECKBOX":
+      return "다중선택";
+    case "TEXT":
+      return "단답형";
+    case "TEXTAREA":
+      return "서술형";
+    default:
+      return type || "-";
+  }
+}
+
+/**
+ * option_values를 화면용 배열로 변환
+ * - 배열이면 그대로(객체면 label/text 우선)
+ * - 문자열이면 개행/쉼표 기준으로 분리
+ */
+function normalizeOptions(item) {
+  const raw = item?.option_values;
+  if (!raw) return [];
+
+  // 배열 형태인 경우
+  if (Array.isArray(raw)) {
+    return raw
+      .map((v) => {
+        if (typeof v === "string") return v;
+        if (v && typeof v === "object") {
+          return v.label ?? v.text ?? "";
+        }
+        return "";
+      })
+      .map((v) => String(v).trim())
+      .filter((v) => v.length > 0);
+  }
+
+  // 문자열 형태인 경우 (줄바꿈, 쉼표 기준 분리)
+  if (typeof raw === "string") {
+    return raw
+      .split(/[\n,]/)
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+  }
+
+  // 그 외는 표시 X
+  return [];
 }
 
 onMounted(fetchDetail);
@@ -316,12 +386,43 @@ section {
   margin-top: 0.45rem;
   font-size: 0.78rem;
   color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .q-type {
   font-weight: 500;
   color: #111827;
 }
+
+/* 옵션 영역 */
+.q-options {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+}
+
+.q-options-label {
+  flex: 0 0 auto;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.q-options-list {
+  flex: 1 1 auto;
+  list-style-type: disc;
+  padding-left: 1.1rem;
+  margin: 0;
+}
+
+.q-option-item {
+  font-size: 0.78rem;
+  color: #374151;
+}
+
+/* 하단 버튼 영역 */
 .form-actions {
   padding-top: 0.9rem;
   border-top: 1px solid #e5e7eb;
