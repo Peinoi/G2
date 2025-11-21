@@ -40,8 +40,9 @@
             @click="goDetail(r.program_code)"
             class="click-row"
           >
-            <td>{{ r.org_name }}</td>
+            <td>{{ r.org_id }}</td>
             <td>{{ r.program_name }}</td>
+
             <td>
               {{ dateFormat(r.start_date, "yyyy-MM-dd") }}~
               {{ dateFormat(r.end_date, "yyyy-MM-dd") }}
@@ -116,9 +117,12 @@ const goDetail = (code) => {
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
 /* === ManagerApprovals.vue 와 동일 스타일 === */
 .apv-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto;
   padding: 0 16px 40px;
 }
@@ -383,5 +387,22 @@ const goDetail = (code) => {
   gap: 12px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+.apv-table td:nth-child(2) {
+  text-align: left !important;
+}
+
+/* 금액 관련 컬럼 오른쪽 정렬 (4~7번째 컬럼) */
+.apv-table td:nth-child(4),
+.apv-table td:nth-child(5),
+.apv-table td:nth-child(6),
+.apv-table td:nth-child(7) {
+  text-align: right !important;
+}
+.apv-table th:nth-child(4),
+.apv-table th:nth-child(5),
+.apv-table th:nth-child(6),
+.apv-table th:nth-child(7) {
+  text-align: right !important;
 }
 </style>
