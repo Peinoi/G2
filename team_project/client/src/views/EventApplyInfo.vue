@@ -113,6 +113,11 @@
             </li>
           </ul>
         </div>
+
+        <!-- 이미지 미리보기 모달 -->
+        <div v-if="previewImage" class="preview-modal" @click="closePreview">
+          <img :src="previewImage" class="preview-img" />
+        </div>
       </div>
     </div>
   </section>
@@ -131,8 +136,33 @@ const route = useRoute();
 const router = useRouter();
 const calendarRef = ref(null);
 
+// 로그인 유저 코드
+const getLoginUserCode = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.user_code || null;
+  } catch {
+    return null;
+  }
+};
+
+// 로그인 권한
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+
 const eventCode = Number(route.params.eventCode || 0);
 const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
+const loginRole = ref(getLoginRole());
 
 const event = ref({
   sub_events: [],
@@ -142,11 +172,41 @@ const event = ref({
 const mainImage = ref("");
 const isApplied = ref(false);
 
+// 미리보기 이미지
+const previewImage = ref("");
+
+// 파일 미리보기
+const previewFile = (file) => {
+  const ext = file.original_filename.split(".").pop().toLowerCase();
+
+  // 이미지면 모달로 보기
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+    previewImage.value = file.file_path;
+    return;
+  }
+
+  // PDF면 새 창 미리보기
+  if (ext === "pdf") {
+    window.open(file.file_path, "_blank");
+    return;
+  }
+
+  // 그 외 파일은 다운로드
+  window.location.href = file.file_path;
+};
+
+const closePreview = () => {
+  previewImage.value = "";
+};
+
 // 상태 버튼 표시
 const canApply = computed(
-  () => role.value === 1 && event.value.event_type === "DD1" && !isApplied.value
+  () =>
+    loginRole.value === "AA1" &&
+    event.value.event_type === "DD1" &&
+    !isApplied.value
 );
-const applied = computed(() => role.value === 1 && isApplied.value);
+const applied = computed(() => loginRole.value === "AA1" && isApplied.value);
 const canEdit = computed(
   () => role.value === 2 && event.value.register_status === "BA2"
 );
@@ -154,7 +214,9 @@ const canReEdit = computed(
   () => role.value === 2 && event.value.register_status === "BA3"
 );
 
-const isAdmin = computed(() => role.value === 3);
+const isAdmin = computed(
+  () => loginRole.value === "AA3" && event.value.register_status !== "BA2"
+);
 
 // 상태 Pill 클래스
 const statusClass = (status) => {
@@ -172,18 +234,6 @@ const statusClass = (status) => {
 
 // 날짜 포맷
 const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
-
-// 로그인 유저 코드
-const getLoginUserCode = () => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
-  try {
-    const data = JSON.parse(userStr);
-    return data.user_code || null;
-  } catch {
-    return null;
-  }
-};
 
 // 이벤트 조회
 const fetchEvent = async () => {
@@ -242,13 +292,20 @@ const applyEvent = async ({ sub_event_code = null }) => {
 
 // 신청 버튼
 const applySimple = async () => {
-  if (isApplied.value) return alert("이미 신청한 일정입니다.");
+  if (loginRole.value !== "AA1")
+    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+
+  if (isApplied.value) return alert("이미 신청했습니다.");
+
   const ok = await applyEvent({});
   if (ok) isApplied.value = true;
 };
 
 // 캘린더 클릭 예약
 const onEventClick = async (info) => {
+  if (loginRole.value !== "AA1")
+    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+
   if (info.event.extendedProps.isApplied)
     return alert("이미 신청한 일정입니다.");
 
@@ -307,7 +364,7 @@ const handleReject = async () => {
 };
 
 // 화면 이동
-const goBack = () => router.push({ name: "EventPlanApprovals" });
+const goBack = () => router.back();
 const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션

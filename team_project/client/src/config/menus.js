@@ -62,12 +62,12 @@ export const eventMenu = [
     collapseRef: "EventApplyResult",
     role: ["AA2", "AA3"],
   },
-  {
-    label: "담당자 목록",
-    path: "/event/manager-list",
-    collapseRef: "EventManagerList",
-    role: ["AA2", "AA3"],
-  },
+  // {
+  //   label: '담당자 목록',
+  //   path: '/event/manager-list',
+  //   collapseRef: 'EventManagerList',
+  //   role: ['AA2', 'AA3'],
+  // },
   {
     label: "참가자 목록",
     path: "/event/attendance-list",

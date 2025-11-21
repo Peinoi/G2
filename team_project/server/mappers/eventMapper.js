@@ -932,7 +932,7 @@ async function addEventResultFull(data) {
 }
 
 // 결과보고서 + 첨부파일 단건조회
-async function selectResultOneFull(event_result_code, user_code) {
+async function selectResultOneFull(event_result_code) {
   let conn;
   try {
     conn = await pool.getConnection();
@@ -1010,6 +1010,10 @@ async function rejectEventResult(resultCode, reason) {
       throw new Error("유효한 resultCode가 아닙니다.");
     }
 
+    // 1) 결과보고서 상태 BA3(반려)로 변경
+    await conn.query(eventSQL.updateEventResultStatus, ["BA3", resultId]);
+
+    // 2) request_approval 상태 BA3(반려)로 변경
     const result = await conn.query(eventSQL.updateApprovalRejectForResult, [
       reason || "",
       resultId,
@@ -1079,6 +1083,167 @@ async function resubmitResult(resultCode, requesterCode) {
   }
 }
 
+// ==========================
+// 참가자 목록 조회
+// ==========================
+async function selectAttendance(filters) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    // 와일드카드/NULL 준비
+    const applyStatusLike = filters.applyStatus
+      ? `%${filters.applyStatus}%`
+      : null;
+    const eventNameLike = filters.eventName ? `%${filters.eventName}%` : null;
+    const managerNameLike = filters.managerName
+      ? `%${filters.managerName}%`
+      : null;
+
+    const page = Number(filters.page || 1);
+    const size = Number(filters.size || 20);
+    const limit = size;
+    const offset = (page - 1) * size;
+
+    const params = [
+      applyStatusLike,
+      filters.applyStatus ? applyStatusLike : null,
+      eventNameLike,
+      filters.eventName ? eventNameLike : null,
+      managerNameLike,
+      filters.managerName ? managerNameLike : null,
+      limit,
+      offset,
+    ];
+
+    const rows = await conn.query(eventSQL.selectAttendance, params);
+
+    for (const apply of rows) {
+      apply.apply_status_name = await commonCodeService.getCodeName(
+        "DE",
+        apply.apply_status
+      );
+      apply.attend_status_name = await commonCodeService.getCodeName(
+        "DG",
+        apply.attend_status
+      );
+      apply.child_gender_name = await commonCodeService.getCodeName(
+        "AC",
+        apply.child_gender
+      );
+    }
+
+    // count
+    const countParams = [
+      applyStatusLike,
+      filters.applyStatus ? applyStatusLike : null,
+      eventNameLike,
+      filters.eventName ? eventNameLike : null,
+      managerNameLike,
+      filters.managerName ? managerNameLike : null,
+    ];
+    const countRows = await conn.query(eventSQL.countAttendance, countParams);
+    const totalCount = countRows[0] ? countRows[0].cnt : 0;
+
+    return { rows, totalCount };
+  } catch (err) {
+    console.error("[eventMapper.js || selectAttendance 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn && conn.release();
+  }
+}
+
+// ==========================
+// 참가자/자녀 단건 조회
+// ==========================
+async function selectAttendanceOne(apply_code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    const rows = await conn.query(eventSQL.selectAttendanceOne, [apply_code]);
+
+    for (const apply of rows) {
+      apply.apply_status_name = await commonCodeService.getCodeName(
+        "DE",
+        apply.apply_status
+      );
+      apply.attend_status_name = await commonCodeService.getCodeName(
+        "DG",
+        apply.attend_status
+      );
+      apply.child_gender_name = await commonCodeService.getCodeName(
+        "AC",
+        apply.child_gender
+      );
+    }
+
+    console.log("[eventMapper.js || selectAttendanceOne 성공]");
+    return rows[0];
+  } catch (err) {
+    console.error("[eventMapper.js || selectAttendanceOne 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn && conn.release();
+  }
+}
+
+// 🔹 이벤트 신청내역 승인
+async function approveMyApply(applyCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const applyId = Number(applyCode);
+    if (!applyId) {
+      throw new Error("유효한 applyCode 아닙니다.");
+    }
+
+    // 신청내역 상태 DE2(승인)로 변경
+    const result = await conn.query(eventSQL.updateApprovalApproveForMyApply, [
+      applyId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+// 🔹 신청내역 취소
+async function rejectMyApply(applyCode) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const applyId = Number(applyCode);
+    if (!applyId) {
+      throw new Error("유효한 applyCode가 아닙니다.");
+    }
+
+    // 이벤트 신청내역 상태 DE4(취소)로 변경
+    const result = await conn.query(eventSQL.updateApprovalRejectForMyApply, [
+      applyId,
+    ]);
+
+    await conn.commit();
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   selectEventMainpage,
   selectEventList,
@@ -1109,4 +1274,8 @@ module.exports = {
   getResultRejectionReason,
   resubmitResult,
   getAllManagers,
+  selectAttendance,
+  selectAttendanceOne,
+  approveMyApply,
+  rejectMyApply,
 };

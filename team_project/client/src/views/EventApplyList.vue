@@ -21,6 +21,7 @@
             v-for="(apply, idx) in applies"
             :key="apply.apply_code || idx"
             class="border-t hover:bg-gray-50"
+            @click="goMyApplyInfo(apply.apply_code, apply.event_code)"
           >
             <td class="px-4 py-2 text-center">{{ idx + 1 }}</td>
             <td class="px-4 py-2">{{ apply.event_name }}</td>
@@ -54,6 +55,9 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const applies = ref([]);
 const user_code = JSON.parse(localStorage.getItem("user") || "{}").user_code;
@@ -86,6 +90,13 @@ const handleCancel = async (apply_code) => {
     console.error("신청 취소 실패:", err);
     alert("신청 취소 중 오류가 발생했습니다.");
   }
+};
+
+const goMyApplyInfo = (apply_code, event_code) => {
+  router.push({
+    name: "EventMyApplyInfo",
+    params: { applyCode: apply_code, eventCode: event_code },
+  });
 };
 
 onMounted(fetchApplies);

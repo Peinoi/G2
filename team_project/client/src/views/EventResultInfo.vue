@@ -4,6 +4,12 @@
       <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
         ← 목록으로
       </MaterialButton>
+      <!-- 관리자 승인/반려 -->
+      <div v-if="isAdmin">
+        <!-- 🔥 여기에 하나로 묶음 -->
+        <MaterialButton @click="handleApprove">승인</MaterialButton>
+        <MaterialButton @click="handleReject">반려</MaterialButton>
+      </div>
     </div>
 
     <div v-if="result" class="detail-card space-y-4">
@@ -51,18 +57,13 @@
         <div v-if="previewImage" class="preview-modal" @click="closePreview">
           <img :src="previewImage" class="preview-img" />
         </div>
-
-        <!-- 하단 이전 버튼 -->
-        <div class="bottom-buttons">
-          <button class="back-btn" @click="goBack">이전으로</button>
-        </div>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 
@@ -72,18 +73,6 @@ const router = useRouter();
 const result = ref(null);
 
 const resultCode = Number(route.params.resultCode || 0);
-
-// 로그인 유저 코드
-const getLoginUserCode = () => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
-  try {
-    const data = JSON.parse(userStr);
-    return data.user_code || null;
-  } catch {
-    return null;
-  }
-};
 
 // 미리보기 이미지
 const previewImage = ref("");
@@ -114,18 +103,48 @@ const closePreview = () => {
 
 // 대표 이미지 설정
 const mainImage = ref("");
+const isApplied = ref(false);
+
+// 로그인 권한
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+const loginRole = ref(getLoginRole());
+
+// 상태 버튼 표시
+const isAdmin = computed(
+  () => loginRole.value === "AA3" && result.value?.result_status !== "BA2"
+);
+
+// 상태 Pill 클래스
+const statusClass = (status) => {
+  switch (status) {
+    case "BA1":
+      return "status-pill--before";
+    case "BA2":
+      return "status-pill--done";
+    case "BA3":
+      return "status-pill--rejected";
+    default:
+      return "";
+  }
+};
 
 // API 호출
 const fetchResult = async () => {
   try {
-    const userCode = getLoginUserCode();
-
-    const res = await axios.get(`/api/event/result/${resultCode}`, {
-      params: { user_code: userCode },
-    });
+    const res = await axios.get(`/api/event/result/${resultCode}`);
 
     if (res.data?.status === "success") {
       result.value = res.data.data;
+      isApplied.value = !!result.value.alreadyApplied;
     } else {
       alert("결과보고서 조회 실패");
       return;
@@ -142,20 +161,43 @@ const fetchResult = async () => {
   }
 };
 
-const statusClass = (status) => {
-  switch (status) {
-    case "BA1":
-      return "status-pill--before";
-    case "BA2":
-      return "status-pill--done";
-    case "BA3":
-      return "status-pill--rejected";
-    default:
-      return "";
+const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+
+// 승인 (관리자)
+const handleApprove = async () => {
+  try {
+    const res = await axios.post(`/api/event/result/${resultCode}/approve`);
+    if (res.data.success) {
+      alert("승인되었습니다.");
+      await fetchResult();
+    } else {
+      alert(res.data.message || "승인 실패");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("서버 오류: " + (err.message || ""));
   }
 };
 
-const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+// 반려 (관리자)
+const handleReject = async () => {
+  const reason = prompt("반려 사유를 입력해주세요:");
+  if (!reason) return;
+  try {
+    const res = await axios.post(`/api/event/result/${resultCode}/reject`, {
+      reason,
+    });
+    if (res.data.success) {
+      alert("반려 처리되었습니다.");
+      await fetchResult();
+    } else {
+      alert(res.data.message || "반려 실패");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("서버 오류: " + (err.message || ""));
+  }
+};
 
 // 이전 버튼
 const goBack = () => router.back();

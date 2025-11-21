@@ -142,9 +142,24 @@ const event = ref({
 const mainImage = ref("");
 const isApplied = ref(false);
 
+// 로그인 권한
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+const loginRole = ref(getLoginRole());
 // 상태 버튼 표시
 const canApply = computed(
-  () => role.value === 1 && event.value.event_type === "DD1" && !isApplied.value
+  () =>
+    loginRole.value === "AA1" &&
+    event.value.event_type === "DD1" &&
+    !isApplied.value
 );
 const applied = computed(() => role.value === 1 && isApplied.value);
 const canEdit = computed(
@@ -249,6 +264,9 @@ const applySimple = async () => {
 
 // 캘린더 클릭 예약
 const onEventClick = async (info) => {
+  if (loginRole.value !== "AA1")
+    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+
   if (info.event.extendedProps.isApplied)
     return alert("이미 신청한 일정입니다.");
 
@@ -306,7 +324,7 @@ const handleReject = async () => {
 };
 
 // 화면 이동
-const goBack = () => router.push({ name: "EventPlanApprovals" });
+const goBack = () => router.back();
 const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션
