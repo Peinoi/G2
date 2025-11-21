@@ -1,7 +1,9 @@
-const FIND_ID = 'SELECT user_id FROM users WHERE user_id = ?';
+const FIND_ID = "SELECT user_id FROM users WHERE user_id = ?";
 
 const AUTH_LOGIN = `
-  SELECT user_code,
+  SELECT 
+         name,
+         user_code,
          org_code,
          user_id, 
          role

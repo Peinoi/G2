@@ -7,7 +7,7 @@
           id="bannerCarousel"
           class="carousel slide shadow-sm rounded-4 overflow-hidden"
           data-bs-ride="carousel"
-          data-bs-interval="2000"
+          data-bs-interval="5000"
         >
           <div class="carousel-inner">
             <!-- ✅ 이벤트 + 후원 합친 배너 사용 -->

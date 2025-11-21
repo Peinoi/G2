@@ -18,29 +18,29 @@
         {{ currentPage }}
       </li> -->
     </ol>
-    <h6 class="mb-0 font-weight-bolder" :class="color">
+    <!-- <h6 class="mb-0 font-weight-bolder" :class="color">
       {{ currentPage }}
-    </h6>
+    </h6> -->
   </nav>
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from "vuex";
 
 export default {
-  name: 'breadcrumbs',
+  name: "breadcrumbs",
   props: {
     currentPage: {
       type: String,
-      required: '',
+      required: "",
     },
     color: {
       type: String,
-      default: 'text-dark',
+      default: "text-dark",
     },
   },
   computed: {
-    ...mapState(['isRTL']),
+    ...mapState(["isRTL"]),
   },
 };
 </script>

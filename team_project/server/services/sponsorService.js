@@ -174,13 +174,16 @@ async function summaryStatementList() {
 }
 
 // 총괄표 단건 조회
-async function summaryStatementListSelect(activity_code) {
+async function summaryStatementListSelect(programCode) {
   //  activity_code 인수로 받습니다.
   const sponsorFindDB = await sponsorMapper.summaryStatementSelect(
-    activity_code
+    programCode
   ); // programSearch로 변경
 
   return sponsorFindDB;
+}
+async function activitySelectOne(activityCode) {
+  return await sponsorMapper.activity_SelectSQL(activityCode);
 }
 
 module.exports = {
@@ -199,5 +202,5 @@ module.exports = {
   activityList,
   current_amountUpdate,
   summaryStatementList,
-  summaryStatementListSelect,
+  summaryStatementListSelect,activitySelectOne
 };
