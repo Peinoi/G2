@@ -34,7 +34,12 @@
               데이터가 없습니다.
             </td>
           </tr>
-          <tr v-for="r in finalList" :key="r.program_code" @click="goDetail(r.program_code)" class="click-row">
+          <tr
+            v-for="r in finalList"
+            :key="r.program_code"
+            @click="goDetail(r.program_code)"
+            class="click-row"
+          >
             <td>{{ r.org_name }}</td>
             <td>{{ r.program_name }}</td>
             <td>
@@ -365,7 +370,18 @@ const goDetail = (code) => {
   border-radius: 5px;
 }
 
-.click-row { cursor: pointer; }
-.click-row:hover { background-color: #eef3ff; }
-
+.click-row {
+  cursor: pointer;
+}
+.click-row:hover {
+  background-color: #eef3ff;
+}
+.apv-toolbar {
+  display: flex;
+  justify-content: flex-end; /* 🔥 우측 정렬 */
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
 </style>

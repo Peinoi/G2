@@ -1,9 +1,13 @@
 <template>
   <div class="apv-page">
-    <h2 class="apv-title">후원 활동 보고서 관리</h2>
+    <h2 class="apv-title">후원 활동 보고서</h2>
 
     <div class="apv-toolbar apv-toolbar-top">
-      <button class="apv-btn apv-btn-primary" @click="programAdd()">
+      <button
+        class="apv-btn apv-btn-primary"
+        @click="programAdd()"
+        v-if="userRole !== 'AA1'"
+      >
         후원 활동 보고서 등록
       </button>
       <div class="search-box">
@@ -57,6 +61,9 @@ import axios from "axios";
 import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
 import { ref, onBeforeMount, computed } from "vue";
+const userJsonString = localStorage.getItem("user");
+const userObject = JSON.parse(userJsonString);
+const userRole = userObject.role;
 
 const emit = defineEmits(["go-to-add", "select-program"]);
 
@@ -80,21 +87,21 @@ const getSponsorList = async (params = {}) => {
   // const list = JSON.parse(JSON.stringify(res));
   // sponsorList.value = JSON.parse(JSON.stringify(res));
   // console.log(list);
-  const userJsonString = localStorage.getItem("user");
+  //const userJsonString = localStorage.getItem("user");
 
-  let userId = null;
+  // let userId = null;
 
-  const userObject = JSON.parse(userJsonString);
+  // const userObject = JSON.parse(userJsonString);
 
-  userId = String(userObject.user_id);
+  // userId = String(userObject.user_id);
 
   let list = JSON.parse(JSON.stringify(res));
 
   // filter의 반환값을 list에 다시 할당 (재할당)
-  list = list.filter((item) => {
-    // 안정성을 위해 String() 변환을 유지
-    return String(item.writer) === userId;
-  });
+  // list = list.filter((item) => {
+  //   // 안정성을 위해 String() 변환을 유지
+  //   return String(item.writer) === userId;
+  // });
 
   sponsorList.value = list;
   // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
@@ -130,12 +137,10 @@ const selectProgram = async (item) => {
   const res = await axios.get(`/api/sponsor/activity/${item.activity_code}`);
 
   emit("select-program", {
-  ...res.data.activity[0],
-  history: res.data.history
-});
-
+    ...res.data.activity[0],
+    history: res.data.history,
+  });
 };
-
 </script>
 
 <!-- ============================================================= -->
