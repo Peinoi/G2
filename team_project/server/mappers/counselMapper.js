@@ -122,6 +122,7 @@ async function saveCounsel(body, files = []) {
       records,
       removeAttachmentCodes = [], // 🔹 프론트에서 넘어오는 삭제 대상 첨부코드 배열
       modifier, // ⭐ 히스토리용 수정자(user_code)
+      requesterCode,
     } = body;
 
     // ⭐ beforeRow 준비용 변수
@@ -262,9 +263,16 @@ async function saveCounsel(body, files = []) {
 
     // 6) 승인요청 처리
     if (needApprovalRequest) {
+      if (!requesterCode) {
+        // 컬럼이 NOT NULL이면 이렇게 막는 게 안전함
+        throw new Error(
+          "승인요청 작성자의 정보가 없습니다. 다시 로그인 후 시도해주세요."
+        );
+      }
+
       await conn.query(sql.insertRequestApproval, [
-        2, // requester_code (담당자, 임시)
-        1, // processor_code (관리자, 임시)
+        requesterCode, // 🔹 로그인한 담당자의 user_code
+        null, // processor_code (관리자, 아직 미정이므로 NULL)
         "AE3", // approval_type
         "BA1", // state (요청)
         "counsel_note", // linked_table_name
@@ -412,7 +420,7 @@ async function getCounselDetail(submitCode) {
 }
 
 // 상담 승인 (request_approval.state = BA2 + counsel_note.status = CB5 + support_plan 생성)
-async function approveCounsel(submitCode) {
+async function approveCounsel(submitCode, processorCode) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -424,14 +432,19 @@ async function approveCounsel(submitCode) {
     }
     const counselCode = exist[0].counsel_code;
 
-    // 3) request_approval 상태 BA2로 업데이트
-    const result = await conn.query(sql.updateApprovalApprove, [counselCode]);
+    // 3) request_approval 상태 BA2로 업데이트 + processor_code 기록
+    const result = await conn.query(sql.updateApprovalApprove, [
+      processorCode || null, // 🔹 승인 처리자
+      counselCode,
+    ]);
 
     // 4) counsel_note.status = 'CB5' (검토완료) 로 변경
     await conn.query(sql.updateCounselNoteApprove, [counselCode]);
 
     await conn.commit();
-    return safeJSON({ affectedRows: result.affectedRows });
+    return safeJSON({
+      affectedRows: result.affectedRows || result[0]?.affectedRows || 0,
+    });
   } catch (e) {
     await conn.rollback();
     throw e;

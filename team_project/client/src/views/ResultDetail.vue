@@ -318,9 +318,13 @@ import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
+import { useAuthStore } from "@/store/authLogin";
 
 const route = useRoute();
 const router = useRouter();
+
+const authStore = useAuthStore();
+authStore.reload();
 
 // 라우터에서 받은 값들
 const resultCode = Number(route.params.resultCode || 0);
@@ -580,7 +584,19 @@ function goWrite() {
 // ✅ 승인
 async function handleApprove() {
   try {
-    const { data } = await axios.post(`/api/result/${resultCode}/approve`);
+    const processorCode = authStore.userCode; // 🔹 로그인한 관리자 userCode
+
+    if (!processorCode) {
+      alert(
+        "로그인 정보가 없어 승인자를 기록할 수 없습니다. 다시 로그인해주세요."
+      );
+      return;
+    }
+
+    const { data } = await axios.post(`/api/result/${resultCode}/approve`, {
+      processorCode, // 🔹 서버로 같이 전달
+    });
+
     if (data?.success) {
       alert("지원결과가 승인되었습니다.");
       await loadDetail();

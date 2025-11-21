@@ -384,16 +384,17 @@ ORDER BY sr.result_code DESC
 
   // 🔹 지원결과 승인요청 → 승인(BA2)
   updateApprovalApproveForResult: `
-    UPDATE request_approval
-    SET
-      state = 'BA2',          -- 승인
-      approval_date = CURDATE(),
-      rejection_reason = NULL
-    WHERE linked_table_name = 'support_result'
-      AND linked_record_pk = ?
-      AND approval_type = 'AE5'
-      AND state = 'BA1'
-  `,
+  UPDATE request_approval
+  SET
+    state = 'BA2',              -- 승인
+    approval_date = CURDATE(),
+    processor_code = ?,         -- 🔹 승인 처리한 사람(user_code)
+    rejection_reason = NULL
+  WHERE linked_table_name = 'support_result'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE5'
+    AND state = 'BA1'
+`,
 
   // 🔹 지원결과 승인요청 → 반려(BA3)
   updateApprovalRejectForResult: `

@@ -255,8 +255,9 @@ module.exports = {
   updateApprovalApprove: `
   UPDATE request_approval
   SET
-    state = 'BA2',          -- 승인
+    state = 'BA2',              -- 승인
     approval_date = CURDATE(),
+    processor_code = ?,         -- 🔹 승인 처리자(user_code)
     rejection_reason = NULL
   WHERE linked_table_name = 'counsel_note'
     AND linked_record_pk = ?

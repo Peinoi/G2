@@ -385,16 +385,17 @@ GROUP BY
 
   // 🔹 지원계획 승인요청 → 승인(BA2)
   updateApprovalApproveForPlan: `
-    UPDATE request_approval
-    SET
-      state = 'BA2',          -- 승인
-      approval_date = CURDATE(),
-      rejection_reason = NULL
-    WHERE linked_table_name = 'support_plan'
-      AND linked_record_pk = ?
-      AND approval_type = 'AE4'
-      AND state = 'BA1'
-  `,
+  UPDATE request_approval
+  SET
+    state = 'BA2',              -- 승인
+    approval_date = CURDATE(),
+    processor_code = ?,         
+    rejection_reason = NULL
+  WHERE linked_table_name = 'support_plan'
+    AND linked_record_pk = ?
+    AND approval_type = 'AE4'
+    AND state = 'BA1'
+`,
 
   // 🔹 지원계획 승인요청 → 반려(BA3)
   updateApprovalRejectForPlan: `

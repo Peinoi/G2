@@ -26,7 +26,7 @@
       </header>
 
       <!-- 🔼 담당자 전용 테이블 (다른 목록) -->
-      <div v-if="isAssigneeRole">
+      <div v-if="isAssigneeRole" class="section-block section-block--assignee">
         <!-- 담당자용 필터 -->
         <div class="filter-row">
           <form class="filter-form" @submit.prevent="onSearchAssignee">
@@ -158,205 +158,207 @@
       </div>
 
       <!-- 🔽 기존 지원계획 목록 (모든 역할용, 일반이 아닌 경우에만 필터) -->
-      <!-- 🔍 검색 / 필터 / 정렬 (일반 이용자 제외) -->
-      <div v-if="selectedRole !== 1" class="filter-row mt-3">
-        <form class="filter-form" @submit.prevent="onSearch">
-          <!-- 검색 인풋 -->
-          <div class="filter-field filter-field--search">
-            <input
-              v-model="searchText"
-              type="text"
-              class="search-input"
-              :placeholder="searchPlaceholder"
-              @keyup.enter="onSearch"
-            />
-          </div>
+      <div class="section-block section-block--plans">
+        <!-- 🔍 검색 / 필터 / 정렬 (일반 이용자 제외) -->
+        <div v-if="selectedRole !== 1" class="filter-row mt-3">
+          <form class="filter-form" @submit.prevent="onSearch">
+            <!-- 검색 인풋 -->
+            <div class="filter-field filter-field--search">
+              <input
+                v-model="searchText"
+                type="text"
+                class="search-input"
+                :placeholder="searchPlaceholder"
+                @keyup.enter="onSearch"
+              />
+            </div>
 
-          <!-- 상태 셀렉트 -->
-          <div class="filter-field filter-field--select select-wrapper">
-            <select
-              v-model="statusFilter"
-              class="select-input"
-              @change="onFilterChange"
-            >
-              <option value="ALL">전체 상태</option>
-              <option value="BEFORE">작성전</option>
-              <option value="REVIEW">검토중</option>
-              <option value="PROGRESS">진행중</option>
-              <option value="DONE">지원완료</option>
-              <option value="RESUBMIT">재승인요청</option>
-              <option value="REJECT">반려</option>
-            </select>
-          </div>
-
-          <!-- 정렬 셀렉트 -->
-          <div class="filter-field filter-field--select select-wrapper">
-            <select
-              v-model="sortOption"
-              class="select-input"
-              @change="onFilterChange"
-            >
-              <option value="WRITTEN_RECENT">계획 작성일 최신순</option>
-              <option value="WRITTEN_OLD">계획 작성일 오래된순</option>
-              <option value="SUBMIT_RECENT">조사지 제출일 최신순</option>
-              <option value="SUBMIT_OLD">조사지 제출일 오래된순</option>
-              <option value="NAME">이름순</option>
-            </select>
-          </div>
-
-          <!-- 검색 버튼 -->
-          <div class="filter-field filter-field--button">
-            <MaterialButton type="submit" color="dark" size="sm">
-              검색
-            </MaterialButton>
-          </div>
-        </form>
-      </div>
-
-      <!-- 상태 표시 (기존 지원계획 목록) -->
-      <div v-if="loading" class="text-gray-500 text-sm">불러오는 중...</div>
-      <div v-else-if="error" class="text-red-600 text-sm">{{ error }}</div>
-      <div v-else-if="!plans.length" class="empty-state">
-        등록된 지원계획이 없습니다.
-      </div>
-
-      <!-- 기존 지원계획 목록 -->
-      <div v-else class="table-wrapper">
-        <div class="table-card">
-          <table class="nice-table">
-            <thead>
-              <tr>
-                <th class="th-cell text-center w-14">No</th>
-                <th class="th-cell">지원자 이름</th>
-                <th class="th-cell">보호자 이름</th>
-                <th class="th-cell">담당자</th>
-                <th v-if="selectedRole === 4" class="th-cell">기관명</th>
-                <th class="th-cell">조사지 제출일</th>
-                <th class="th-cell">계획 작성일</th>
-                <th class="th-cell text-center">상태</th>
-                <th class="th-cell text-center w-28"></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr
-                v-for="(row, idx) in paginatedPlans"
-                :key="row.planCode"
-                class="table-row-item"
-                @click.stop="goDetail(row)"
+            <!-- 상태 셀렉트 -->
+            <div class="filter-field filter-field--select select-wrapper">
+              <select
+                v-model="statusFilter"
+                class="select-input"
+                @change="onFilterChange"
               >
-                <!-- No 컬럼 (페이징 반영) -->
-                <td class="td-cell text-center">
-                  {{ (currentPage - 1) * pageSize + idx + 1 }}
-                </td>
+                <option value="ALL">전체 상태</option>
+                <option value="BEFORE">작성전</option>
+                <option value="REVIEW">검토중</option>
+                <option value="PROGRESS">진행중</option>
+                <option value="DONE">지원완료</option>
+                <option value="RESUBMIT">재승인요청</option>
+                <option value="REJECT">반려</option>
+              </select>
+            </div>
 
-                <!-- 지원자 이름 -->
-                <td class="td-cell">
-                  {{ row.childName ? row.childName : "본인" }}
-                </td>
+            <!-- 정렬 셀렉트 -->
+            <div class="filter-field filter-field--select select-wrapper">
+              <select
+                v-model="sortOption"
+                class="select-input"
+                @change="onFilterChange"
+              >
+                <option value="WRITTEN_RECENT">계획 작성일 최신순</option>
+                <option value="WRITTEN_OLD">계획 작성일 오래된순</option>
+                <option value="SUBMIT_RECENT">조사지 제출일 최신순</option>
+                <option value="SUBMIT_OLD">조사지 제출일 오래된순</option>
+                <option value="NAME">이름순</option>
+              </select>
+            </div>
 
-                <!-- 보호자 이름 -->
-                <td class="td-cell">
-                  {{ row.writerName || "-" }}
-                </td>
-
-                <!-- 담당자 -->
-                <td class="td-cell">
-                  {{ row.assiName || "-" }}
-                </td>
-
-                <!-- 시스템(4)일 때만 기관명 -->
-                <td v-if="selectedRole === 4" class="td-cell">
-                  {{ row.orgName || "-" }}
-                </td>
-
-                <!-- 조사지 제출일 -->
-                <td class="td-cell">
-                  {{ formatDate(row.submitAt) }}
-                </td>
-
-                <!-- 계획 작성일 (작성전이면 -) -->
-                <td class="td-cell">
-                  {{
-                    isBeforeWriteStatus(row.status)
-                      ? "-"
-                      : formatDate(row.writtenAt)
-                  }}
-                </td>
-
-                <!-- 상태 배지 -->
-                <td class="td-cell text-center td-status">
-                  <button
-                    v-if="
-                      normStatus(row.status) === 'CC7' && selectedRole !== 1
-                    "
-                    type="button"
-                    class="status-pill status-pill--rejected status-pill--clickable"
-                    @click.stop="openRejectReason(row)"
-                  >
-                    {{ statusLabel(row.status) }}
-                  </button>
-                  <span
-                    v-else
-                    class="status-pill"
-                    :class="statusPillClass(row.status)"
-                  >
-                    {{ statusLabel(row.status) }}
-                  </span>
-                </td>
-
-                <!-- 작업 -->
-                <td class="td-cell">
-                  <div class="flex items-center justify-center">
-                    <template v-if="isAssigneeRole">
-                      <MaterialButton
-                        v-if="normStatus(row.status) === 'CC3'"
-                        color="dark"
-                        size="sm"
-                        @click.stop="handleEdit(row)"
-                      >
-                        수정하기
-                      </MaterialButton>
-                      <MaterialButton
-                        v-else-if="normStatus(row.status) === 'CC7'"
-                        color="dark"
-                        size="sm"
-                        @click.stop="handleReEdit(row)"
-                      >
-                        재수정하기
-                      </MaterialButton>
-                      <span v-else class="text-gray-400 text-xs"></span>
-                    </template>
-
-                    <span v-else class="text-gray-400 text-xs"></span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <!-- 검색 버튼 -->
+            <div class="filter-field filter-field--button">
+              <MaterialButton type="submit" color="dark" size="sm">
+                검색
+              </MaterialButton>
+            </div>
+          </form>
         </div>
 
-        <!-- 페이지네이션 (기존 목록) -->
-        <div v-if="totalPages > 1" class="mt-6 text-center">
-          <MaterialPagination color="dark" size="md" class="pagination">
-            <MaterialPaginationItem
-              prev
-              :disabled="currentPage === 1"
-              @click="changePage(currentPage - 1)"
-            />
-            <MaterialPaginationItem
-              v-for="page in totalPages"
-              :key="page"
-              :label="String(page)"
-              :active="page === currentPage"
-              @click="changePage(page)"
-            />
-            <MaterialPaginationItem
-              next
-              :disabled="currentPage === totalPages"
-              @click="changePage(currentPage + 1)"
-            />
-          </MaterialPagination>
+        <!-- 상태 표시 (기존 지원계획 목록) -->
+        <div v-if="loading" class="text-gray-500 text-sm">불러오는 중...</div>
+        <div v-else-if="error" class="text-red-600 text-sm">{{ error }}</div>
+        <div v-else-if="!plans.length" class="empty-state">
+          등록된 지원계획이 없습니다.
+        </div>
+
+        <!-- 기존 지원계획 목록 -->
+        <div v-else class="table-wrapper">
+          <div class="table-card">
+            <table class="nice-table">
+              <thead>
+                <tr>
+                  <th class="th-cell text-center w-14">No</th>
+                  <th class="th-cell">지원자 이름</th>
+                  <th class="th-cell">보호자 이름</th>
+                  <th class="th-cell">담당자</th>
+                  <th v-if="selectedRole === 4" class="th-cell">기관명</th>
+                  <th class="th-cell">조사지 제출일</th>
+                  <th class="th-cell">계획 작성일</th>
+                  <th class="th-cell text-center">상태</th>
+                  <th class="th-cell text-center w-28"></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="(row, idx) in paginatedPlans"
+                  :key="row.planCode"
+                  class="table-row-item"
+                  @click.stop="goDetail(row)"
+                >
+                  <!-- No 컬럼 (페이징 반영) -->
+                  <td class="td-cell text-center">
+                    {{ (currentPage - 1) * pageSize + idx + 1 }}
+                  </td>
+
+                  <!-- 지원자 이름 -->
+                  <td class="td-cell">
+                    {{ row.childName ? row.childName : "본인" }}
+                  </td>
+
+                  <!-- 보호자 이름 -->
+                  <td class="td-cell">
+                    {{ row.writerName || "-" }}
+                  </td>
+
+                  <!-- 담당자 -->
+                  <td class="td-cell">
+                    {{ row.assiName || "-" }}
+                  </td>
+
+                  <!-- 시스템(4)일 때만 기관명 -->
+                  <td v-if="selectedRole === 4" class="td-cell">
+                    {{ row.orgName || "-" }}
+                  </td>
+
+                  <!-- 조사지 제출일 -->
+                  <td class="td-cell">
+                    {{ formatDate(row.submitAt) }}
+                  </td>
+
+                  <!-- 계획 작성일 (작성전이면 -) -->
+                  <td class="td-cell">
+                    {{
+                      isBeforeWriteStatus(row.status)
+                        ? "-"
+                        : formatDate(row.writtenAt)
+                    }}
+                  </td>
+
+                  <!-- 상태 배지 -->
+                  <td class="td-cell text-center td-status">
+                    <button
+                      v-if="
+                        normStatus(row.status) === 'CC7' && selectedRole !== 1
+                      "
+                      type="button"
+                      class="status-pill status-pill--rejected status-pill--clickable"
+                      @click.stop="openRejectReason(row)"
+                    >
+                      {{ statusLabel(row.status) }}
+                    </button>
+                    <span
+                      v-else
+                      class="status-pill"
+                      :class="statusPillClass(row.status)"
+                    >
+                      {{ statusLabel(row.status) }}
+                    </span>
+                  </td>
+
+                  <!-- 작업 -->
+                  <td class="td-cell">
+                    <div class="flex items-center justify-center">
+                      <template v-if="isAssigneeRole">
+                        <MaterialButton
+                          v-if="normStatus(row.status) === 'CC3'"
+                          color="dark"
+                          size="sm"
+                          @click.stop="handleEdit(row)"
+                        >
+                          수정하기
+                        </MaterialButton>
+                        <MaterialButton
+                          v-else-if="normStatus(row.status) === 'CC7'"
+                          color="dark"
+                          size="sm"
+                          @click.stop="handleReEdit(row)"
+                        >
+                          재수정하기
+                        </MaterialButton>
+                        <span v-else class="text-gray-400 text-xs"></span>
+                      </template>
+
+                      <span v-else class="text-gray-400 text-xs"></span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 페이지네이션 (기존 목록) -->
+          <div v-if="totalPages > 1" class="mt-6 text-center">
+            <MaterialPagination color="dark" size="md" class="pagination">
+              <MaterialPaginationItem
+                prev
+                :disabled="currentPage === 1"
+                @click="changePage(currentPage - 1)"
+              />
+              <MaterialPaginationItem
+                v-for="page in totalPages"
+                :key="page"
+                :label="String(page)"
+                :active="page === currentPage"
+                @click="changePage(page)"
+              />
+              <MaterialPaginationItem
+                next
+                :disabled="currentPage === totalPages"
+                @click="changePage(currentPage + 1)"
+              />
+            </MaterialPagination>
+          </div>
         </div>
       </div>
 
@@ -588,7 +590,6 @@ const loadAssigneeList = async () => {
       userId: currentUserId.value,
       role: selectedRole.value,
     };
-    // 👉 실제 API 엔드포인트에 맞게 수정해서 사용하면 됨
     const { data } = await axios.get("/api/plans/assignee", { params });
     assigneePlans.value = Array.isArray(data?.result) ? data.result : [];
     assigneeCurrentPage.value = 1;
@@ -624,6 +625,8 @@ const searchPlaceholder = computed(() => {
 // 🔍 검색/필터/정렬 적용된 리스트
 const filteredPlans = computed(() => {
   let rows = [...plans.value];
+
+  rows = rows.filter((row) => normStatus(row.status) !== "CC1");
 
   // 받은 submitcode로 필터 - 다른 화면에서 넘어오면
   if (filterSubmitCode.value) {
@@ -912,11 +915,12 @@ onMounted(() => {
 <style scoped>
 section {
   color: #111827;
+  font-size: 15px; /* 전체 기본 폰트 크기 */
 }
 
 /* 페이지 폭 통일 */
 .page-shell {
-  max-width: 960px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -948,13 +952,13 @@ section {
   align-items: center;
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 13px;
   background-color: #f3f4f6;
   color: #4b5563;
 }
 
 .role-warning {
-  font-size: 0.7rem;
+  font-size: 12px;
   color: #b91c1c;
 }
 
@@ -996,7 +1000,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 0.9rem;
-  font-size: 0.875rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
 }
@@ -1019,7 +1023,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 1.1rem 0.45rem 0.8rem;
-  font-size: 0.8rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
   color: #374151;
@@ -1038,7 +1042,7 @@ section {
   border-radius: 0.75rem;
   border: 1px dashed #d1d5db;
   background-color: #f9fafb;
-  font-size: 0.9rem;
+  font-size: 15px;
   color: #6b7280;
 }
 
@@ -1062,13 +1066,13 @@ section {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
+  text-align: center; /* ★ 전체 중앙정렬 */
 }
 
 /* 헤더 셀 */
 .th-cell {
   padding: 0.75rem 0.9rem;
-  text-align: left;
-  font-size: 0.75rem;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1076,6 +1080,7 @@ section {
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  text-align: center; /* ★ 중앙정렬 */
 }
 
 /* 바디 셀 */
@@ -1087,7 +1092,8 @@ section {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 15px;
+  text-align: center; /* ★ 중앙정렬 */
 }
 
 /* 행 스타일 */
@@ -1119,7 +1125,7 @@ section {
   justify-content: center;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 500;
   border: 1px solid transparent;
 }
@@ -1210,5 +1216,37 @@ section {
   overflow: visible;
   text-overflow: clip;
   white-space: nowrap;
+}
+
+/* 테이블 공통 폰트 + 중앙정렬 강조 */
+table th,
+table td {
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 15px !important;
+  text-align: center !important;
+}
+
+/* 🔹 위/아래 테이블 섹션 구분용 래퍼 */
+.section-block {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 위쪽 담당자 전용 영역: 살짝 회색 배경 */
+.section-block--assignee {
+  background-color: #e1e0e7;
+}
+
+/* 아래 기존 지원계획 영역: 흰 배경 */
+.section-block--plans {
+  background-color: #ffffff;
 }
 </style>

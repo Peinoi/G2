@@ -246,7 +246,7 @@ async function savePlanWithItems(formJson, files) {
 
       await conn.query(sql.insertRequestApprovalForPlan, [
         requesterCode,
-        1, // processor_code (임시 관리자 1)
+        null,
         "AE4",
         "BA1",
         "support_plan",
@@ -682,10 +682,8 @@ async function getPlanFormDataBySubmit(submitCode) {
   }
 }
 
-// ---------------------------------------------------------------------
-// 지원계획 승인 (CC4 + request_approval BA2 + support_result 생성)
-// ---------------------------------------------------------------------
-async function approveSupportPlan(planCode) {
+//승인
+async function approveSupportPlan(planCode, processorCode) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -698,8 +696,11 @@ async function approveSupportPlan(planCode) {
     // 1) support_plan 상태 CC4(승인)로 변경
     await conn.query(sql.updateSupportPlanStatus, ["CC4", planId]);
 
-    // 2) request_approval 상태 BA2(승인)로 변경
-    const result = await conn.query(sql.updateApprovalApproveForPlan, [planId]);
+    // 2) request_approval 상태 BA2(승인)로 변경 + processor_code 세팅
+    const result = await conn.query(sql.updateApprovalApproveForPlan, [
+      processorCode || null, // 🔹 null 허용이면 이렇게
+      planId,
+    ]);
 
     // 3) ✅ support_result 헤더 자동 생성 (이미 있으면 생성 안 함)
     const [existingResult] = await conn.query(sql.getSupportResultByPlan, [
@@ -707,7 +708,6 @@ async function approveSupportPlan(planCode) {
     ]);
 
     if (!existingResult) {
-      // plan 정보에서 assi_by 가져오기
       const [planRow] = await conn.query(sql.getSupportPlanByCode, [planId]);
       if (!planRow) {
         throw new Error("지원계획 정보를 찾을 수 없습니다.");
@@ -715,7 +715,6 @@ async function approveSupportPlan(planCode) {
 
       const assiBy = planRow.assi_by || null;
 
-      // support_result 에 CD3 상태로 한 줄 생성
       await conn.query(sql.insertSupportResultFromPlan, [planId, assiBy]);
     }
 
@@ -805,7 +804,7 @@ async function resubmitPlan(planCode, requesterCode) {
     // 3) request_approval에 새 승인요청 INSERT
     await conn.query(sql.insertRequestApprovalForPlan, [
       requesterCode, // requester_code (담당자)
-      1, // processor_code (관리자, 임시)
+      null, // processor_code (관리자, 임시)
       "AE4", // approval_type
       "BA1", // state: 요청
       "support_plan",

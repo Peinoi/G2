@@ -64,7 +64,12 @@
           <div class="meta-item">
             <span class="meta-label">상담일</span>
             <span class="meta-value">
-              <input type="date" v-model="mainForm.counselDate" class="input" />
+              <input
+                type="date"
+                v-model="mainForm.counselDate"
+                class="input"
+                :min="formattedSubmitAt"
+              />
             </span>
           </div>
         </div>
@@ -186,7 +191,12 @@
 
         <div>
           <label class="block text-sm mb-1 font-medium">상담일: </label>
-          <input type="date" v-model="record.counselDate" class="input" />
+          <input
+            type="date"
+            v-model="record.counselDate"
+            class="input"
+            :min="formattedSubmitAt"
+          />
         </div>
 
         <div>
@@ -265,7 +275,7 @@ const submitInfo = ref({
 
 const formattedSubmitAt = computed(() => {
   const v = submitInfo.value.submitAt;
-  return v ? v.slice(0, 10) : "-";
+  return v ? v.slice(0, 10) : "";
 });
 
 // 메인 폼
@@ -317,7 +327,10 @@ async function loadData() {
   }
 }
 
-onMounted(loadData);
+onMounted(() => {
+  auth.reload(); // 새로고침 후에도 userCode 복구
+  loadData();
+});
 
 // 파일 변경 핸들러
 function onMainFilesChange(e) {
@@ -464,11 +477,26 @@ function removeRecord(id) {
 // 유효성
 function validate() {
   if (!mainForm.value.counselDate) return "상담일을 입력해주세요.";
+
+  // 🔹 조사지 제출일보다 앞 날짜 방지 (메인 상담일)
+  if (
+    formattedSubmitAt.value &&
+    mainForm.value.counselDate < formattedSubmitAt.value
+  ) {
+    return "상담일은 조사지 제출일보다 이전일 수 없습니다.";
+  }
+
   if (!mainForm.value.title.trim()) return "상담 제목을 입력해주세요.";
   if (!mainForm.value.content.trim()) return "상담 내용을 입력해주세요.";
 
   for (const r of records.value) {
     if (!r.counselDate) return "추가 상담 기록의 상담일을 입력해주세요.";
+
+    // 🔹 조사지 제출일보다 앞 날짜 방지 (추가 상담 기록)
+    if (formattedSubmitAt.value && r.counselDate < formattedSubmitAt.value) {
+      return "추가 상담 기록의 상담일은 조사지 제출일보다 이전일 수 없습니다.";
+    }
+
     if (!r.title.trim()) return "추가 상담 기록의 제목을 입력해주세요.";
     if (!r.content.trim()) return "추가 상담 기록의 내용을 입력해주세요.";
   }
@@ -491,6 +519,7 @@ async function submitAll() {
       records: records.value,
       removeAttachmentCodes: removedAttachmentCodes.value,
       modifier: auth.userCode,
+      requesterCode: auth.userCode,
     };
 
     const formData = new FormData();

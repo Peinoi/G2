@@ -598,11 +598,12 @@ onMounted(() => {
 <style scoped>
 section {
   color: #111827;
+  font-size: 15px; /* 전체 기본 폰트 크기 */
 }
 
 /* 페이지 전체 폭 컨테이너: 헤더 + 카드 폭 통일 */
 .page-shell {
-  max-width: 960px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -636,13 +637,13 @@ section {
   align-items: center;
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 13px;
   background-color: #f3f4f6;
   color: #4b5563;
 }
 
 .role-warning {
-  font-size: 0.7rem;
+  font-size: 12px;
   color: #b91c1c;
 }
 
@@ -688,7 +689,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 0.9rem;
-  font-size: 0.875rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
 }
@@ -711,7 +712,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 1.1rem 0.45rem 0.8rem;
-  font-size: 0.8rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
   color: #374151;
@@ -730,7 +731,7 @@ section {
   border-radius: 0.75rem;
   border: 1px dashed #d1d5db;
   background-color: #f9fafb;
-  font-size: 0.9rem;
+  font-size: 15px;
   color: #6b7280;
 }
 
@@ -754,13 +755,13 @@ section {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
+  text-align: center; /* ★ 전체 중앙 정렬 */
 }
 
 /* 헤더 셀 */
 .th-cell {
   padding: 0.75rem 0.9rem;
-  text-align: left;
-  font-size: 0.75rem;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -768,6 +769,7 @@ section {
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
 /* 바디 셀 */
@@ -779,14 +781,16 @@ section {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 15px;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
 .td-cell.mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 15px;
   color: #4b5563;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
 /* 행 스타일 */
@@ -820,7 +824,7 @@ section {
   justify-content: center;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 500;
   border: 1px solid transparent;
 }
@@ -886,6 +890,8 @@ table td {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  font-size: 15px !important;
+  text-align: center !important; /* ★ 무조건 중앙 */
 }
 
 /* 모달 */

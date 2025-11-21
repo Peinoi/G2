@@ -322,9 +322,13 @@ import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
+import { useAuthStore } from "@/store/authLogin";
 
 const route = useRoute();
 const router = useRouter();
+
+const authStore = useAuthStore();
+authStore.reload();
 
 const planCode = Number(route.params.planCode || 0);
 const submitCode = Number(route.query.submitCode || 0);
@@ -502,11 +506,13 @@ function statusLabel(code) {
   const c = (code || "").toString().toUpperCase();
   switch (c) {
     case "CC1":
-      return "임시저장";
+      return "작성전";
     case "CC2":
       return "작성전";
     case "CC3":
       return "검토전";
+    case "CC4":
+      return "진행중";
     case "CC5":
       return "검토완료";
     case "CC6":
@@ -570,10 +576,22 @@ function goWrite() {
   });
 }
 
-// ✅ 승인
+//  승인
 async function handleApprove() {
   try {
-    const { data } = await axios.post(`/api/plans/${planCode}/approve`);
+    const processorCode = authStore.userCode; // 🔹 로그인한 사용자 코드
+
+    if (!processorCode) {
+      alert(
+        "로그인 정보가 없어 승인자를 기록할 수 없습니다. 다시 로그인해주세요."
+      );
+      return;
+    }
+
+    const { data } = await axios.post(`/api/plans/${planCode}/approve`, {
+      processorCode, // 🔹 서버로 함께 전달
+    });
+
     if (data?.success) {
       alert("지원계획이 승인되었습니다.");
       await loadDetail();

@@ -317,9 +317,13 @@ import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
+import { useAuthStore } from "@/store/authLogin";
 
 const route = useRoute();
 const router = useRouter();
+
+const auth = useAuthStore(); // 🔹 추가
+auth.reload();
 
 const submitCode = computed(() =>
   Number(route.params.submitCode || route.query.submitCode || 0)
@@ -528,7 +532,19 @@ const rejectReason = ref("");
 async function handleApprove() {
   try {
     const code = submitCode.value;
-    const { data } = await axios.post(`/api/counsel/${code}/approve`);
+    const processorCode = auth.userCode; // 🔹 로그인한 관리자 userCode
+
+    if (!processorCode) {
+      alert(
+        "로그인 정보가 없어 승인자를 기록할 수 없습니다. 다시 로그인해주세요."
+      );
+      return;
+    }
+
+    const { data } = await axios.post(`/api/counsel/${code}/approve`, {
+      processorCode, // 🔹 백엔드로 전송
+    });
+
     if (data?.success) {
       alert("승인되었습니다.");
       await loadData(); // 다시 조회

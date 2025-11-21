@@ -264,7 +264,12 @@ router.get("/form/:submitCode", async (req, res) => {
 router.post("/:planCode/approve", async (req, res) => {
   try {
     const planCode = Number(req.params.planCode);
-    const result = await supportPlanService.approveSupportPlan(planCode);
+    const processorCode = Number(req.body.processorCode) || null; // 🔹 추가
+
+    const result = await supportPlanService.approveSupportPlan(
+      planCode,
+      processorCode
+    );
 
     res.json({ success: true, result });
   } catch (e) {
