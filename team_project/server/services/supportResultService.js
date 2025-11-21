@@ -35,14 +35,17 @@ module.exports = {
     return supportResultMapper.getResultDetail(Number(resultCode));
   },
 
-  // 수
+  // 수정
   updateResultWithItems(formJson, files) {
     return supportResultMapper.updateResultWithItems(formJson, files);
   },
 
-  //승인
-  approveSupportResult(resultCode) {
-    return supportResultMapper.approveSupportResult(Number(resultCode));
+  // 승인
+  approveSupportResult(resultCode, processorCode) {
+    return supportResultMapper.approveSupportResult(
+      Number(resultCode),
+      processorCode
+    );
   },
 
   //반려

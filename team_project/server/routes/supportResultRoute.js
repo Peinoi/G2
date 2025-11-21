@@ -242,7 +242,12 @@ router.post("/:resultCode/approve", async (req, res) => {
         .json({ success: false, message: "유효한 resultCode가 아닙니다." });
     }
 
-    const result = await supportResultService.approveSupportResult(resultCode);
+    const processorCode = Number(req.body.processorCode) || null; // 🔹 추가
+
+    const result = await supportResultService.approveSupportResult(
+      resultCode,
+      processorCode
+    );
 
     res.json({ success: true, result: toSafeJson(result) });
   } catch (e) {

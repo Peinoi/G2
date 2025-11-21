@@ -40,8 +40,8 @@ module.exports = {
     return supportPlanMapper.getPlanFormDataBySubmit(submitCode);
   },
   // 승인
-  async approveSupportPlan(planCode) {
-    return supportPlanMapper.approveSupportPlan(planCode);
+  async approveSupportPlan(planCode, processorCode) {
+    return supportPlanMapper.approveSupportPlan(planCode, processorCode);
   },
 
   // 반려

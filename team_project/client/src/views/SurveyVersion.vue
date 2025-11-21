@@ -142,6 +142,11 @@ function goToDetail(templateVerCode) {
 </script>
 
 <style scoped>
+section {
+  color: #111827;
+  font-size: 15px; /* 전체 기본 폰트 크기 */
+}
+
 .pagination {
   display: inline-flex !important;
 }
@@ -162,18 +167,18 @@ function goToDetail(templateVerCode) {
   overflow: hidden;
 }
 
-/* 🔥 테이블이 항상 카드 전체를 꽉 채우도록 */
+/* 테이블 */
 .nice-table {
   width: 100%;
   table-layout: fixed; /* 칼럼 폭 균등 분배 */
   border-collapse: collapse;
+  text-align: center; /* ★ 전체 중앙 정렬 */
 }
 
 /* 헤더 셀 */
 .th-cell {
   padding: 0.75rem 0.9rem;
-  text-align: left;
-  font-size: 0.75rem;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -181,6 +186,7 @@ function goToDetail(templateVerCode) {
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   white-space: nowrap;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
 /* 바디 셀 */
@@ -192,16 +198,19 @@ function goToDetail(templateVerCode) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 15px;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
 .td-cell.mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 15px;
   color: #4b5563;
+  text-align: center; /* ★ 중앙 정렬 */
 }
 
-/* 행 스타일 */
+/* 행 */
 .table-row-item {
   transition:
     background-color 0.15s ease,
@@ -218,14 +227,14 @@ function goToDetail(templateVerCode) {
   background-color: #f9fafb;
 }
 
-/* 호버 효과 */
+/* 호버 */
 .table-row-item:hover {
   background-color: #f3f4f6;
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
 }
 
-/* 현재 사용중 강조 */
+/* 사용중 강조 */
 .table-row-item.is-current {
   border-left: 3px solid #111827;
   background: linear-gradient(
@@ -235,12 +244,13 @@ function goToDetail(templateVerCode) {
   );
 }
 
+/* 모든 테이블 셀 공통 */
 table th,
 table td {
-  font-size: 14px;
+  font-size: 15px !important;
   font-weight: 400;
   font-family: "Noto Sans KR", sans-serif;
-  text-align: center;
+  text-align: center !important; /* ★ 무조건 중앙 */
 }
 
 /* 뱃지 */
@@ -250,7 +260,7 @@ table td {
   justify-content: center;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 15px;
   font-weight: 500;
 }
 

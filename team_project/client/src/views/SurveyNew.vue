@@ -89,14 +89,6 @@
                   color="dark"
                   size="sm"
                   variant="outlined"
-                  @click="addItem(sIndex, subIndex)"
-                >
-                  질문 추가
-                </MaterialButton>
-                <MaterialButton
-                  color="dark"
-                  size="sm"
-                  variant="outlined"
                   @click="removeSubsection(sIndex, subIndex)"
                 >
                   삭제
@@ -157,10 +149,10 @@
                       class="w-full input-basic"
                       @change="onChangeType(it)"
                     >
-                      <option value="TEXT">TEXT (단답)</option>
-                      <option value="TEXTAREA">TEXTAREA (서술)</option>
-                      <option value="RADIO">RADIO (단일 선택)</option>
-                      <option value="CHECKBOX">CHECKBOX (다중 선택)</option>
+                      <option value="TEXT">단답형</option>
+                      <option value="TEXTAREA">서술형</option>
+                      <option value="RADIO">단일 선택</option>
+                      <option value="CHECKBOX">다중 선택</option>
                     </select>
                   </div>
 
@@ -244,6 +236,16 @@
                 </div>
               </div>
               <!-- // 질문 하나 -->
+              <div class="question-add-wrap mt-2">
+                <MaterialButton
+                  color="dark"
+                  size="sm"
+                  variant="outlined"
+                  @click="addItem(sIndex, subIndex)"
+                >
+                  질문 추가
+                </MaterialButton>
+              </div>
             </div>
           </div>
         </div>
@@ -279,7 +281,7 @@
       <div class="modal-box">
         <h3 class="text-xl font-semibold mb-4">작성 내용 확인</h3>
 
-        <div class="max-h-[70vh] overflow-y-auto space-y-4 pr-2">
+        <div class="preview-scroll space-y-4 pr-2">
           <div
             v-for="(sec, sIdx) in sections"
             :key="sec.id"
@@ -310,7 +312,7 @@
                 class="preview-question"
               >
                 <div class="font-medium mb-1">
-                  질문 #{{ iIdx + 1 }} ({{ it.type }})
+                  질문 #{{ iIdx + 1 }}
                   <span v-if="it.required" class="text-red-600 text-sm">
                     *필수
                   </span>
@@ -622,8 +624,17 @@ section {
   width: 100%;
   max-width: 720px;
   max-height: 90vh;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+  /* 🔥 여기부터 추가/수정 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 모달 바깥으로 넘치는 것만 잘라주고 */
+}
+
+/* 내용 부분만 스크롤 되게 */
+.preview-scroll {
+  flex: 1; /* 남는 높이를 다 차지하고 */
+  overflow-y: auto; /* 여기만 세로 스크롤 */
+  margin-bottom: 0.75rem; /* 버튼과 살짝 간격 */
 }
 
 /* 프리뷰 안쪽 카드들 */
@@ -656,5 +667,10 @@ section {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
+}
+/* <style scoped> 안에 추가 */
+.question-add-wrap {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

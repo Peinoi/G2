@@ -245,7 +245,7 @@ async function saveResultWithItems(formJson, files = []) {
 
       await conn.query(sql.insertRequestApprovalForResult, [
         requesterCode,
-        1, // processor_code (관리자: 임시로 1)
+        null, // processor_code (관리자: 임시로 1)
         "AE5", // approval_type: 결과 승인
         "BA1", // state: 요청
         "support_result",
@@ -706,8 +706,8 @@ async function updateResultWithItems(formJson, files) {
   }
 }
 
-// 🔹 지원결과 승인 (CD5 + request_approval BA2 / support_plan CC5)
-async function approveSupportResult(resultCode) {
+// 승인
+async function approveSupportResult(resultCode, processorCode) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -735,8 +735,11 @@ async function approveSupportResult(resultCode) {
     // 2) 연결된 support_plan 상태 CC5(결과 승인 완료)로 변경
     await conn.query(sql.updateSupportPlanStatusFromResult, ["CC5", planCode]);
 
-    // 3) request_approval 승인 처리 (BA2)
-    const result = await conn.query(sql.updateApprovalApproveForResult, [id]);
+    // 3) request_approval 승인 처리 (BA2) + processor_code 세팅
+    const result = await conn.query(sql.updateApprovalApproveForResult, [
+      processorCode || null, // 🔹 NULL 허용이면 이렇게
+      id,
+    ]);
 
     await conn.commit();
     return safeJSON({
@@ -820,7 +823,7 @@ async function resubmitResult(resultCode, requesterCode) {
     // 3) request_approval에 새 승인요청 INSERT
     await conn.query(sql.insertRequestApprovalForResult, [
       requesterCode, // requester_code (담당자)
-      1, // processor_code (관리자, 임시)
+      null, // processor_code (관리자, 임시)
       "AE5", // approval_type
       "BA1", // state: 요청
       "support_result",

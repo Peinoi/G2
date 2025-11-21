@@ -20,8 +20,8 @@ module.exports = {
     return counselMapper.getCounselDetail(submitCode);
   },
   //상담 승인
-  async approveCounsel(submitCode) {
-    return await counselMapper.approveCounsel(submitCode);
+  async approveCounsel(submitCode, processorCode) {
+    return await counselMapper.approveCounsel(submitCode, processorCode);
   },
   //상담 반려
   async rejectCounsel(submitCode, reason) {

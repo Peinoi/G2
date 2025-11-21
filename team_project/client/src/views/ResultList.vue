@@ -667,11 +667,12 @@ function closeRejectReasonModal() {
 <style scoped>
 section {
   color: #111827;
+  font-size: 15px; /* 기본 폰트 크기 */
 }
 
 /* 페이지 폭 통일 */
 .page-shell {
-  max-width: 960px;
+  max-width: 1600px; /* ✅ 1600px로 확장 */
   margin: 0 auto;
 }
 
@@ -751,7 +752,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 0.9rem;
-  font-size: 0.875rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
 }
@@ -774,7 +775,7 @@ section {
   border-radius: 999px;
   border: 1px solid #e5e7eb;
   padding: 0.45rem 1.1rem 0.45rem 0.8rem;
-  font-size: 0.8rem;
+  font-size: 15px;
   background-color: #ffffff;
   outline: none;
   color: #374151;
@@ -793,7 +794,7 @@ section {
   border-radius: 0.75rem;
   border: 1px dashed #d1d5db;
   background-color: #f9fafb;
-  font-size: 0.9rem;
+  font-size: 15px;
   color: #6b7280;
 }
 
@@ -822,8 +823,8 @@ section {
 /* 헤더 셀 */
 .th-cell {
   padding: 0.75rem 0.9rem;
-  text-align: left;
-  font-size: 0.75rem;
+  text-align: center; /* ✅ 중앙 정렬 */
+  font-size: 15px; /* ✅ 15px */
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -842,7 +843,8 @@ section {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.9rem;
+  font-size: 15px; /* ✅ 15px */
+  text-align: center; /* ✅ 기본 중앙 정렬 */
 }
 
 /* 행 스타일 */
@@ -874,7 +876,7 @@ section {
   justify-content: center;
   padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 13px;
   font-weight: 500;
   border: 1px solid transparent;
 }
@@ -966,5 +968,19 @@ section {
   overflow: visible;
   text-overflow: clip;
   white-space: nowrap;
+}
+
+/* ✅ 테이블 전체 공통 폰트/정렬 */
+table th,
+table td {
+  font-size: 15px;
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  text-align: center;
 }
 </style>

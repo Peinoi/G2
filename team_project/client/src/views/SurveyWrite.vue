@@ -149,12 +149,14 @@
                 >
                   내용
                 </label>
-                <textarea
+                <MaterialTextarea
                   :id="`item-${item.item_code}`"
-                  v-model="answers[item.item_code]"
-                  class="w-full textarea-basic"
-                  rows="3"
-                ></textarea>
+                  variant="outline"
+                  :rows="5"
+                  placeholder="내용을 입력하세요"
+                  :value="answers[item.item_code]"
+                  @input="(e) => (answers[item.item_code] = e.target.value)"
+                />
               </div>
 
               <!-- RADIO (기본 input 사용) -->
@@ -237,6 +239,7 @@ import { useRouter } from "vue-router";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialInput from "@/components/MaterialInput.vue";
+import MaterialTextarea from "@/components/MaterialTextarea.vue";
 
 const router = useRouter();
 const survey = ref(null);
@@ -318,6 +321,54 @@ onMounted(async () => {
 // 제출하기
 async function submitSurvey() {
   try {
+    //  1) SELF 선택 시 장애유형 필수
+    if (writerType.value === "SELF") {
+      if (!disabilityType.value || disabilityType.value.trim() === "") {
+        alert("장애 유형을 입력해주세요.");
+        return;
+      }
+    }
+
+    //  2) 필수 질문 유효성 검사
+    for (const section of survey.value.sections) {
+      for (const sub of section.subsections) {
+        for (const item of sub.items) {
+          if (item.is_required === "Y") {
+            const val = answers.value[item.item_code];
+
+            // TEXT / TEXTAREA
+            if (
+              item.question_type === "TEXT" ||
+              item.question_type === "TEXTAREA"
+            ) {
+              if (!val || val.trim() === "") {
+                alert(`필수 질문을 입력해주세요:\n"${item.question_text}"`);
+                return;
+              }
+            }
+
+            // RADIO (단일 선택)
+            if (item.question_type === "RADIO") {
+              if (!val || val === "") {
+                alert(`필수 질문을 선택해주세요:\n"${item.question_text}"`);
+                return;
+              }
+            }
+
+            // CHECKBOX (복수 선택)
+            if (item.question_type === "CHECKBOX") {
+              if (!Array.isArray(val) || val.length === 0) {
+                alert(
+                  `필수 체크박스 항목을 선택해주세요:\n"${item.question_text}"`
+                );
+                return;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // 대리인인데 대상자를 안 골랐을 때 간단 검증
     if (writerType.value === "DELEGATE" && !selectedPersonCode.value) {
       alert("대상자를 선택해주세요.");
@@ -338,6 +389,7 @@ async function submitSurvey() {
       return;
     }
 
+    // 🔥 SELF일 경우 장애유형 저장
     if (writerType.value === "SELF" && disabilityType.value) {
       await axios.put("/api/survey/disability-type", {
         user_code: Number(userCode),
@@ -349,8 +401,7 @@ async function submitSurvey() {
       template_ver_code: survey.value.template_ver_code,
       answers: answers.value,
       written_by: Number(userCode),
-      // 아래 두 필드는 백엔드에서 필요할 때 쓰면 됨
-      writer_type: writerType.value, // SELF / DELEGATE
+      writer_type: writerType.value,
       target_person_code:
         writerType.value === "DELEGATE" ? selectedPersonCode.value : null,
     };

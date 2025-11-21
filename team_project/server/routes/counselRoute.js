@@ -156,7 +156,18 @@ router.get("/:submitCode", async (req, res) => {
 router.post("/:submitCode/approve", async (req, res) => {
   try {
     const submitCode = Number(req.params.submitCode);
-    const result = await counselService.approveCounsel(submitCode);
+    const processorCode = Number(req.body.processorCode) || null; // 🔹 추가
+
+    if (!submitCode) {
+      return res
+        .status(400)
+        .json({ success: false, message: "유효한 submitCode가 아닙니다." });
+    }
+
+    const result = await counselService.approveCounsel(
+      submitCode,
+      processorCode
+    );
 
     res.json({ success: true, result });
   } catch (e) {
