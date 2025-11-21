@@ -286,10 +286,10 @@
             class="preview-section"
           >
             <h4 class="font-semibold text-lg mb-1">
-              항목 #{{ sIdx + 1 }} — {{ sec.title || "제목 없음" }}
+              항목 #{{ sIdx + 1 }} — {{ sec.title || '제목 없음' }}
             </h4>
             <p class="text-gray-600 mb-3">
-              {{ sec.desc || "설명 없음" }}
+              {{ sec.desc || '설명 없음' }}
             </p>
 
             <div
@@ -298,10 +298,10 @@
               class="preview-subsection"
             >
               <h5 class="font-medium">
-                세부항목 #{{ subIdx + 1 }} — {{ sub.title || "제목 없음" }}
+                세부항목 #{{ subIdx + 1 }} — {{ sub.title || '제목 없음' }}
               </h5>
               <p class="text-gray-500 mb-2">
-                {{ sub.desc || "설명 없음" }}
+                {{ sub.desc || '설명 없음' }}
               </p>
 
               <div
@@ -317,7 +317,7 @@
                 </div>
 
                 <div class="text-gray-800 mb-2">
-                  {{ it.text || "질문 내용 없음" }}
+                  {{ it.text || '질문 내용 없음' }}
                 </div>
 
                 <!-- 옵션 -->
@@ -325,7 +325,7 @@
                   <div class="text-xs text-gray-600 mb-1">옵션</div>
                   <ul class="list-disc pl-6 text-sm">
                     <li v-for="op in it.options" :key="op.id">
-                      {{ op.label || "라벨 없음" }}
+                      {{ op.label || '라벨 없음' }}
                     </li>
                   </ul>
                 </div>
@@ -359,24 +359,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
-import axios from "axios";
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 
-import MaterialButton from "@/components/MaterialButton.vue";
-import MaterialInput from "@/components/MaterialInput.vue";
-import MaterialSwitch from "@/components/MaterialSwitch.vue";
+import MaterialButton from '@/components/MaterialButton.vue';
+import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialSwitch from '@/components/MaterialSwitch.vue';
 
 const router = useRouter();
 const sections = ref([]);
 let uid = 1;
 const newId = () => uid++;
 const isChoiceType = (t) =>
-  ["RADIO", "CHECKBOX"].includes(String(t).toUpperCase());
+  ['RADIO', 'CHECKBOX'].includes(String(t).toUpperCase());
 
 // 섹션
 function addSection() {
-  sections.value.push({ id: newId(), title: "", desc: "", subsections: [] });
+  sections.value.push({ id: newId(), title: '', desc: '', subsections: [] });
 }
 function removeSection(i) {
   sections.value.splice(i, 1);
@@ -386,8 +386,8 @@ function removeSection(i) {
 function addSubsection(i) {
   sections.value[i].subsections.push({
     id: newId(),
-    title: "",
-    desc: "",
+    title: '',
+    desc: '',
     items: [],
   });
 }
@@ -399,8 +399,8 @@ function removeSubsection(i, j) {
 function addItem(i, j) {
   sections.value[i].subsections[j].items.push({
     id: newId(),
-    type: "TEXT",
-    text: "",
+    type: 'TEXT',
+    text: '',
     required: false,
     options: [],
   });
@@ -414,7 +414,7 @@ function onChangeType(item) {
   if (isChoiceType(item.type)) {
     if (!Array.isArray(item.options)) item.options = [];
     if (item.options.length === 0)
-      item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
+      item.options.push({ id: newId(), label: '' }); // 🔥 value/order 제거
   } else {
     item.options = [];
   }
@@ -423,7 +423,7 @@ function onChangeType(item) {
 // 옵션 추가/삭제
 function addOption(i, j, k) {
   const item = sections.value[i].subsections[j].items[k];
-  item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
+  item.options.push({ id: newId(), label: '' }); // 🔥 value/order 제거
 }
 function removeOption(i, j, k, o) {
   const item = sections.value[i].subsections[j].items[k];
@@ -433,8 +433,8 @@ function removeOption(i, j, k, o) {
 // 저장할 데이터 구조 (백엔드 insertSurvey에 맞춤)
 const payload = computed(() => ({
   template: {
-    version_no: "2.0",
-    status: "ACTIVE",
+    version_no: '2.0',
+    status: 'ACTIVE',
     created_by: 1,
     created_at: new Date().toISOString().slice(0, 10),
   },
@@ -450,11 +450,11 @@ const payload = computed(() => ({
         order: iIdx + 1,
         question_type: it.type,
         question_text: it.text,
-        is_required: it.required ? "Y" : "N",
+        is_required: it.required ? 'Y' : 'N',
         // 🔥 선택형일 때만 option_values 채움
         option_values: isChoiceType(it.type)
           ? it.options.map((op, k) => {
-              const base = op.label || ""; // 라벨만 사용
+              const base = op.label || ''; // 라벨만 사용
               return {
                 label: base,
                 value: base, // value는 label과 동일하게 자동 세팅
@@ -476,21 +476,21 @@ function openPreview() {
 // ✅ 저장 함수 (백엔드 연동)
 async function saveDraft() {
   try {
-    const { data } = await axios.post("/api/survey/new", payload.value);
+    const { data } = await axios.post('/api/survey/new', payload.value);
     if (data?.success) {
-      alert("조사지 저장 완료!");
-      router.push("/survey-version");
+      alert('조사지 저장 완료!');
+      router.push('/survey-version');
     } else {
-      alert("저장 실패");
+      alert('저장 실패');
     }
   } catch (e) {
-    console.error("save error:", e);
-    alert("서버 오류: " + (e.response?.data?.message || e.message));
+    console.error('save error:', e);
+    alert('서버 오류: ' + (e.response?.data?.message || e.message));
   }
 }
 
 function goBack() {
-  router.push({ name: "surveyVersion" });
+  router.push({ name: 'surveyVersion' });
 }
 </script>
 

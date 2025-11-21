@@ -29,6 +29,12 @@ router.post('/addUser', async (req, res) => {
   }
 });
 
+// 기관 목록 조회
+router.post('/findOrg', async (req, res) => {
+  const result = await userService.findOrg();
+  res.json(result);
+});
+
 // 기관 회원가입
 router.post('/addOrg', async (req, res) => {
   try {

@@ -67,15 +67,20 @@
       </material-button>
     </div>
 
-    <!-- 기관명 -->
-    <material-input
-      id="org_name"
-      type="text"
-      label="기관명"
-      v-model="org_name"
-      size="lg"
-      class="mb-3"
-    />
+    <!-- 기관명 (select box) -->
+    <div class="input-group input-group-outline my-3">
+      <label class="form-label"></label>
+      <select v-model="org_name" class="form-control">
+        <option disabled value="">기관명을 선택하세요</option>
+        <option
+          v-for="org in orgList"
+          :key="org.org_name"
+          :value="org.org_name"
+        >
+          {{ org.org_name }}
+        </option>
+      </select>
+    </div>
 
     <!-- 부서명 -->
     <material-input
@@ -92,8 +97,8 @@
       <label class="form-label"></label>
       <select v-model="role" class="form-control">
         <option disabled value="">권한을 선택하세요</option>
-        <option value="AA3">기관 담당자</option>
-        <option value="AA2">기관 관리자</option>
+        <option value="AA2">기관 담당자</option>
+        <option value="AA3">기관 관리자</option>
       </select>
     </div>
 
@@ -156,6 +161,7 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
+import { findAllOrg } from '../api/user';
 
 export default {
   name: 'SignUpOrgForm',
@@ -170,6 +176,7 @@ export default {
       address: '',
       email: '',
       org_name: '',
+      orgList: [],
       department: '',
       role: '',
       emailSent: false,
@@ -251,6 +258,13 @@ export default {
         this.phone = this.phone.slice(0, 11);
       }
     },
+    async findOrgList() {
+      const result = await findAllOrg();
+      this.orgList = result;
+    },
+  },
+  mounted() {
+    this.findOrgList();
   },
 };
 </script>

@@ -1,3 +1,4 @@
+const pool = require('../configs/db');
 const signUserMapper = require('../mappers/signUserMapper');
 
 // 전체 목록 조회 test
@@ -20,6 +21,16 @@ async function addUser(userData) {
   }
 }
 
+// 기관 목록 조회
+async function findOrg() {
+  try {
+    const result = await signUserMapper.findOrgList();
+    return result;
+  } catch (err) {
+    console.error('[ findOrg 오류 ] : ', err);
+  }
+}
+
 // 기관 회원
 // 헷갈릴까봐 작동 순서 주석 달아둠
 // 1. 프론트에서 회원가입 완료를 진행 -> /api/user/addOrg으로 이동
@@ -28,20 +39,49 @@ async function addUser(userData) {
 // 3. 기관 코드가 없으면 ok: false 반환
 // 4. 기관 코드가 있으면 매퍼에 있는 addOrg를 실행하여 DB 기입
 async function addOrg(userData) {
+  const conn = await pool.getConnection();
   try {
-    // 기관명 조회 -> orgCode 가져옴
-    const orgCode = await signUserMapper.findOrgCode(userData.org_name);
-    if (!orgCode) {
-      return { ok: false, message: '등록된 기관 없음' };
-    }
-    // 기관 코드가 있으면 회원가입 진행 ㄱㄱ
-    const result = await signUserMapper.addOrg({
+    await conn.beginTransaction();
+    // 기관명 조회 -> 가입
+    const orgCodeResult = await signUserMapper.findOrgCode(
+      conn,
+      userData.org_name
+    );
+    const orgCode = orgCodeResult[0].org_code;
+    await signUserMapper.addOrg(conn, {
       ...userData,
       org_code: orgCode,
     });
-    return result;
+
+    const userCode = await signUserMapper.findUserCode(conn, userData.userId);
+    let reqData = {};
+    if (userData.role == 'AA2') {
+      reqData = {
+        user_code: userCode[0].user_code,
+        approval_type: 'AE2',
+        request_date: userData.joinDate,
+        state: 'BA1',
+      };
+    } else {
+      reqData = {
+        user_code: userCode[0].user_code,
+        approval_type: 'AE1',
+        request_date: userData.joinDate,
+        state: 'BA1',
+      };
+    }
+    const result = await signUserMapper.requestApproval(conn, reqData);
+    if (result.affectedRows == 0) {
+      conn.rollback();
+      return { ok: false, message: '등록 실패' };
+    }
+    conn.commit();
+    return { ok: true, message: '등록 성공' };
   } catch (err) {
     console.error('[ addOrg 오류 ] : ', err);
+    conn.rollback();
+  } finally {
+    conn.release();
   }
 }
 
@@ -73,4 +113,4 @@ async function findIdPw(type, data) {
   }
 }
 
-module.exports = { checkId, addUser, addOrg, login, findIdPw };
+module.exports = { checkId, addUser, findOrg, addOrg, login, findIdPw };

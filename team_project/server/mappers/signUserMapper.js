@@ -41,21 +41,35 @@ async function addUser(data) {
   }
 }
 
-// 기관 code 가져오기
-async function findOrgCode(orgName) {
+// 기관 목록 조회
+async function findOrgList() {
   try {
-    const rows = await pool.query(signUserSQL.FIND_ORG_CODE, [orgName]);
-    if (rows.length == 0) {
-      return null;
-    }
-    return rows[0].org_code;
+    return await pool.query(signUserSQL.FIND_ORG_LIST);
+  } catch (err) {
+    console.error('[ findOrgList 찾기 실패 ] : ', err);
+  }
+}
+
+// 기관 code 가져오기
+async function findOrgCode(conn, orgName) {
+  try {
+    return await conn.query(signUserSQL.FIND_ORG_CODE, [orgName]);
   } catch (err) {
     console.error('[ findOrgCode 찾기 실패 ] : ', err);
   }
 }
 
+async function findUserCode(conn, userId) {
+  try {
+    const result = await conn.query(signUserSQL.FIND_USER_CODE, [userId]);
+    return result;
+  } catch (err) {
+    console.error('[ findUserCode 찾기 실패 ] : ', err);
+  }
+}
+
 // 기관 회원가입
-async function addOrg(data) {
+async function addOrg(conn, data) {
   try {
     const userData = [
       data.org_code,
@@ -68,16 +82,29 @@ async function addOrg(data) {
       data.address,
       data.email,
       data.department,
-      1, // is_active(승인 여부)
+      0, // is_active(승인 여부)
       0, // 로그인 실패 횟수
       data.joinDate, // 가입일
     ];
 
-    await pool.query(signUserSQL.INSERT_USER, userData);
-
-    return { ok: true, message: '기관 회원가입 완료' };
+    return await conn.query(signUserSQL.INSERT_USER, userData);
   } catch (err) {
     console.error('[ insertOrgUser 실패 ]', err);
+  }
+}
+
+// 승인 요청 테이블 기입
+async function requestApproval(conn, data) {
+  try {
+    const { user_code, approval_type, request_date, state } = data;
+    return await conn.query(signUserSQL.REQUEST_USER, [
+      user_code,
+      approval_type,
+      request_date,
+      state,
+    ]);
+  } catch (err) {
+    console.error('[ requestApproval 실패 ]', err);
   }
 }
 
@@ -152,8 +179,11 @@ async function updatePw(data) {
 module.exports = {
   findUserId,
   addUser,
+  findOrgList,
   findOrgCode,
+  findUserCode,
   addOrg,
+  requestApproval,
   authLogin,
   findId,
   findPw,
