@@ -3,7 +3,7 @@ export const sponsorMenu = [
     label: "후원 프로그램 목록",
     path: "/sponsorProgramList",
     collapseRef: "sponsorProgramList",
-    role: ["AA1", "AA2", "AA3"],
+    role: ["AA0", "AA1", "AA2", "AA3"],
   },
   {
     label: "후원 프로그램 관리",
@@ -21,13 +21,13 @@ export const sponsorMenu = [
     label: "활동 보고서",
     path: "/activity",
     collapseRef: "SponsorActivity",
-    role: ["AA1", "AA2", "AA3"],
+    role: ["AA0", "AA1", "AA2", "AA3"],
   },
   {
     label: "후원 예산 총괄표",
     path: "/budget-summary",
     collapseRef: "BudgetSummary",
-    role: ["AA1", "AA2", "AA3", "AA4"],
+    role: ["AA0", "AA1", "AA2", "AA3", "AA4"],
   },
 ];
 

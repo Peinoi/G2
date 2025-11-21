@@ -206,7 +206,7 @@ onMounted(() => {
 <style scoped>
 .program-container {
   padding: 20px;
-  max-width: 900px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 

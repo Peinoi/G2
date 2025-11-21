@@ -81,9 +81,12 @@ defineExpose({
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
 /* === ManagerApprovals.vue 와 동일 스타일 === */
 .apv-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto;
   padding: 0 16px 40px;
 }
@@ -337,5 +340,8 @@ defineExpose({
   margin-top: 8px;
   color: #b91c1c;
   font-size: 12px;
+}
+.apv-table td:nth-child(9) {
+  text-align: right !important;
 }
 </style>

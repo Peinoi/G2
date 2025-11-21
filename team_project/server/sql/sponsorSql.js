@@ -347,7 +347,7 @@ FROM support_program sp
 LEFT JOIN users u
     ON sp.writer = u.user_id     
 LEFT JOIN organization o
-    ON u.user_code = o.user_code
+    ON u.org_code = o.org_code
 LEFT JOIN support_activity sa
     ON sp.program_code = sa.program_code
 LEFT JOIN donation_expenditure de
@@ -399,8 +399,6 @@ WHERE sp.program_code = ?
 ORDER BY de.used_at ASC;
 
 `;
-
-
 
 module.exports = {
   sponsor_all,

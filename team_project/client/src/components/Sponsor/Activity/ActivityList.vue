@@ -6,7 +6,7 @@
       <button
         class="apv-btn apv-btn-primary"
         @click="programAdd()"
-        v-if="userRole !== 'AA1'"
+        v-if="userRole !== 'AA1' && userRole !== 'AA0'"
       >
         후원 활동 보고서 등록
       </button>
@@ -62,8 +62,15 @@ import dateFormat from "@/utils/dateFormat";
 import numberFormat from "@/utils/numberFormat";
 import { ref, onBeforeMount, computed } from "vue";
 const userJsonString = localStorage.getItem("user");
-const userObject = JSON.parse(userJsonString);
-const userRole = userObject.role;
+let userObject = {};
+try {
+  userObject = userJsonString ? JSON.parse(userJsonString) : {};
+} catch (e) {
+  console.error("❌ user 파싱 실패:", e);
+  userObject = {};
+}
+
+const userRole = userObject.role || "AA0";
 
 const emit = defineEmits(["go-to-add", "select-program"]);
 
@@ -145,9 +152,12 @@ const selectProgram = async (item) => {
 
 <!-- ============================================================= -->
 <style scoped>
+* {
+  font-size: 15px;
+}
 /* === ManagerApprovals.vue 와 동일 스타일 적용 === */
 .apv-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto;
   padding: 0 16px 40px;
 }
@@ -403,5 +413,9 @@ const selectProgram = async (item) => {
     min-width: unset;
     width: 100%;
   }
+}
+.apv-table td:nth-child(5),
+.apv-table td:nth-child(6) {
+  text-align: right !important;
 }
 </style>
