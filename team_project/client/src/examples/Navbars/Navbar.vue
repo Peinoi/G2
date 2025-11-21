@@ -40,6 +40,19 @@
         <!-- 오른쪽 아이콘 -->
         <div class="ms-auto d-flex align-items-center">
           <ul class="navbar-nav justify-content-end">
+            <!-- ✅ 로그인 중일 때 로그인한 사용자 이름 표시 -->
+            <li
+              v-if="piniaLogin.isLogin"
+              class="nav-item d-flex align-items-center me-2"
+            >
+              <span
+                class="px-2 nav-link font-weight-bold lh-1"
+                :class="color ? color : 'text-body'"
+                style="cursor: default"
+              >
+                {{ piniaLogin.userName }} 님
+              </span>
+            </li>
             <!-- 로그인 아이콘 -->
             <li class="nav-item d-flex align-items-center">
               <div
@@ -242,24 +255,24 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from '../Breadcrumbs.vue';
-import { mapMutations, mapState } from 'vuex';
-import { useAuthStore } from '@/store/authLogin';
-import { roleMenu } from '@/examples/Menu/roleMenu';
+import Breadcrumbs from "../Breadcrumbs.vue";
+import { mapMutations, mapState } from "vuex";
+import { useAuthStore } from "@/store/authLogin";
+import { roleMenu } from "@/examples/Menu/roleMenu";
 
 export default {
-  name: 'navbar',
+  name: "navbar",
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ['minNav', 'color'],
+  props: ["minNav", "color"],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
+    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
 
     toggleSidebar() {
       this.navbarMinimize();
@@ -269,17 +282,17 @@ export default {
       // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
       if (this.piniaLogin.isLogin) {
         this.piniaLogin.logout();
-        alert('로그아웃 완료');
+        alert("로그아웃 완료");
       }
 
-      this.$router.push({ name: 'SignIn' });
+      this.$router.push({ name: "SignIn" });
     },
   },
   components: {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(['isRTL', 'isAbsolute']),
+    ...mapState(["isRTL", "isAbsolute"]),
 
     currentRouteName() {
       return this.$route.name;

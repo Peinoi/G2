@@ -39,25 +39,27 @@ async function activity_SelectSQL(activity_code) {
   let sponsorConn;
   try {
     sponsorConn = await pool.getConnection();
-    const sponsorRows = await sponsorConn.query(
+
+    const activity = await sponsorConn.query(
       sponsorSql.activity_select_one,
       [activity_code]
     );
+
     const history = await sponsorConn.query(
       sponsorSql.activity_history_select,
       [activity_code]
     );
 
-    console.log("[ activitySQL.js || 성공 ]");
-    //  console.log(sponsorRows);
-    return sponsorRows;
+    return { activity, history };
   } catch (err) {
-    console.error("[ activitySQL.js || 실패 ]", err.message);
+    console.error("[ activity_SelectSQL 실패 ]", err.message);
     throw err;
   } finally {
     if (sponsorConn) sponsorConn.release();
   }
 }
+
+
 
 async function programAddSQL(programDataArray, attachments) {
   let sponsorConn;
@@ -527,5 +529,5 @@ module.exports = {
   activityHistoryAddSQL,
   current_amountUpdate,
   summaryStatement,
-  summaryStatementSelect,
+  summaryStatementSelect,activity_SelectSQL
 };

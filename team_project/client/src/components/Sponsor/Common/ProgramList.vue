@@ -197,7 +197,15 @@ const getSponsorList = async (params = {}) => {
 
   // filter의 반환값을 list에 다시 할당 (재할당)
   list = list.filter((item) => {
-    // 안정성을 위해 String() 변환을 유지
+    // 승인된 프로그램은 전체 공개
+    if (
+      item.approval_status === "승인" ||
+      item.approval_status === "승인완료"
+    ) {
+      return true;
+    }
+
+    // 그 외 상태는 작성자 본인만 조회 가능
     return String(item.writer) === userId;
   });
 
@@ -467,7 +475,7 @@ const Approval = async (program) => {
 .apv-table td {
   padding: 9px 10px;
   border-bottom: 1px solid #edf2f7;
-  text-align: left;
+  text-align: center;
 }
 
 .apv-table th {

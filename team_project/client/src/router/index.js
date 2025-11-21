@@ -34,7 +34,7 @@ import KakaoPayApprove from '../views/Sponsor/KakaoPayApprove.vue';
 import SponsorActivity from '../views/Sponsor/SponsorActivity.vue';
 import BudgetSummary from '../views/Sponsor/BudgetSummary.vue';
 import MyGiving from '../views/Sponsor/MyGiving.vue';
-
+import BudgetSummaryInfo from "../views/Sponsor/BudgetSummaryInfo.vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -104,10 +104,16 @@ const router = createRouter({
       component: SponsorActivity,
     },
     {
-      path: '/summary',
-      name: 'BudgetSummary',
-      component: BudgetSummary,
-    },
+  path: '/budget-summary',
+  name: 'BudgetSummary',
+  component: BudgetSummary,
+},
+{
+  path: '/budget-summary/:programCode',
+  name: 'BudgetSummaryInfo',
+  component: BudgetSummaryInfo,
+  props: true,
+},
     {
       path: '/mygiving',
       name: 'MyGiving',
@@ -458,6 +464,8 @@ router.beforeEach((to, from, next) => {
     'SponsorActivity',
     'BudgetSummary',
     'MyGiving',
+    'BudgetSummary',
+    'BudgetSummaryInfo'
   ];
 
   // event 그룹
