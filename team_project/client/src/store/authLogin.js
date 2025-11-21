@@ -1,20 +1,21 @@
 // src/store/authLogin.js
 
-import { defineStore } from 'pinia';
-import { login as loginApi } from '../api/user';
+import { defineStore } from "pinia";
+import { login as loginApi } from "../api/user";
 
-export const useAuthStore = defineStore('authLogin', {
+export const useAuthStore = defineStore("authLogin", {
   state: () => ({
     userId: "",
+    userName: "",
     role: "AA0",
     userCode: "",
     orgCode: "",
     isLogin: false,
   }),
   getters: {
-    isAA1: (state) => state.role == 'AA1',
-    isAA2: (state) => state.role == 'AA2',
-    isAA3: (state) => state.role == 'AA3',
+    isAA1: (state) => state.role == "AA1",
+    isAA2: (state) => state.role == "AA2",
+    isAA3: (state) => state.role == "AA3",
   },
   actions: {
     reload() {
@@ -25,9 +26,10 @@ export const useAuthStore = defineStore('authLogin', {
       // loginData를 기반으로 pinia 객체에 값을 저장
       // 로그인 상태가 아닐 경우 생략
       // -> 새로고침해도 로그인 유지됨
-      const loginCheck = localStorage.getItem('user');
+      const loginCheck = localStorage.getItem("user");
       if (!loginCheck) {
         this.userId = "";
+        this.userName = "";
         this.userCode = "";
         this.role = "AA0";
         this.isLogin = false;
@@ -37,6 +39,7 @@ export const useAuthStore = defineStore('authLogin', {
       try {
         const loginData = JSON.parse(loginCheck);
         this.userId = loginData.user_id;
+        this.userName = loginData.name || "";
         this.role = loginData.role;
         this.userCode = loginData.user_code;
         this.orgCode = loginData.org_code;
@@ -45,6 +48,7 @@ export const useAuthStore = defineStore('authLogin', {
         console.error("[ pinia reload 오류 ] : ", err);
         // 오류나도 게스트로
         this.userId = "";
+        this.userName = "";
         this.userCode = "";
         this.role = "AA0";
         this.isLogin = false;
@@ -60,15 +64,19 @@ export const useAuthStore = defineStore('authLogin', {
       }
 
       this.userId = result.user_id;
+      this.userName = result.name || "";
       this.role = result.role;
       this.userCode = result.user_code;
       this.orgCode = result.org_code;
       this.isLogin = true;
 
+      console.log("test");
+      console.log(result);
       localStorage.setItem(
-        'user',
+        "user",
         JSON.stringify({
           userId: result.user_id,
+          userName: result.name || "",
           role: result.role,
           userCode: result.user_code,
           orgCode: result.org_code,
@@ -80,11 +88,12 @@ export const useAuthStore = defineStore('authLogin', {
     // 로그아웃
     logout() {
       this.userId = "";
+      this.userName = "";
       this.role = "AA0";
       this.userCode = "";
       this.orgCode = "";
       this.isLogin = false;
-      localStorage.removeItem('user');
+      localStorage.removeItem("user");
     },
   },
 });

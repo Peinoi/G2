@@ -3,7 +3,7 @@
   <div
     class="page-header align-items-start min-vh-100"
     style="
-      background-image: url('https://images.unsplash.com/photo-1497294815431-9365093b7331?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80');
+      background-image: url(&quot;https://images.unsplash.com/photo-1497294815431-9365093b7331?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80&quot;);
     "
   >
     <span class="mask bg-gradient-dark opacity-6"></span>
@@ -273,17 +273,17 @@
 </template>
 
 <script>
-import Navbar from '@/examples/PageLayout/Navbar.vue';
-import MaterialInput from '@/components/MaterialInput.vue';
+import Navbar from "@/examples/PageLayout/Navbar.vue";
+import MaterialInput from "@/components/MaterialInput.vue";
 // import MaterialSwitch from '@/components/MaterialSwitch.vue';
-import MaterialButton from '@/components/MaterialButton.vue';
-import { mapMutations } from 'vuex';
-import { useAuthStore } from '../store/authLogin';
-import { useMenuStore } from '@/store/sidebar';
-import { findIdPw } from '../api/user';
+import MaterialButton from "@/components/MaterialButton.vue";
+import { mapMutations } from "vuex";
+import { useAuthStore } from "../store/authLogin";
+import { useMenuStore } from "@/store/sidebar";
+import { findIdPw } from "../api/user";
 
 export default {
-  name: 'sign-in',
+  name: "sign-in",
 
   components: {
     Navbar,
@@ -293,17 +293,17 @@ export default {
   },
   data() {
     return {
-      userId: '',
-      userPw: '',
+      userId: "",
+      userPw: "",
       showFindIdModal: false,
       showFindPwModal: false,
-      findIdName: '',
-      findIdPhone: '',
-      findPwUserId: '',
-      findPwName: '',
-      findPwPhone: '',
-      findPwNewPw: '',
-      findPwNewPwCheck: '',
+      findIdName: "",
+      findIdPhone: "",
+      findPwUserId: "",
+      findPwName: "",
+      findPwPhone: "",
+      findPwNewPw: "",
+      findPwNewPwCheck: "",
       findPwStep: 1, // 1: 본인 확인, 2: 재설정
     };
   },
@@ -318,7 +318,7 @@ export default {
   methods: {
     async login() {
       if (!this.userId || !this.userPw) {
-        alert('아이디 및 비밀번호 입력해주세요');
+        alert("아이디 및 비밀번호 입력해주세요");
         return;
       }
 
@@ -330,13 +330,12 @@ export default {
           userId: this.userId,
           userPw: this.userPw,
         });
-
         alert(`반갑습니다 ${result.user_id}(${result.role})님`);
-        this.$router.push({ name: 'dashboard' });
-        localStorage.setItem('user', JSON.stringify(result));
+        this.$router.push({ name: "dashboard" });
+        localStorage.setItem("user", JSON.stringify(result));
         menu.setRole(result.role);
       } catch (err) {
-        alert('로그인 실패: 아이디 및 패스워드 틀림');
+        alert("로그인 실패: 아이디 및 패스워드 틀림");
       }
     },
 
@@ -344,26 +343,26 @@ export default {
       let phone = this[targetVariable];
       if (!phone) return;
 
-      const cleaned = phone.replace(/[^0-9]/g, '');
-      let formatted = '';
+      const cleaned = phone.replace(/[^0-9]/g, "");
+      let formatted = "";
 
       if (cleaned.length < 4) {
         formatted = cleaned;
       } else if (cleaned.length < 8) {
-        formatted = cleaned.slice(0, 3) + '-' + cleaned.slice(3);
+        formatted = cleaned.slice(0, 3) + "-" + cleaned.slice(3);
       } else if (cleaned.length < 11) {
         formatted =
           cleaned.slice(0, 3) +
-          '-' +
+          "-" +
           cleaned.slice(3, 7) +
-          '-' +
+          "-" +
           cleaned.slice(7);
       } else {
         formatted =
           cleaned.slice(0, 3) +
-          '-' +
+          "-" +
           cleaned.slice(3, 7) +
-          '-' +
+          "-" +
           cleaned.slice(7, 11);
       }
 
@@ -372,15 +371,15 @@ export default {
 
     async findId() {
       if (!this.findIdName || !this.findIdPhone) {
-        alert('모든 항목을 입력해주세요');
+        alert("모든 항목을 입력해주세요");
         return;
       }
-      const result = await findIdPw('findId', {
+      const result = await findIdPw("findId", {
         name: this.findIdName,
         phone: this.findIdPhone,
       });
       if (!result.ok) {
-        alert('조건에 맞는 값이 없습니다');
+        alert("조건에 맞는 값이 없습니다");
         return;
       }
       alert(`아이디는 ${result.user_id} 입니다.`);
@@ -388,39 +387,39 @@ export default {
 
     async findPw() {
       if (!this.findPwUserId || !this.findPwName || !this.findPwPhone) {
-        return alert('모든 항목을 입력해주세요');
+        return alert("모든 항목을 입력해주세요");
       }
-      const result = await findIdPw('findPw', {
+      const result = await findIdPw("findPw", {
         user_id: this.findPwUserId,
         name: this.findPwName,
         phone: this.findPwPhone,
       });
       if (!result.ok) {
-        alert('조건에 맞는 값이 없습니다');
+        alert("조건에 맞는 값이 없습니다");
         return;
       }
-      alert('다음 페이지로 이동');
+      alert("다음 페이지로 이동");
       this.findPwStep = 2;
     },
 
     async resetPassword() {
       if (!this.findPwNewPw || !this.findPwNewPwCheck) {
-        return alert('모두 입력해주세요');
+        return alert("모두 입력해주세요");
       }
       if (this.findPwNewPw !== this.findPwNewPwCheck) {
-        return alert('비밀번호 틀림');
+        return alert("비밀번호 틀림");
       }
-      const result = await findIdPw('findResetPw', {
+      const result = await findIdPw("findResetPw", {
         user_id: this.findPwUserId,
         name: this.findPwName,
         phone: this.findPwPhone,
         newPw: this.findPwNewPw,
       });
       if (!result.ok) {
-        alert('PW 변경 실패');
+        alert("PW 변경 실패");
         return;
       }
-      alert('비밀번호 변경 성공');
+      alert("비밀번호 변경 성공");
       this.togglePwModal();
       this.findPwStep = 1;
     },
@@ -432,7 +431,7 @@ export default {
       this.showFindPwModal = !this.showFindPwModal;
     },
 
-    ...mapMutations(['toggleEveryDisplay', 'toggleHideConfig']),
+    ...mapMutations(["toggleEveryDisplay", "toggleHideConfig"]),
   },
 };
 </script>

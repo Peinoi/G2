@@ -287,8 +287,12 @@ onMounted(fetchList);
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
+
 .apv-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto;
   padding: 0 16px 40px;
 }
