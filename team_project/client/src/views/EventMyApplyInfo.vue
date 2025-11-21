@@ -160,30 +160,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 
 const route = useRoute();
 const router = useRouter();
 
-const isManager = ref(false);
-
-const checkManager = () => {
+// 로그인 권한
+const getLoginRole = () => {
   const userStr = localStorage.getItem("user");
-  if (!userStr) return false;
+  if (!userStr) return null;
   try {
-    const user = JSON.parse(userStr);
-    return user.role === "AA2";
+    const data = JSON.parse(userStr);
+    return data.role || null;
   } catch {
-    return false;
+    return null;
   }
 };
 
-const eventCode = Number(route.params.eventCode || 0);
-const applyCode = Number(route.params.applyCode || 0);
+const loginRole = ref(getLoginRole());
 
 const applyInfo = ref({});
+
+const isManager = computed(() => {
+  // 로그인 권한이 AA2이고, 상태가 DA2(승인) 또는 DA4(취소) 아닐 때만 버튼 보여주기
+  return (
+    loginRole.value === "AA2" &&
+    !["DE2", "DE4"].includes(applyInfo.value?.apply_status)
+  );
+});
+
+// const checkManager = () => {
+//   const userStr = localStorage.getItem("user");
+//   if (!userStr) return false;
+//   try {
+//     const user = JSON.parse(userStr);
+//     return user.role === "AA2";
+//   } catch {
+//     return false;
+//   }
+// };
+
+const eventCode = Number(route.params.eventCode || 0);
+const applyCode = Number(route.params.applyCode || 0);
 
 const event = ref({
   sub_events: [],
@@ -260,11 +280,11 @@ const fetchEvent = async () => {
 // 상태 Pill 클래스
 const statusClass = (status) => {
   switch (status) {
-    case "DA1":
+    case "DE1":
       return "status-pill--before";
-    case "DA2":
+    case "DE2":
       return "status-pill--done";
-    case "DA4":
+    case "DE4":
       return "status-pill--rejected";
     default:
       return "";
@@ -289,8 +309,10 @@ const handleApprove = async () => {
     const res = await axios.post(`/api/event/myApply/approve/${applyCode}`);
     if (res.data.success) {
       alert("승인되었습니다.");
+
       await fetchEvent();
       await fetchApply();
+      console.log("applyInfo after approve:", applyInfo.value);
     } else {
       alert(res.data.message || "승인 실패");
     }
@@ -306,6 +328,7 @@ const handleReject = async () => {
     const res = await axios.post(`/api/event/myApply/reject/${applyCode}`);
     if (res.data.success) {
       alert("취소 처리되었습니다.");
+
       await fetchEvent();
       await fetchApply();
     } else {
@@ -323,7 +346,7 @@ const goBack = () => router.back();
 onMounted(async () => {
   await fetchEvent();
   await fetchApply();
-  isManager.value = checkManager();
+  // isManager.value = checkManager();
 });
 </script>
 

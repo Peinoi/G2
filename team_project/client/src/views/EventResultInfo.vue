@@ -5,11 +5,11 @@
         ← 목록으로
       </MaterialButton>
       <!-- 관리자 승인/반려 -->
-      <MaterialButton v-if="isAdmin" @click="handleApprove"
-        >승인</MaterialButton
-      >
-
-      <MaterialButton v-if="isAdmin" @click="handleReject">반려</MaterialButton>
+      <div v-if="isAdmin">
+        <!-- 🔥 여기에 하나로 묶음 -->
+        <MaterialButton @click="handleApprove">승인</MaterialButton>
+        <MaterialButton @click="handleReject">반려</MaterialButton>
+      </div>
     </div>
 
     <div v-if="result" class="detail-card space-y-4">
@@ -73,7 +73,6 @@ const router = useRouter();
 const result = ref(null);
 
 const resultCode = Number(route.params.resultCode || 0);
-const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
 
 // 미리보기 이미지
 const previewImage = ref("");
@@ -106,8 +105,23 @@ const closePreview = () => {
 const mainImage = ref("");
 const isApplied = ref(false);
 
+// 로그인 권한
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+const loginRole = ref(getLoginRole());
+
 // 상태 버튼 표시
-const isAdmin = computed(() => role.value === 3);
+const isAdmin = computed(
+  () => loginRole.value === "AA3" && result.value?.result_status !== "BA2"
+);
 
 // 상태 Pill 클래스
 const statusClass = (status) => {

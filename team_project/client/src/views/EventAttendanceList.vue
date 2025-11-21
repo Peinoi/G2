@@ -47,7 +47,7 @@
             <th>신청일</th>
             <th>메인매니저</th>
             <th>신청상태</th>
-            <th>참석상태</th>
+            <!-- <th>참석상태</th> -->
           </tr>
         </thead>
 
@@ -72,13 +72,13 @@
               </span>
             </td>
 
-            <td>
+            <!-- <td>
               <span
                 :class="['priority-badge', stateBadgeClass(row.attend_status)]"
               >
                 {{ codeLabel(row.attend_status_name) }}
               </span>
-            </td>
+            </td> -->
           </tr>
 
           <tr v-if="rows.length === 0">

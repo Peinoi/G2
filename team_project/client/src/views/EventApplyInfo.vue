@@ -136,8 +136,33 @@ const route = useRoute();
 const router = useRouter();
 const calendarRef = ref(null);
 
+// 로그인 유저 코드
+const getLoginUserCode = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.user_code || null;
+  } catch {
+    return null;
+  }
+};
+
+// 로그인 권한
+const getLoginRole = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.role || null;
+  } catch {
+    return null;
+  }
+};
+
 const eventCode = Number(route.params.eventCode || 0);
 const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
+const loginRole = ref(getLoginRole());
 
 const event = ref({
   sub_events: [],
@@ -176,9 +201,12 @@ const closePreview = () => {
 
 // 상태 버튼 표시
 const canApply = computed(
-  () => role.value === 1 && event.value.event_type === "DD1" && !isApplied.value
+  () =>
+    loginRole.value === "AA1" &&
+    event.value.event_type === "DD1" &&
+    !isApplied.value
 );
-const applied = computed(() => role.value === 1 && isApplied.value);
+const applied = computed(() => loginRole.value === "AA1" && isApplied.value);
 const canEdit = computed(
   () => role.value === 2 && event.value.register_status === "BA2"
 );
@@ -186,7 +214,9 @@ const canReEdit = computed(
   () => role.value === 2 && event.value.register_status === "BA3"
 );
 
-const isAdmin = computed(() => role.value === 3);
+const isAdmin = computed(
+  () => loginRole.value === "AA3" && event.value.register_status !== "BA2"
+);
 
 // 상태 Pill 클래스
 const statusClass = (status) => {
@@ -204,18 +234,6 @@ const statusClass = (status) => {
 
 // 날짜 포맷
 const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
-
-// 로그인 유저 코드
-const getLoginUserCode = () => {
-  const userStr = localStorage.getItem("user");
-  if (!userStr) return null;
-  try {
-    const data = JSON.parse(userStr);
-    return data.user_code || null;
-  } catch {
-    return null;
-  }
-};
 
 // 이벤트 조회
 const fetchEvent = async () => {
@@ -274,13 +292,20 @@ const applyEvent = async ({ sub_event_code = null }) => {
 
 // 신청 버튼
 const applySimple = async () => {
-  if (isApplied.value) return alert("이미 신청한 일정입니다.");
+  if (loginRole.value !== "AA1")
+    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+
+  if (isApplied.value) return alert("이미 신청했습니다.");
+
   const ok = await applyEvent({});
   if (ok) isApplied.value = true;
 };
 
 // 캘린더 클릭 예약
 const onEventClick = async (info) => {
+  if (loginRole.value !== "AA1")
+    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+
   if (info.event.extendedProps.isApplied)
     return alert("이미 신청한 일정입니다.");
 
