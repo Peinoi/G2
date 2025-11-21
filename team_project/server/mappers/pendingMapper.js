@@ -13,19 +13,24 @@ async function getPendingListMapper(data) {
 }
 
 async function updateStatusMapper(data) {
+  const conn = await pool.getConnection();
   try {
-    const { status, manager_code, submit_code } = data;
-    const result = await pool.query(pendingSQL.UPDATE_STATUS, [
-      status,
-      manager_code,
-      submit_code,
-    ]);
-    if (result.affectedRows == 0) {
-      return { ok: false, message: '변경 실패' };
-    }
-    return { ok: true, message: '변경 성공' };
+    await conn.beginTransaction();
+
+    const { status, assi_by, submit_code } = data;
+    await conn.query(pendingSQL.UPDATE_STATUS, [status, assi_by, submit_code]);
+
+    await conn.query(pendingSQL.INSERT_COUNSEL, [submit_code]);
+
+    await conn.commit();
+
+    return { ok: true, message: '배정 성공' };
   } catch (err) {
     console.error('[ updateStatusMapper 실패 ] : ', err);
+    await conn.rollback();
+    return { ok: false, message: '트랜잭션 오류 : 배정 실패' };
+  } finally {
+    conn.release();
   }
 }
 

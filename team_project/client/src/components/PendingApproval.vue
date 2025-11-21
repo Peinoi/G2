@@ -78,7 +78,7 @@
         <tbody>
           <tr v-for="(item, index) in list" :key="item.id">
             <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ item.childName }}</td>
+            <td>{{ item.childName ? item.childName : item.writerName }}</td>
             <td>{{ item.submitAt }}</td>
             <td>{{ item.managerName }}</td>
             <td class="apv-actions-cell">
@@ -236,10 +236,12 @@ export default {
           !this.stateActive || item.status === this.stateActive;
         const searchChild =
           !this.searchChildActive ||
-          item.childName.includes(this.searchChildActive.trim());
+          (item.childName || item.writerName || '').includes(
+            this.searchChildActive.trim()
+          );
         const searchManager =
           !this.searchManagerActive ||
-          item.managerName.includes(this.searchManagerActive.trim());
+          (item.managerName || '').includes(this.searchManagerActive.trim());
 
         return searchStatus && searchChild && searchManager;
       });
@@ -277,6 +279,7 @@ export default {
       this.listRaw = result.map((item) => ({
         submit_code: item.submit_code,
         childName: item.child_name,
+        writerName: item.writer_name,
         submitAt: item.submit_at?.split(' ')[0],
         managerName: item.manager_name,
         status: this.changeCode('load', item.status),
@@ -335,7 +338,7 @@ export default {
       const res = {
         submit_code: this.pendingItem.submit_code,
         status: 'CA3',
-        manager_code: this.selectedManager,
+        assi_by: this.selectedManager,
       };
 
       const result = await changeStatusApi(res);
