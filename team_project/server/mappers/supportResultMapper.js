@@ -122,6 +122,7 @@ async function getResultBasic(submitCode) {
       guardianName: row.guardian_name || "", // 보호자 이름
       assigneeName: row.assignee_name || "", // 담당자 이름
       disabilityType: row.disability_type || "", // 장애유형
+      level: row.level || "",
 
       ssnFront: row.ssn,
       counselSubmitAt: row.counsel_submit_at,

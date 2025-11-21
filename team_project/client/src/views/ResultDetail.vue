@@ -100,6 +100,14 @@
               </span>
             </div>
 
+            <!-- 4. 장애유형 -->
+            <div class="meta-item">
+              <span class="meta-label">우선순위</span>
+              <span class="meta-value">
+                {{ basicInfo.level || "-" }}
+              </span>
+            </div>
+
             <!-- 5. 계획작성일 (계획서 작성/제출일) -->
             <div class="meta-item">
               <span class="meta-label">계획작성일</span>
@@ -346,6 +354,7 @@ const basicInfo = ref({
   assigneeName: "",
   disabilityType: "",
   planSubmitAt: "",
+  level: "",
 });
 
 const formattedPlanSubmitAt = computed(() => {
@@ -411,6 +420,7 @@ async function loadBasicInfo() {
     assigneeName: res.assigneeName || "-",
     disabilityType: res.disabilityType || "-",
     planSubmitAt: res.planSubmitAt || "",
+    level: res.level || "",
   };
 }
 

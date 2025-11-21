@@ -89,6 +89,14 @@
                   color="dark"
                   size="sm"
                   variant="outlined"
+                  @click="addItem(sIndex, subIndex)"
+                >
+                  질문 추가
+                </MaterialButton>
+                <MaterialButton
+                  color="dark"
+                  size="sm"
+                  variant="outlined"
                   @click="removeSubsection(sIndex, subIndex)"
                 >
                   삭제
@@ -236,16 +244,6 @@
                 </div>
               </div>
               <!-- // 질문 하나 -->
-              <div class="question-add-wrap mt-2">
-                <MaterialButton
-                  color="dark"
-                  size="sm"
-                  variant="outlined"
-                  @click="addItem(sIndex, subIndex)"
-                >
-                  질문 추가
-                </MaterialButton>
-              </div>
             </div>
           </div>
         </div>
