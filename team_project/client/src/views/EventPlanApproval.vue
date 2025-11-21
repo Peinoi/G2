@@ -291,8 +291,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
+
 .priority-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto 40px;
   padding: 0 16px;
 }
@@ -319,7 +323,7 @@ onMounted(() => {
 }
 
 .priority-table thead th {
-  text-align: left;
+  text-align: center;
   padding: 10px 8px;
   font-weight: 600;
   font-size: 12px;
@@ -334,6 +338,7 @@ onMounted(() => {
   border-bottom: 1px solid #f3f4f6;
   color: #374151;
   vertical-align: middle;
+  text-align: center;
 }
 
 .priority-row {

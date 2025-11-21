@@ -242,6 +242,13 @@ const modifierRoleMap = {
   AA4: "시스템 관리자",
 };
 
+// 🔹 우선순위(BB 코드) 매핑
+const priorityMap = {
+  BB1: "긴급",
+  BB2: "중점",
+  BB3: "준비",
+};
+
 const getModifierRoleName = (roleCode) => modifierRoleMap[roleCode] || "-";
 
 // 🔹 변경 항목 컬럼명을 한글로 변환
@@ -278,7 +285,7 @@ const getChangeItemLabel = (row) => {
     goal: "계획했던 목표",
     publicContent: "일반용 내용",
     privateContent: "기관용 내용",
-    prionity: "우선순위",
+    priority: "우선순위",
 
     detail_title: "추가 제목",
     detail1_title: "추가-1 제목",
@@ -365,7 +372,6 @@ const getChangeItemLabel = (row) => {
 const formatHistoryValue = (value) => {
   if (value == null || value === "") return "";
 
-  // 문자열이 아닌 값이 올 수도 있으니 문자열로 맞춰줌
   const str = String(value).trim();
 
   // JSON Object 형식인지 확인
@@ -373,28 +379,38 @@ const formatHistoryValue = (value) => {
     try {
       const obj = JSON.parse(str);
 
-      // 객체가 아니면 그냥 리턴
       if (typeof obj !== "object" || Array.isArray(obj) || obj === null) {
-        return str;
+        // JSON이 아닌 단일 값이 BB 코드일 수도 있으니 매핑
+        return priorityMap[str] || str;
       }
 
-      // { "76": "곰", "77": ["영국","일본"] } → "76: 곰, 77: 영국, 일본"
+      // JSON 객체일 때 내부 값을 매핑
       const parts = Object.entries(obj).map(([key, val]) => {
+        // 배열이면 내부 항목도 매핑
         if (Array.isArray(val)) {
-          return `${key}: ${val.join(", ")}`;
+          const mappedArr = val.map((v) =>
+            typeof v === "string" && priorityMap[v] ? priorityMap[v] : v
+          );
+          return `${key}: ${mappedArr.join(", ")}`;
         }
+
+        // 단일 값이 BB 코드라면 치환
+        if (typeof val === "string" && priorityMap[val]) {
+          return `${key}: ${priorityMap[val]}`;
+        }
+
         return `${key}: ${val}`;
       });
 
       return parts.join(", ");
     } catch (e) {
-      // JSON 파싱 실패하면 그냥 원본 출력
-      return str;
+      // JSON 파싱 실패 → 단일 값이 BB 코드면 매핑
+      return priorityMap[str] || str;
     }
   }
 
-  // JSON이 아니면 그대로 출력
-  return str;
+  // JSON이 아니면 단일 값이 BB 코드인지 체크
+  return priorityMap[str] || str;
 };
 
 // 날짜 format
@@ -492,8 +508,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
+
 .hist-page {
   padding: 24px;
+  max-width: 1600px;
 }
 
 .hist-title {
@@ -511,6 +532,10 @@ onMounted(async () => {
   font-size: 14px;
 }
 
+/* ===========================
+   🔷 필터 영역
+   =========================== */
+
 .hist-toolbar {
   margin-bottom: 16px;
   display: flex;
@@ -527,8 +552,10 @@ onMounted(async () => {
 .hist-select,
 .hist-input {
   padding: 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
 }
 
 .hist-input {
@@ -549,39 +576,87 @@ onMounted(async () => {
   color: white;
 }
 
+/* ===========================
+   🔷 테이블 감싸는 카드 스타일
+   (후원결과 priority-card 기반)
+   =========================== */
+
 .hist-table-wrap {
-  border: 1px solid #eee;
-  border-radius: 8px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  padding: 12px 16px;
   overflow-x: auto;
 }
+
+/* ===========================
+   🔷 테이블 전체 스타일
+   (priority-table 스타일 100% 적용)
+   =========================== */
 
 .hist-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1000px;
-}
-
-.hist-table th,
-.hist-table td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  min-width: 1000px; /* 기존 유지 */
 }
 
 .hist-table thead th {
-  background: #fafafa;
+  text-align: center;
+  padding: 10px 8px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  white-space: nowrap;
 }
 
-.hist-before,
-.hist-after {
+.hist-table tbody td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* hover 효과 통일 */
+.hist-table tbody tr:hover {
+  background: #f3f4ff;
+  transform: translateY(-1px);
+  transition:
+    background-color 0.12s ease,
+    transform 0.06s ease;
+}
+
+/* ===========================
+   🔷 before / after만 왼쪽 정렬 + 여러 줄 허용
+   =========================== */
+
+.hist-table td.hist-before,
+.hist-table td.hist-after {
   white-space: pre-wrap;
   word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
+  text-align: left;
 }
+
+/* ===========================
+   🔷 empty & loading
+   =========================== */
 
 .hist-empty,
 .hist-loading {
   text-align: center;
-  padding: 12px 0;
+  padding: 14px 0;
+  color: #9ca3af;
 }
+
+/* ===========================
+   🔷 페이징
+   =========================== */
 
 .hist-pagination {
   margin-top: 14px;

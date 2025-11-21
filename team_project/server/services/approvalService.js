@@ -14,11 +14,12 @@ async function managerApprovalList({ state, keyword, page, size }) {
 }
 
 /** ✅ 승인 + 승인 메일 발송 */
-async function approve({ approvalCode }) {
+async function approve({ approvalCode, processorCode }) {
   // 1) 상태 BA2(승인)로 변경 + 사용자 활성화 (mapper에서 처리)
   const result = await approvalMapper.updateApprovalState({
     approvalCode,
     nextState: "BA2",
+    processorCode,
   });
 
   if (!result.affectedRows) {
@@ -47,11 +48,12 @@ async function approve({ approvalCode }) {
 }
 
 /** ✅ 반려 + 메일 발송 */
-async function reject({ approvalCode, reason }) {
+async function reject({ approvalCode, reason, processorCode }) {
   // 1) 상태를 BA3(반려)로 변경
   const result = await approvalMapper.updateApprovalState({
     approvalCode,
     nextState: "BA3",
+    processorCode,
   });
 
   // 변경된 행 없으면 메일도 안 보냄
@@ -100,10 +102,11 @@ async function staffApprovalList({
 }
 
 /** ✅ 기관 담당자 승인 (is_active 활성화 + 메일 발송) */
-async function approveStaff({ approvalCode }) {
+async function approveStaff({ approvalCode, processorCode }) {
   const result = await approvalMapper.updateApprovalStateForStaff({
     approvalCode,
     nextState: "BA2",
+    processorCode,
   });
 
   // 승인 자체가 안 되었으면 메일도 안 보냄
@@ -132,10 +135,11 @@ async function approveStaff({ approvalCode }) {
 }
 
 /** ✅ 기관 담당자 반려 (BA3 + 메일 발송) */
-async function rejectStaff({ approvalCode, reason }) {
+async function rejectStaff({ approvalCode, reason, processorCode }) {
   const result = await approvalMapper.updateApprovalStateForStaff({
     approvalCode,
     nextState: "BA3",
+    processorCode,
   });
 
   if (!result.affectedRows) {

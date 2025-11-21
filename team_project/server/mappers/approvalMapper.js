@@ -51,12 +51,12 @@ async function managerApprovalList({ state, keyword, page, size }) {
 /** ✅ 승인/반려 공통 업데이트 + 승인 시 사용자 활성화(is_active=1)
  *  + 회원가입 반려 시 히스토리 복사 후 users 삭제
  */
-async function updateApprovalState({ approvalCode, nextState }) {
+async function updateApprovalState({ approvalCode, processorCode, nextState }) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    const params = [nextState, approvalCode];
+    const params = [nextState, processorCode, approvalCode];
 
     console.log(
       "[approvalMapper] updateApprovalState SQL:",
@@ -225,29 +225,30 @@ async function staffApprovalList({
 }
 
 /** AE2 (기관 담당자 승인/반려) 업데이트 */
-async function updateApprovalStateForStaff({ approvalCode, nextState }) {
+async function updateApprovalStateForStaff({
+  approvalCode,
+  processorCode,
+  nextState,
+}) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
     const ret = await conn.query(approvalSQL.updateApprovalState, [
       nextState,
+      processorCode, // 🔹 처리자 user_code
       approvalCode,
     ]);
     const result = ret[0] || ret;
 
     if (result.affectedRows > 0) {
-      // 승인 → 활성화
       if (nextState === "BA2") {
         await conn.query(approvalSQL.activateUserByApproval, [approvalCode]);
       }
 
-      // 반려 → AE1/AE2 (회원가입/기관담당자 가입) 이면 히스토리 + FK 끊고 + 유저 삭제
       if (nextState === "BA3") {
-        // 1) 히스토리 복사
         await conn.query(approvalSQL.insertSignupRejectHistory, [approvalCode]);
 
-        // 2) approvalCode 로 user_code 조회
         const retUser = await conn.query(approvalSQL.findUserCodeByApproval, [
           approvalCode,
         ]);
@@ -260,12 +261,9 @@ async function updateApprovalStateForStaff({ approvalCode, nextState }) {
         );
 
         if (userCode) {
-          // 3) FK 끊기
           await conn.query(approvalSQL.clearRequesterCodeByApproval, [
             approvalCode,
           ]);
-
-          // 4) users 삭제
           await conn.query(approvalSQL.deleteUserByApproval, [userCode]);
         } else {
           console.log(

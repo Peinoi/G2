@@ -102,7 +102,7 @@
                       ]"
                       @click="changeStatus(item, key)"
                     >
-                      {{ key == '미검토' ? '미검토' : key }}
+                      {{ key == "미검토" ? "미검토" : key }}
                     </button>
                   </template>
                 </div>
@@ -180,23 +180,23 @@ import {
   getPendingList,
   searchManagers,
   changeStatus as changeStatusApi,
-} from '../api/pending';
-import ManagersModal from './Pending/ManagerSelectModal.vue';
-import ConfirmModal from './Pending/ConfirmModal.vue';
+} from "../api/pending";
+import ManagersModal from "./Pending/ManagerSelectModal.vue";
+import ConfirmModal from "./Pending/ConfirmModal.vue";
 
 export default {
-  name: 'PendingApproval',
+  name: "PendingApproval",
   data() {
     return {
       // input 바인딩되는 값(데이터만 변경, computed에 영향 X)
-      stateInput: '',
-      searchChildInput: '',
-      searchManagerInput: '',
+      stateInput: "",
+      searchChildInput: "",
+      searchManagerInput: "",
 
       // 실제 검색 값 (fetchList에서만 변경)
-      stateActive: '',
-      searchChildActive: '',
-      searchManagerActive: '',
+      stateActive: "",
+      searchChildActive: "",
+      searchManagerActive: "",
 
       // 페이징
       pageSize: 10,
@@ -205,9 +205,9 @@ export default {
       listRaw: [],
 
       statusMap: {
-        검토완료: { label: '승인완료', class: 'apv-state-CA3' },
+        검토완료: { label: "승인완료", class: "apv-state-CA3" },
       },
-      allStatusKeys: ['검토완료'],
+      allStatusKeys: ["검토완료"],
 
       // 모달 관련
       // -> 담당자 리스트
@@ -217,10 +217,10 @@ export default {
       showConfirmModal: false,
       showDoneModal: false,
 
-      confirmMode: 'confirm',
+      confirmMode: "confirm",
 
       managers: [],
-      selectedManager: '',
+      selectedManager: "",
       pendingItem: null,
     };
   },
@@ -236,12 +236,12 @@ export default {
           !this.stateActive || item.status === this.stateActive;
         const searchChild =
           !this.searchChildActive ||
-          (item.childName || item.writerName || '').includes(
+          (item.childName || item.writerName || "").includes(
             this.searchChildActive.trim()
           );
         const searchManager =
           !this.searchManagerActive ||
-          (item.managerName || '').includes(this.searchManagerActive.trim());
+          (item.managerName || "").includes(this.searchManagerActive.trim());
 
         return searchStatus && searchChild && searchManager;
       });
@@ -273,16 +273,16 @@ export default {
       this.searchChildActive = this.searchChildInput;
       this.searchManagerActive = this.searchManagerInput;
 
-      const data = JSON.parse(localStorage.getItem('user'));
+      const data = JSON.parse(localStorage.getItem("user"));
       const result = await getPendingList(data.org_code);
 
       this.listRaw = result.map((item) => ({
         submit_code: item.submit_code,
         childName: item.child_name,
         writerName: item.writer_name,
-        submitAt: item.submit_at?.split(' ')[0],
+        submitAt: item.submit_at?.split(" ")[0],
         managerName: item.manager_name,
-        status: this.changeCode('load', item.status),
+        status: this.changeCode("load", item.status),
       }));
       // 검색 후 1페이지로 이동
       this.currentPage = 1;
@@ -301,11 +301,11 @@ export default {
 
     // 상태값 코드 <-> 텍스트 변경 함수
     changeCode(type, code) {
-      if (type == 'change') {
-        const result = code == '미검토' ? 'CA1' : 'CA3';
+      if (type == "change") {
+        const result = code == "미검토" ? "CA1" : "CA3";
         return result;
       }
-      const result = code == 'CA1' ? '미검토' : '검토완료';
+      const result = code == "CA1" ? "미검토" : "검토완료";
       return result;
     },
 
@@ -313,12 +313,12 @@ export default {
     async changeStatus(item) {
       // org_code 추출
       // -> 모달창 출력
-      const data = JSON.parse(localStorage.getItem('user'));
+      const data = JSON.parse(localStorage.getItem("user"));
       const managers = await searchManagers(data.org_code);
       this.managers = managers;
       this.pendingItem = item;
 
-      this.selectedManager = '';
+      this.selectedManager = "";
       this.showManagerModal = true;
     },
 
@@ -328,7 +328,7 @@ export default {
       this.selectedManager = managerName;
 
       this.showManagerModal = false;
-      this.confirmMode = 'confirm';
+      this.confirmMode = "confirm";
       this.showConfirmModal = true;
     },
 
@@ -337,7 +337,7 @@ export default {
     async finalApproval() {
       const res = {
         submit_code: this.pendingItem.submit_code,
-        status: 'CA3',
+        status: "CA3",
         assi_by: this.selectedManager,
       };
 
@@ -346,11 +346,11 @@ export default {
       this.showConfirmModal = false;
 
       if (!result.ok) {
-        alert('배정 실패');
+        alert("배정 실패");
         return;
       }
 
-      this.confirmMode = 'done';
+      this.confirmMode = "done";
       this.showDoneModal = true;
       this.fetchList();
     },
@@ -370,8 +370,8 @@ export default {
 
 <style scoped>
 .apv-page {
-  font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕',
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕",
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   padding-left: 0 !important;
   padding-right: 0 !important;
 }

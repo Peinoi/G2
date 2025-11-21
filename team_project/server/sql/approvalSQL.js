@@ -40,6 +40,7 @@ LIMIT ?, ?
 const updateApprovalState = `
   UPDATE request_approval
      SET state = ?,
+         processor_code = ?,      -- 🔹 승인/반려 처리한 사람 user_code
          approval_date = NOW()
    WHERE approval_code = ?
      AND state = 'BA1'   -- 요청 상태일 때만 변경
@@ -49,12 +50,14 @@ const findApprovalWithUser = `
   SELECT
     ra.approval_code,
     ra.state,
-    u.user_code,
-    u.name        AS user_name,
-    u.email
+    COALESCE(u.user_code, ush.user_code) AS user_code,
+    COALESCE(u.name,      ush.name)      AS user_name,
+    COALESCE(u.email,     ush.email)     AS email
   FROM request_approval ra
-  JOIN users u
+  LEFT JOIN users u
     ON u.user_code = ra.requester_code
+  LEFT JOIN user_signup_reject_history ush
+    ON ush.approval_code = ra.approval_code
   WHERE ra.approval_code = ?
 `;
 
@@ -448,7 +451,7 @@ const supportPlanApprovalTotalCount = `
   LEFT JOIN users parent
     ON parent.user_code = ss.written_by
   LEFT JOIN child c
-    ON c.user_code = parent.user_code
+    ON c.child_code = ss.child_code
   LEFT JOIN users mgr
     ON mgr.user_code = sp.assi_by
   LEFT JOIN organization org
@@ -612,7 +615,7 @@ const supportResultApprovalTotalCount = `
   LEFT JOIN users parent
     ON parent.user_code = ss.written_by
   LEFT JOIN child c
-    ON c.user_code = parent.user_code
+    ON c.child_code = ss.child_code
   LEFT JOIN users mgr
     ON mgr.user_code = sr.assi_by
   LEFT JOIN organization org
