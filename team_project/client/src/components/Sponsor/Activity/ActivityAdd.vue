@@ -5,12 +5,11 @@
     <div class="at-toolbar">
       <div class="at-row">
         <div class="at-field-group at-field-grow">
-          <label for="program_select" class="at-label">프로그램</label>
+          <label class="at-label">프로그램</label>
           <select
-            name="program_select"
-            id="program_select"
-            v-model="programCode"
             class="at-select"
+            v-model="programCode"
+            :disabled="props.readOnly"
           >
             <option value="">-- 프로그램 선택 --</option>
             <option
@@ -26,12 +25,12 @@
 
       <div class="at-row">
         <div class="at-field-group at-field-grow">
-          <label for="title" class="at-label">제목</label>
+          <label class="at-label">제목</label>
           <material-input
-            id="title"
-            placeholder="제목을 입력해주세요"
             class="at-input"
             v-model="title"
+            placeholder="제목을 입력해주세요"
+            :disabled="props.readOnly"
           />
         </div>
       </div>
@@ -39,7 +38,11 @@
       <div class="at-field-group">
         <label class="at-label">내용</label>
         <div class="ck-wrapper">
-          <MyEditor v-show="loadEditor" v-model="content" />
+          <MyEditor
+            v-show="loadEditorFlag"
+            v-model="content"
+            :readOnly="props.readOnly"
+          />
         </div>
       </div>
 
@@ -48,11 +51,14 @@
         <div class="at-field-group at-field-grow">
           <label class="at-label">후원금 사용 용도</label>
         </div>
-        <div>
-          <material-button @click="addExpenditure" class="at-btn-add"
-            >추가</material-button
-          >
-        </div>
+
+        <!-- 등록 모드에서만 보임 -->
+        <material-button
+          v-if="!props.readOnly"
+          @click="addExpenditure"
+        >
+          추가
+        </material-button>
       </div>
 
       <!-- 동적 항목 -->
@@ -62,57 +68,54 @@
         class="at-expenditure-item"
       >
         <div class="at-row at-expenditure-row">
+
           <div class="at-field-group at-field-half">
-            <label :for="`usageItem-${item.id}`" class="at-label"
-              >사용 항목</label
-            >
+            <label class="at-label">사용 항목</label>
             <material-input
-              :id="`usageItem-${item.id}`"
-              placeholder="예: 물품 구매"
               class="at-input"
               v-model="item.usageItem"
+              placeholder="예: 물품 구매"
+              :disabled="props.readOnly"
             />
           </div>
 
           <div class="at-field-group at-field-half">
-            <label :for="`recipient-${item.id}`" class="at-label">사용처</label>
+            <label class="at-label">사용처</label>
             <material-input
-              :id="`recipient-${item.id}`"
-              placeholder="예: A 보육원"
               class="at-input"
               v-model="item.recipient"
+              placeholder="예: A 보육원"
+              :disabled="props.readOnly"
             />
           </div>
         </div>
 
         <div class="at-row at-expenditure-row">
-          <!-- 금액 입력 (자동 콤마 적용) -->
+
           <div class="at-field-group at-field-half">
-            <label :for="`amount-${item.id}`" class="at-label"
-              >지급 금액 (원)</label
-            >
+            <label class="at-label">지급 금액 (원)</label>
             <material-input
-              :id="`amount-${item.id}`"
-              placeholder="지급 금액을 입력해주세요 "
               class="at-input"
               v-model="item.amountFormatted"
-              @input="formatAmount(item)"
+              :disabled="props.readOnly"
+              @input="props.readOnly ? null : formatAmount(item)"
             />
           </div>
 
           <div class="at-field-group at-field-half at-date-field">
-            <label :for="`usedAt-${item.id}`" class="at-label">사용일</label>
+            <label class="at-label">사용일</label>
             <input
-              :id="`usedAt-${item.id}`"
               class="at-select"
               type="date"
               v-model="item.usedAt"
+              :disabled="props.readOnly"
             />
           </div>
 
+          <!-- 등록 모드에서만 보임 -->
           <div class="at-delete-col">
             <material-button
-              class="at-btn-delete"
+              v-if="!props.readOnly"
               @click="removeExpenditure(item.id)"
             >
               삭제
@@ -122,11 +125,19 @@
       </div>
     </div>
 
+    <!-- 하단 버튼 -->
     <div class="at-actions">
-      <material-button class="at-btn at-btn-primary" v-on:click="activityAdd">
+      <!-- 등록 모드에서만 보임 -->
+      <material-button
+        class="at-btn-primary"
+        v-if="!props.readOnly"
+        @click="activityAdd"
+      >
         제출
       </material-button>
-      <material-button class="at-btn" @click="goList()">닫기</material-button>
+
+      <!-- 닫기 버튼은 항상 보임 -->
+      <material-button class="at-btn" @click="goList">닫기</material-button>
     </div>
   </div>
 </template>
@@ -135,67 +146,64 @@
 import axios from "axios";
 import MaterialInput from "@/components/MaterialInput.vue";
 import MaterialButton from "@/components/MaterialButton.vue";
-import numberFormat from "../../../utils/numberFormat.js";
-import { nextTick, ref, onBeforeMount, defineEmits } from "vue";
 import MyEditor from "@/components/Sponsor/Common/CkEditor.vue";
-// --- [데이터 정의] ---
-let sponsorList = ref([]); // 프로그램 목록
+import numberFormat from "@/utils/numberFormat";
+import { ref, onBeforeMount, watch, defineEmits, defineProps, nextTick } from "vue";
+
+const props = defineProps({
+  initialProgram: { type: Object, default: null },
+  readOnly: { type: Boolean, default: false },
+});
+
+const emit = defineEmits(["goToList"]);
+
+let sponsorList = ref([]);
 const programCode = ref("");
 const title = ref("");
 const content = ref("");
-const showEditor = ref(false);
 
-const loadEditor = async () => {
-  // 레이아웃 변경 작업을 수행합니다 (예: 탭 변경, 모달 열기)
-  await nextTick(); // DOM 업데이트가 완료될 때까지 기다립니다.
-  showEditor.value = true; // 그 후에 CKEditor를 렌더링합니다.
-};
-// 후원금 사용 내역 (동적)
+const loadEditorFlag = ref(false);
+nextTick(() => (loadEditorFlag.value = true));
+
+// 상세 보기 또는 등록 모드 데이터 세팅
+watch(
+  () => props.initialProgram,
+  (v) => {
+    if (v) {
+      programCode.value = v.program_code;
+      title.value = v.title;
+      content.value = v.content;
+
+      expenditureList.value = v.history.map((h) => ({
+        id: h.id,
+        usageItem: h.usage_item,
+        recipient: h.recipient,
+        amount: h.amount,
+        amountFormatted: numberFormat(h.amount),
+        usedAt: h.used_at,
+      }));
+    }
+  },
+  { immediate: true }
+);
+
+onBeforeMount(async () => {
+  const result = await axios.get(`/api/sponsor`);
+  sponsorList.value = result.data.serviceSponsor;
+});
+
+// 동적 사용 내역
 const expenditureList = ref([
   {
     id: Date.now(),
     usageItem: "",
     recipient: "",
-    amount: null, // 실제 숫자
-    amountFormatted: "", // 콤마 포함 문자열
+    amount: null,
+    amountFormatted: "",
     usedAt: "",
   },
 ]);
 
-// emit 선언
-const emit = defineEmits(["goToList"]);
-
-/**
- * 프로그램 목록 API 호출
- */
-const getSponsorList = async () => {
-  let result = await axios.get(`/api/sponsor`).catch((err) => console.log(err));
-  if (!result || !result.data) {
-    console.log("조회 결과 데이터가 유효하지 않습니다.");
-    sponsorList.value = [];
-    return;
-  }
-  const res = result.data.serviceSponsor;
-  sponsorList.value = JSON.parse(JSON.stringify(res));
-};
-
-/**
- * 입력값을 콤마 포함 문자열로 변환
- */
-const formatAmount = (item) => {
-  // 숫자만 남기기
-  let raw = item.amountFormatted.replace(/[^0-9]/g, "");
-
-  // 실제 숫자 저장
-  item.amount = raw ? Number(raw) : null;
-
-  // 화면 표시용 문자열 포맷
-  item.amountFormatted = raw ? numberFormat(raw) : "";
-};
-
-/**
- * 항목 추가
- */
 const addExpenditure = () => {
   expenditureList.value.push({
     id: Date.now(),
@@ -207,47 +215,44 @@ const addExpenditure = () => {
   });
 };
 
-/**
- * 항목 삭제
- */
 const removeExpenditure = (id) => {
   if (expenditureList.value.length === 1) {
-    alert("최소 하나의 사용 용도 항목은 유지해야 합니다.");
-    return;
+    return alert("최소 1개 항목은 필요합니다.");
   }
-
-  expenditureList.value = expenditureList.value.filter(
-    (item) => item.id !== id
-  );
+  expenditureList.value = expenditureList.value.filter((x) => x.id !== id);
 };
 
-/**
- * 목록 이동
- */
+const formatAmount = (item) => {
+  const raw = item.amountFormatted.replace(/[^0-9]/g, "");
+  item.amount = raw ? Number(raw) : null;
+  item.amountFormatted = raw ? numberFormat(raw) : "";
+};
+
+
 const goList = () => {
+  // 내부 값 초기화
+  programCode.value = "";
+  title.value = "";
+  content.value = "";
+  expenditureList.value = [{
+    id: Date.now(),
+    usageItem: "",
+    recipient: "",
+    amount: null,
+    amountFormatted: "",
+    usedAt: "",
+  }];
+
   emit("goToList");
 };
 
-// mount
-onBeforeMount(() => {
-  getSponsorList();
-});
-
-defineExpose({
-  getSponsorList,
-});
-
-//제출
+// 제출
 const activityAdd = async () => {
-  const userDataString = localStorage.getItem("user");
-  const userData = JSON.parse(userDataString);
-  const used_amount = expenditureList.value.reduce(
-    (sum, item) => sum + (item.amount || 0),
-    0
-  );
+  const user = JSON.parse(localStorage.getItem("user"));
+  const used_amount = expenditureList.value.reduce((s, i) => s + (i.amount || 0), 0);
 
   const payload = {
-    writer: userData.user_id,
+    writer: user.user_id,
     title: title.value,
     content: content.value,
     used_amount,
@@ -259,21 +264,14 @@ const activityAdd = async () => {
       used_at: item.usedAt,
     })),
   };
-  console.log("활동 보고서");
 
-  console.log(payload);
-  try {
-    await axios.post(
-      `/api/sponsor/${programCode.value}/${userData.user_id}/activity`,
-      payload
-    );
-    alert("활동 보고서 작성 완료");
-    goList();
-  } catch (err) {
-    console.log("제출 실패" + err);
-  }
+  await axios.post(`/api/sponsor/${programCode.value}/${user.user_id}/activity`, payload);
+  alert("작성 완료");
+  goList();
 };
 </script>
+
+
 
 <style scoped>
 /* AuthorityTransfer.vue의 스타일 테마를 기반으로 재구성 */

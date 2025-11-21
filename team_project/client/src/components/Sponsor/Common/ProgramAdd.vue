@@ -246,8 +246,21 @@
       </div>
 
       <div v-show="approval_mode" class="button-group-footer">
-        <button class="primary-button" @click="approveProgram()">승인</button>
-        <button class="secondary-button" @click="openRejectModal()">
+        <!-- 승인 버튼 | AA4이면 숨김 -->
+        <button
+          class="primary-button"
+          @click="approveProgram()"
+          v-if="userRole !== 'AA4'"
+        >
+          승인
+        </button>
+
+        <!-- 반려 버튼 | AA4이면 숨김 -->
+        <button
+          class="secondary-button"
+          @click="openRejectModal()"
+          v-if="userRole !== 'AA4'"
+        >
           반려
         </button>
         <router-link to="/sponsorshipPlanApprovals">
@@ -278,6 +291,9 @@ import axios from "axios";
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 const router = useRouter();
+const userDataString = localStorage.getItem("user");
+const userData = JSON.parse(userDataString);
+const userRole = userData.role;
 const isLocked = computed(() => {
   return isEditMode.value && formData.value.approval_status === "승인대기중";
 });
@@ -507,8 +523,7 @@ const programAdd = async () => {
       .filter((value) => value !== null && value > 0);
     donationUnit = validUnits.length > 0 ? validUnits.join(",") : null;
   }
-  const userDataString = localStorage.getItem("user");
-  const userData = JSON.parse(userDataString);
+
   const form = new FormData();
   form.append("program_name", formData.value.program_name);
   form.append("sponsor_type", formData.value.sponsor_type);
