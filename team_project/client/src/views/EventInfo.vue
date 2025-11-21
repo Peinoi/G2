@@ -36,7 +36,11 @@
     <div class="detail-card space-y-4">
       <header class="flex justify-between items-center">
         <h2 class="text-2xl font-semibold">이벤트 상세</h2>
-        <span class="status-pill" :class="statusClass(event.register_status)">
+        <span
+          v-if="seeStatus"
+          class="status-pill"
+          :class="statusClass(event.register_status)"
+        >
           {{ event.register_status_name }}
         </span>
       </header>
@@ -170,6 +174,10 @@ const canReEdit = computed(
 );
 
 const isAdmin = computed(() => role.value === 3);
+
+const seeStatus = computed(
+  () => loginRole.value === "AA2" && loginRole.value === "AA3"
+);
 
 // 상태 Pill 클래스
 const statusClass = (status) => {
