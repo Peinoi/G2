@@ -1,20 +1,19 @@
-<!-- src/views/EventApplyResult.vue -->
 <template>
-  <section class="p-6 max-w-6xl mx-auto space-y-4">
-    <h2 class="text-2xl font-semibold mb-4">이벤트 계획 / 결과 목록</h2>
+  <section class="apply-page">
+    <h2 class="page-title">이벤트 계획 / 결과 목록</h2>
 
-    <div class="border rounded-lg overflow-hidden bg-white">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-100 text-xs text-gray-600">
+    <div class="table-wrap">
+      <table class="apply-table">
+        <thead>
           <tr>
-            <th class="px-3 py-2 text-left w-12">No</th>
-            <th class="px-3 py-2 text-left w-48">이벤트명</th>
-            <th class="px-3 py-2 text-left w-36">이벤트 요청일</th>
-            <th class="px-3 py-2 text-left w-36">메인 매니저</th>
-            <th class="px-3 py-2 text-left w-24">계획 상태</th>
-            <th class="px-3 py-2 text-left w-24">결과 상태</th>
-            <th class="px-3 py-2 text-left w-32">진행계획</th>
-            <th class="px-3 py-2 text-left w-32">진행결과</th>
+            <th>이벤트코드</th>
+            <th>이벤트명</th>
+            <th>이벤트 요청일</th>
+            <th>메인 매니저</th>
+            <th>계획 상태</th>
+            <th>결과 상태</th>
+            <th>진행계획</th>
+            <th>진행결과</th>
           </tr>
         </thead>
 
@@ -22,20 +21,31 @@
           <tr
             v-for="(row, idx) in events"
             :key="row.event_code || idx"
-            class="border-t"
+            class="click-row"
           >
-            <td class="px-3 py-2">{{ idx + 1 }}</td>
-            <td class="px-3 py-2">{{ row.event_name }}</td>
-            <td class="px-3 py-2">{{ formatDate(row.event_register_date) }}</td>
-            <td class="px-3 py-2">{{ row.main_manager_name || "-" }}</td>
-            <td class="px-3 py-2">
+            <td class="text-center">{{ row.event_code }}</td>
+
+            <!-- 이름 → 왼쪽 정렬 -->
+            <td class="text-left">{{ row.event_name }}</td>
+
+            <!-- 날짜 → 중앙정렬 -->
+            <td class="text-center">
+              {{ formatDate(row.event_register_date) }}
+            </td>
+
+            <!-- 이름 → 중앙 정렬 -->
+            <td class="text-center">{{ row.main_manager_name || "-" }}</td>
+
+            <!-- 상태값 → 중앙 -->
+            <td class="text-center">
               <span
                 :class="['status-badge', statusBadgeClass(row.register_status)]"
               >
                 {{ row.register_status_name || "-" }}
               </span>
             </td>
-            <td class="px-3 py-2">
+
+            <td class="text-center">
               <span
                 v-if="row.event_result_code"
                 :class="['status-badge', statusBadgeClass(row.result_status)]"
@@ -44,12 +54,16 @@
               </span>
               <span v-else>-</span>
             </td>
-            <td class="px-3 py-2">
+
+            <!-- 중앙 -->
+            <td class="text-center">
               <button class="view-btn" @click="viewPlan(row.event_code)">
                 보기
               </button>
             </td>
-            <td class="px-3 py-2">
+
+            <!-- 중앙 -->
+            <td class="text-center">
               <button
                 v-if="row.event_result_code"
                 class="view-btn"
@@ -62,9 +76,7 @@
           </tr>
 
           <tr v-if="!events.length">
-            <td colspan="8" class="px-3 py-6 text-center text-gray-500">
-              등록된 이벤트가 없습니다.
-            </td>
+            <td colspan="8" class="empty-row">등록된 이벤트가 없습니다.</td>
           </tr>
         </tbody>
       </table>
@@ -84,8 +96,7 @@ const getLoginUserCode = () => {
   const userStr = localStorage.getItem("user");
   if (!userStr) return null;
   try {
-    const data = JSON.parse(userStr);
-    return data.user_code || null;
+    return JSON.parse(userStr).user_code || null;
   } catch {
     return null;
   }
@@ -95,17 +106,14 @@ const getLoginRole = () => {
   const userStr = localStorage.getItem("user");
   if (!userStr) return null;
   try {
-    const data = JSON.parse(userStr);
-    return data.role || null;
+    return JSON.parse(userStr).role || null;
   } catch {
     return null;
   }
 };
 
-// 날짜 포맷 함수 (YYYY-MM-DD)
 const formatDate = (v) => (v ? String(v).slice(0, 10) : "-");
 
-// 이벤트 목록 불러오기
 const loadEvents = async () => {
   try {
     const user_code = getLoginUserCode();
@@ -114,43 +122,33 @@ const loadEvents = async () => {
       return;
     }
 
-    const params = { role: getLoginRole(), user_code: getLoginUserCode() };
-    const role = getLoginRole();
-    if (role !== "AA3") {
-      params.user_code = user_code;
-    }
+    const params = { role: getLoginRole(), user_code };
+    if (getLoginRole() !== "AA3") params.user_code = user_code;
 
-    const res = await axios.get("/api/event/applyResult", {
-      params, // role=AA3이면 params 비어있어서 전체, 아니면 user_code만
-    });
-
-    console.log(res.data);
+    const res = await axios.get("/api/event/applyResult", { params });
     events.value = res.data.data || [];
   } catch (err) {
     console.error("이벤트 요청/결과 목록 조회 실패:", err);
   }
 };
 
-// 상태 뱃지
 const statusBadgeClass = (code) => {
   switch (code) {
     case "BA1":
-      return "badge-request"; // 요청
+      return "badge-request";
     case "BA2":
-      return "badge-approve"; // 승인
+      return "badge-approve";
     case "BA3":
-      return "badge-reject"; // 반려
+      return "badge-reject";
     default:
       return "badge-default";
   }
 };
 
-// 진행계획 보기
 const viewPlan = (event_code) => {
   router.push({ name: "EventApplyInfo", params: { eventCode: event_code } });
 };
 
-// 진행결과 보기
 const viewResult = (event_result_code) => {
   router.push({
     name: "EventResultInfo",
@@ -162,44 +160,123 @@ onMounted(loadEvents);
 </script>
 
 <style scoped>
-.view-btn {
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+/* 페이지 전체 */
+.apply-page {
+  width: 1600px;
+  margin: 24px auto 40px;
+  padding: 0 16px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+/* 테이블 래핑 */
+.table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  overflow-x: auto;
+  padding: 12px 16px;
+}
+
+/* 테이블 */
+.apply-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  table-layout: auto; /* 내용에 맞게 컬럼 너비 자동 조정 */
+}
+
+.apply-table th {
+  text-align: center;
+  padding: 8px 6px; /* 간격 줄임 */
   font-size: 14px;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.apply-table td {
+  padding: 6px 6px; /* 간격 줄임 */
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  text-align: center;
+  vertical-align: middle;
+
+  white-space: nowrap; /* 줄바꿈 방지 */
+  overflow: hidden;
+  text-overflow: ellipsis; /* 넘치면 … 처리 */
+  max-width: 250px; /* 필요시 조절 */
+}
+
+.text-left {
+  text-align: left !important;
+}
+.text-center {
+  text-align: center !important;
+}
+
+/* hover */
+.click-row:hover {
+  background: #f3f4ff;
   cursor: pointer;
 }
-.view-btn:hover {
-  background: #125ea8;
+
+/* 빈행 */
+.empty-row {
+  text-align: center;
+  padding: 14px 0;
+  color: #9ca3af;
 }
-.status-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
+
+/* 버튼 */
+.view-btn {
+  background: #2563eb;
+  color: white;
+  border-radius: 6px;
+  padding: 4px 10px; /* 조금 더 슬림하게 */
   font-size: 12px;
-  font-weight: 500;
-  color: #fff;
+  cursor: pointer;
+  border: none;
+}
+.view-btn:hover {
+  background: #1e40af;
 }
 
-/* 요청 */
+/* 상태 뱃지 */
+.status-badge {
+  padding: 2px 6px; /* 가로 패딩 줄임 */
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid transparent;
+}
+
 .badge-request {
-  background-color: #3730a3; /* 보라 */
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
 }
 
-/* 승인 */
 .badge-approve {
-  background-color: #166534; /* 초록 */
+  background: #ecfdf5;
+  color: #166534;
+  border-color: #bbf7d0;
 }
 
-/* 반려 */
 .badge-reject {
-  background-color: #b91c1c; /* 빨강 */
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 
-/* 기본 */
 .badge-default {
-  background-color: #6b7280; /* 회색 */
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
 }
 </style>

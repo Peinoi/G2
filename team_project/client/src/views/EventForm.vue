@@ -18,19 +18,6 @@
             <input type="text" v-model="eventInfo.event_name" required />
           </div>
           <div>
-            <label>기관 코드</label>
-            <input type="text" v-model="eventInfo.org_code" readonly />
-          </div>
-          <div>
-            <label>메인 매니저 코드</label>
-            <input
-              type="text"
-              v-model="eventInfo.user_code"
-              readonly
-              required
-            />
-          </div>
-          <div>
             <label>등록일</label>
             <input type="date" v-model="formattedRegisterDate" readonly />
           </div>
@@ -176,7 +163,7 @@
               :key="m.user_code"
               :value="m.user_code"
             >
-              {{ m.name }} ({{ m.user_code }})
+              {{ m.name }}
             </option>
           </select>
 
@@ -191,18 +178,6 @@
         <button type="button" class="btn-primary" @click="addSubManager">
           추가
         </button>
-      </div>
-
-      <!-- 상태 -->
-      <div class="grid-2 card">
-        <div>
-          <label>모집 상태</label>
-          <input type="text" v-model="eventInfo.recruit_status" readonly />
-        </div>
-        <div>
-          <label>등록 상태</label>
-          <input type="text" v-model="eventInfo.register_status" readonly />
-        </div>
       </div>
 
       <button type="submit" class="btn-submit">

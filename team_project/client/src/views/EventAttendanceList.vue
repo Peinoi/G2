@@ -227,10 +227,13 @@ onMounted(load);
 
 <style scoped>
 /* ========== priority 공통 디자인 그대로 사용 ========== */
-
+* {
+  font-size: 15px;
+}
+/* 페이지 전체 */
 .priority-page {
-  max-width: 1100px;
-  margin: 24px auto 40px;
+  width: 1600px; /* 전체 폭 고정 */
+  margin: 24px auto 40px; /* 좌우 가운데 정렬 */
   padding: 0 16px;
 }
 
@@ -271,35 +274,90 @@ onMounted(load);
   font-size: 12px;
 }
 
+/* 카드 */
 .priority-card {
+  width: 100%; /* 부모 폭에 맞춤 */
+  max-width: 1600px; /* 최대 폭 동일 */
+  margin: 0 auto;
+  padding: 12px 16px;
+  overflow-x: hidden;
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
-  padding: 12px 16px;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
+/* 테이블 */
 .priority-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 15px;
+  table-layout: fixed; /* 컬럼 폭 고정 */
 }
 
+/* th 스타일 */
 .priority-table thead th {
-  text-align: left;
-  padding: 10px 8px;
-  font-size: 12px;
+  text-align: center;
+  padding: 6px 4px; /* 패딩 최소화 */
+  font-size: 15px;
   color: #6b7280;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
+/* td 기본 스타일 */
 .priority-table tbody td {
-  padding: 9px 8px;
+  padding: 6px 4px; /* 패딩 최소화 */
   border-bottom: 1px solid #f3f4f6;
+  text-align: center;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 컬럼 폭 조정 */
+.priority-table th:nth-child(1),
+.priority-table td:nth-child(1) {
+  width: 6%;
+} /* 신청코드 */
+.priority-table th:nth-child(2),
+.priority-table td:nth-child(2) {
+  width: 30%;
+} /* 이벤트명 */
+.priority-table th:nth-child(3),
+.priority-table td:nth-child(3) {
+  width: 14%;
+} /* 신청자 */
+.priority-table th:nth-child(4),
+.priority-table td:nth-child(4) {
+  width: 12%;
+} /* 신청일 */
+.priority-table th:nth-child(5),
+.priority-table td:nth-child(5) {
+  width: 14%;
+} /* 메인매니저 */
+.priority-table th:nth-child(6),
+.priority-table td:nth-child(6) {
+  width: 14%;
+} /* 신청상태 */
+
+/* 이름 컬럼 왼쪽 정렬 */
+.priority-table tbody td:nth-child(2) {
+  text-align: left;
+}
+
+/* 버튼/상태 컬럼 중앙 */
+.priority-table tbody td:nth-child(1),
+.priority-table tbody td:nth-child(3),
+.priority-table tbody td:nth-child(5),
+.priority-table tbody td:nth-child(6) {
+  text-align: center;
+}
+
+/* hover */
 .priority-row:hover {
   background: #f3f4ff;
 }
@@ -360,5 +418,8 @@ onMounted(load);
   background: #f3f4f6;
   color: #4b5563;
   border-color: #e5e7eb;
+}
+* {
+  font-size: 15px;
 }
 </style>

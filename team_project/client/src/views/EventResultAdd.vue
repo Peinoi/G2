@@ -15,7 +15,7 @@
                 :value="ev.event_code"
                 :key="ev.event_code"
               >
-                {{ ev.event_name }} ({{ ev.event_code }})
+                {{ ev.event_name }}
               </option>
             </select>
           </div>
@@ -31,8 +31,8 @@
           </div>
 
           <div>
-            <label>결과 상태</label>
-            <input type="text" v-model="form.result_status" readonly />
+            <label>매니저 코드</label>
+            <input type="text" :value="userName || user_code" readonly />
           </div>
         </div>
       </div>
@@ -72,21 +72,6 @@
             </button>
           </li>
         </ul>
-      </div>
-
-      <div class="card grid-2">
-        <div>
-          <label>매니저 코드</label>
-          <input type="text" :value="userName || user_code" readonly />
-        </div>
-        <div>
-          <label>승인 상태</label>
-          <input
-            type="text"
-            :value="statusLabel(form.result_status)"
-            readonly
-          />
-        </div>
       </div>
 
       <div class="actions">
@@ -197,12 +182,6 @@ const form = ref({
 const formattedReportDate = computed(() =>
   dateFormat(form.value.report_register_date, "yyyy-MM-dd")
 );
-
-// 상태 라벨
-const statusLabel = (code) => {
-  const map = { BA1: "요청", BA2: "승인", BA3: "반려" };
-  return map[code] || code;
-};
 
 // --------------------
 // 파일 핸들링

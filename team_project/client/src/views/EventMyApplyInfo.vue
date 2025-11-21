@@ -17,7 +17,11 @@
 
     <!-- 이벤트 기본정보 카드 -->
     <div v-if="applyInfo" class="detail-card space-y-4">
-      <span class="status-pill" :class="statusClass(applyInfo.apply_status)">
+      <span
+        v-if="isManager"
+        class="status-pill"
+        :class="statusClass(applyInfo.apply_status)"
+      >
         {{ applyInfo.apply_status_name }}
       </span>
       <header class="flex justify-between items-center">
