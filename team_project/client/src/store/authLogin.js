@@ -41,7 +41,7 @@ export const useAuthStore = defineStore("authLogin", {
         this.userId = loginData.user_id;
         this.userName = loginData.name || "";
         this.role = loginData.role;
-        this.userCode = loginData.user_code;
+        this.userCode = loginData.userCode || loginData.user_code || "";
         this.orgCode = loginData.org_code;
         this.isLogin = true;
       } catch (err) {

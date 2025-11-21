@@ -306,8 +306,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
+* {
+  font-size: 15px;
+}
+
 .priority-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 24px auto 40px;
   padding: 0 16px;
 }
@@ -327,6 +331,7 @@ onMounted(() => {
   padding: 12px 16px;
 }
 
+/* 🔹 테이블 기본 스타일 (후원 결과와 동일 계열) */
 .priority-table {
   width: 100%;
   border-collapse: collapse;
@@ -334,7 +339,7 @@ onMounted(() => {
 }
 
 .priority-table thead th {
-  text-align: left;
+  text-align: center;
   padding: 10px 8px;
   font-weight: 600;
   font-size: 12px;
@@ -349,8 +354,10 @@ onMounted(() => {
   border-bottom: 1px solid #f3f4f6;
   color: #374151;
   vertical-align: middle;
+  text-align: center;
 }
 
+/* 🔹 행 호버 효과 */
 .priority-row {
   cursor: pointer;
   transition:
@@ -369,6 +376,7 @@ onMounted(() => {
   color: #9ca3af;
 }
 
+/* 🔹 우선순위 칩 */
 .priority-chip {
   display: inline-flex;
   align-items: center;
@@ -398,6 +406,7 @@ onMounted(() => {
   color: #4b5563;
 }
 
+/* 🔹 상태 배지 (요청/승인/반려) */
 .priority-badge {
   display: inline-flex;
   align-items: center;
@@ -432,12 +441,14 @@ onMounted(() => {
   color: #4b5563;
 }
 
+/* 🔹 로딩 텍스트 */
 .priority-loading {
   font-size: 13px;
   color: #6b7280;
   padding: 8px 4px;
 }
 
+/* 🔹 페이징 영역 */
 .priority-pagination {
   margin-top: 10px;
   display: flex;
@@ -477,6 +488,7 @@ onMounted(() => {
   text-align: right;
 }
 
+/* 🔹 상단 필터 영역 */
 .priority-filters {
   display: flex;
   gap: 10px;

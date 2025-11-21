@@ -36,25 +36,34 @@ router.get("/", async (req, res) => {
 router.put("/:code/approve", async (req, res) => {
   try {
     const approvalCode = req.params.code;
-    const result = await approvalService.approve({ approvalCode });
+
+    // 로그인 사용자
+    const processorCode = req.user?.user_code; // ⭐ 처리자 user_code
+
+    if (!processorCode) {
+      return res.status(401).json({
+        status: "fail",
+        message: "로그인 정보가 없어 승인자를 확인할 수 없습니다.",
+      });
+    }
+
+    const result = await approvalService.approve({
+      approvalCode,
+      processorCode,
+    });
 
     if (!result.affectedRows) {
       return res.status(400).json({
         status: "fail",
-        message:
-          "변경된 행이 없습니다. (이미 처리되었거나 존재하지 않는 승인코드)",
+        message: "이미 처리되었거나 존재하지 않는 승인코드",
       });
     }
 
-    return res.status(200).json({
-      status: "success",
-    });
+    return res.status(200).json({ status: "success" });
   } catch (err) {
-    console.error("[PUT /approvals/:code/approve] 실패:", err.stack || err);
-    return res.status(500).json({
-      status: "error",
-      message: err.message || "승인 처리 중 오류",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "승인 처리 중 오류" });
   }
 });
 
@@ -64,25 +73,33 @@ router.put("/:code/reject", async (req, res) => {
     const approvalCode = req.params.code;
     const { reason } = req.body || {};
 
-    const result = await approvalService.reject({ approvalCode, reason });
+    const processorCode = req.user?.user_code; // ⭐ 처리자 user_code
+
+    if (!processorCode) {
+      return res.status(401).json({
+        status: "fail",
+        message: "로그인 정보가 없어 승인자를 확인할 수 없습니다.",
+      });
+    }
+
+    const result = await approvalService.reject({
+      approvalCode,
+      reason,
+      processorCode,
+    });
 
     if (!result.affectedRows) {
       return res.status(400).json({
         status: "fail",
-        message:
-          "변경된 행이 없습니다. (이미 처리되었거나 존재하지 않는 승인코드)",
+        message: "이미 처리되었거나 존재하지 않는 승인코드",
       });
     }
 
-    return res.status(200).json({
-      status: "success",
-    });
+    return res.status(200).json({ status: "success" });
   } catch (err) {
-    console.error("[PUT /approvals/:code/reject] 실패:", err.stack || err);
-    return res.status(500).json({
-      status: "error",
-      message: err.message || "반려 처리 중 오류",
-    });
+    return res
+      .status(500)
+      .json({ status: "error", message: "반려 처리 중 오류" });
   }
 });
 
@@ -122,7 +139,14 @@ router.get("/staff", async (req, res) => {
 router.put("/staff/:code/approve", async (req, res) => {
   try {
     const approvalCode = req.params.code;
-    const result = await approvalService.approveStaff({ approvalCode });
+
+    // 🔹 프론트에서 보낸 처리자 user_code 받기
+    const processorCode = req.body.processorCode;
+
+    const result = await approvalService.approveStaff({
+      approvalCode,
+      processorCode,
+    });
 
     if (!result.affectedRows) {
       return res.status(400).json({
@@ -151,11 +175,12 @@ router.put("/staff/:code/approve", async (req, res) => {
 router.put("/staff/:code/reject", async (req, res) => {
   try {
     const approvalCode = req.params.code;
-    const { reason } = req.body || {};
+    const { reason, processorCode } = req.body;
 
     const result = await approvalService.rejectStaff({
       approvalCode,
       reason,
+      processorCode,
     });
 
     if (!result.affectedRows) {

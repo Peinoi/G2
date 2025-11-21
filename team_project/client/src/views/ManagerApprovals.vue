@@ -234,7 +234,11 @@ async function onApprove(row) {
     return;
   try {
     await axios.put(
-      `/api/approvals/${encodeURIComponent(row.approval_code)}/approve`
+      `/api/approvals/${encodeURIComponent(row.approval_code)}/approve`,
+      {
+        // 🔹 처리자 코드 추가
+        processorCode: auth.userCode,
+      }
     );
     alert("승인 처리되었습니다.");
     await fetchList();
@@ -270,6 +274,8 @@ async function confirmReject() {
       )}/reject`,
       {
         reason: rejectReason.value,
+        // 🔹 처리자 코드 추가
+        processorCode: auth.userCode,
       }
     );
     alert("반려 처리되었습니다.");
@@ -301,9 +307,10 @@ onMounted(fetchList);
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 16px;
+  color: #111827;
 }
 
-/* 상단 툴바 */
+/* 🔹 상단 툴바 (검색/필터 라인) */
 .apv-toolbar {
   display: flex;
   justify-content: space-between;
@@ -324,7 +331,7 @@ onMounted(fetchList);
   min-width: 220px;
   padding: 7px 10px;
   border-radius: 8px;
-  border: 1px solid #d7dce5;
+  border: 1px solid #d1d5db;
   font-size: 13px;
   outline: none;
   background: #fff;
@@ -336,23 +343,28 @@ onMounted(fetchList);
   box-shadow: 0 0 0 1px rgba(126, 166, 246, 0.25);
 }
 
-/* 버튼 공통 */
+/* 🔹 버튼 공통 */
 .apv-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: 999px;
   border: 1px solid #d2d6e0;
   background: #ffffff;
   font-size: 12px;
   cursor: pointer;
-  transition: 0.12s ease-in-out;
+  transition:
+    background-color 0.12s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
   white-space: nowrap;
 }
 
 .apv-btn:hover {
-  filter: brightness(0.98);
+  background: #f3f4ff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transform: translateY(-0.5px);
 }
 
 .apv-btn:disabled {
@@ -360,13 +372,13 @@ onMounted(fetchList);
   cursor: not-allowed;
 }
 
-/* 사이즈 작은 버튼 */
+/* 작은 버튼 */
 .apv-btn-xs {
   padding: 4px 8px;
   font-size: 11px;
 }
 
-/* 버튼 스타일 변형 */
+/* 버튼 변형 */
 .apv-btn-primary {
   background: #7ea6f6;
   border-color: #7ea6f6;
@@ -374,7 +386,7 @@ onMounted(fetchList);
 }
 
 .apv-btn-primary:hover {
-  filter: brightness(0.96);
+  background: #678fe0;
 }
 
 .apv-btn-danger {
@@ -384,7 +396,7 @@ onMounted(fetchList);
 }
 
 .apv-btn-danger:hover {
-  filter: brightness(0.96);
+  background: #e25656;
 }
 
 .apv-btn-outline {
@@ -393,49 +405,61 @@ onMounted(fetchList);
   color: #315fbf;
 }
 
-/* 테이블 */
+/* 🔹 테이블 카드 (지원/후원 결과 카드랑 통일) */
 .apv-table-wrap {
-  border-radius: 12px;
-  overflow: hidden;
   background: #ffffff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
-  border: 1px solid #e2e7f0;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  padding: 12px 16px;
+  overflow-x: auto;
 }
 
+/* 🔹 테이블 기본 스타일 (priority-table 느낌) */
 .apv-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.apv-table thead {
-  background: #f5f7fb;
-}
-
-.apv-table th,
-.apv-table td {
-  padding: 9px 10px;
-  border-bottom: 1px solid #edf2f7;
-  text-align: left;
-}
-
-.apv-table th {
+.apv-table thead th {
+  text-align: center;
+  padding: 10px 8px;
   font-weight: 600;
-  color: #4a5568;
+  font-size: 12px;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
   white-space: nowrap;
 }
 
+.apv-table tbody td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* 행 호버 */
+.apv-table tbody tr {
+  transition:
+    background-color 0.12s ease,
+    transform 0.06s ease;
+}
+
 .apv-table tbody tr:hover {
-  background: #f9fbff;
+  background: #f3f4ff;
+  transform: translateY(-1px);
 }
 
 .apv-empty {
   text-align: center;
   padding: 14px 0;
-  color: #6b7280;
+  color: #9ca3af;
 }
 
-/* 상태 Pill */
+/* 🔹 상태 Pill (후원/지원 리스트랑 동일 톤) */
 .apv-state-pill {
   display: inline-flex;
   align-items: center;
@@ -444,28 +468,31 @@ onMounted(fetchList);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 500;
+  border: 1px solid transparent;
 }
 
 .apv-state-BA1 {
-  background: #fff7e6;
-  color: #b7791f;
-  border: 1px solid #f6e3b5;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
 }
 
 .apv-state-BA2 {
-  background: #e6fffa;
-  color: #047857;
-  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+  color: #166534;
 }
 
 .apv-state-BA3 {
   background: #fef2f2;
+  border-color: #fecaca;
   color: #b91c1c;
-  border: 1px solid #fecaca;
 }
 
+/* 승인/반려 버튼 칸 */
 .apv-actions-cell {
   display: flex;
+  justify-content: center;
   gap: 4px;
   align-items: center;
 }
@@ -475,7 +502,7 @@ onMounted(fetchList);
   font-size: 12px;
 }
 
-/* 모달 */
+/* 🔹 반려 사유 모달 */
 .apv-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -498,6 +525,7 @@ onMounted(fetchList);
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 6px;
+  color: #111827;
 }
 
 .apv-modal-sub {
@@ -509,7 +537,7 @@ onMounted(fetchList);
 .apv-textarea {
   width: 100%;
   border-radius: 8px;
-  border: 1px solid #d7dce5;
+  border: 1px solid #d1d5db;
   padding: 8px 10px;
   font-size: 13px;
   resize: vertical;
@@ -529,13 +557,15 @@ onMounted(fetchList);
   margin-top: 12px;
 }
 
-/* 페이징/에러 */
+/* 🔹 페이징/에러 */
 .apv-pagination {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+  font-size: 12px;
+  color: #4b5563;
 }
 
 .apv-page-text {
