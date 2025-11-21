@@ -207,12 +207,24 @@ export default {
         org_name: updated.orgName,
         department: updated.deptName,
       };
+      
       const result = await updateInfo("org", updateData);
       if (!result.ok) {
         alert(result.message);
         return;
       }
+
+      // 1) DB 최신 정보 다시 불러오기
       await this.userFullInfo();
+
+      // 2) 로그인 정보(authStore)에 orgCode 반영
+      if (this.orgData.orgCode) {
+        this.auth.updateOrgCode(this.orgData.orgCode);
+      } else {
+        console.warn("[saveOrgInfo] orgData.orgCode가 없습니다.", this.orgData);
+      }
+
+      // 3) 화면 상태 정리
       this.orgEditMode = false;
       alert("수정 완료");
     },

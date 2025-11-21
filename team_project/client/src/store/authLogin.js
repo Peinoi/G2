@@ -95,5 +95,21 @@ export const useAuthStore = defineStore("authLogin", {
       this.isLogin = false;
       localStorage.removeItem("user");
     },
+
+    updateOrgCode(newOrgCode) {
+      this.orgCode = newOrgCode;
+
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        try {
+          const obj = JSON.parse(saved);
+          obj.orgCode = newOrgCode;
+          obj.org_code = newOrgCode;
+          localStorage.setItem("user", JSON.stringify(obj));
+        } catch (e) {
+          console.error("[updateOrgCode localStorage 오류]", e);
+        }
+      }
+    },
   },
 });
