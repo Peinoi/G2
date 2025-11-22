@@ -2,34 +2,32 @@ const FIND_ID = 'SELECT user_id FROM users WHERE user_id = ?';
 
 const AUTH_LOGIN = `
   SELECT 
-         name,
-         user_code,
-         org_code,
-         user_id, 
-         role,
-         is_active
+    name
+    , user_code
+    , org_code
+    , user_id
+    , role
+    , is_active
+    , password_hash
   FROM users
-  WHERE user_id = ?
-  AND password_hash = ?
-`;
+  WHERE user_id = ?`;
 
 const INSERT_USER = `
   INSERT INTO users (
-    org_code,
-    user_id,
-    password_hash,
-    role,
-    name,
-    ssn,
-    phone,
-    address,
-    email,
-    department, 
-    is_active,
-    login_fail_count,
-    join_date
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`;
+    org_code
+    , user_id
+    , password_hash
+    , role
+    , name
+    , ssn
+    , phone
+    , address
+    , email
+    , department
+    , is_active
+    , login_fail_count
+    , join_date
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 const FIND_ORG_LIST = `
 SELECT org_name FROM organization`;
@@ -46,12 +44,6 @@ const FIND_ORG_CODE = `
   SELECT org_code
   FROM organization
   WHERE org_name = ?
-`;
-
-const FIND_USER_CODE = `
-  SELECT user_code
-  FROM users
-  WHERE user_id = ?
 `;
 
 const SEARCH_ORG = `
@@ -77,9 +69,7 @@ AND phone = ?`;
 const FIND_RESET_PW = `
 UPDATE users
 SET password_hash = ?
-WHERE user_id = ?
-AND name = ?
-AND phone = ?`;
+WHERE user_id = ?`;
 
 module.exports = {
   FIND_ID,
@@ -88,7 +78,6 @@ module.exports = {
   FIND_ORG_LIST,
   REQUEST_USER,
   FIND_ORG_CODE,
-  FIND_USER_CODE,
   SEARCH_ORG,
   FIND_USER_ID,
   FIND_USER_PW,

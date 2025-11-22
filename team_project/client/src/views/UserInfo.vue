@@ -9,7 +9,9 @@
       <div>
         <material-button
           :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
-          @click="activeTab = 'user'"
+          @click="
+            (activeTab = 'user'), (editMode = false), (orgEditMode = false)
+          "
         >
           사용자 정보
         </material-button>
@@ -18,7 +20,9 @@
       <div>
         <material-button
           :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
-          @click="activeTab = 'org'"
+          @click="
+            (activeTab = 'org'), (editMode = false), (orgEditMode = false)
+          "
         >
           소속기관 정보
         </material-button>
@@ -84,10 +88,10 @@
 
 <script>
 import { useAuthStore } from '@/store/authLogin';
-import UserBasicInfo from '@/components/userInfo/UserBasicInfo.vue';
-import UserOrgInfo from '@/components/userInfo/UserOrgInfo.vue';
-import UserChildInfo from '@/components/userInfo/UserChildInfo.vue';
-import UserPasswordModal from '@/components/userInfo/UserPasswordModal.vue';
+import UserBasicInfo from '@/components/UserInfo/UserBasicInfo.vue';
+import UserOrgInfo from '@/components/UserInfo/UserOrgInfo.vue';
+import UserChildInfo from '@/components/UserInfo/UserChildInfo.vue';
+import UserPasswordModal from '@/components/UserInfo/UserPasswordModal.vue';
 import {
   findUserInfo,
   addChild,
@@ -98,7 +102,7 @@ import {
 import dateFormat from '@/utils/dateFormat';
 
 export default {
-  name: "UserInfo",
+  name: 'UserInfo',
 
   components: {
     UserBasicInfo,
@@ -108,25 +112,25 @@ export default {
   },
   data() {
     return {
-      activeTab: "user",
+      activeTab: 'user',
       editMode: false,
       orgEditMode: false,
       showPwModal: false,
       userData: {
-        user_id: "",
-        name: "",
-        phone: "",
-        address: "",
-        email: "",
+        user_id: '',
+        name: '',
+        phone: '',
+        address: '',
+        email: '',
       },
       orgData: {
-        orgCode: "",
-        orgName: "",
-        managerName: "",
-        deptName: "",
-        roleName: "",
-        phone: "",
-        address: "",
+        orgCode: '',
+        orgName: '',
+        managerName: '',
+        deptName: '',
+        roleName: '',
+        phone: '',
+        address: '',
       },
       childList: [],
       showChildForm: false,
@@ -141,19 +145,19 @@ export default {
     this.auth = auth;
 
     this.userData.user_id = auth.userId;
-    this.userData.name = "";
-    this.userData.phone = "";
-    this.userData.address = "";
-    this.userData.email = "";
+    this.userData.name = '';
+    this.userData.phone = '';
+    this.userData.address = '';
+    this.userData.email = '';
     this.originalUser = { ...this.userData };
 
-    this.orgData.orgCode = "";
-    this.orgData.orgName = "";
-    this.orgData.managerName = "";
-    this.orgData.deptName = "";
+    this.orgData.orgCode = '';
+    this.orgData.orgName = '';
+    this.orgData.managerName = '';
+    this.orgData.deptName = '';
     this.orgData.roleName = auth.role;
-    this.orgData.phone = "";
-    this.orgData.address = "";
+    this.orgData.phone = '';
+    this.orgData.address = '';
     this.originalOrg = { ...this.orgData };
 
     this.userFullInfo();
@@ -173,14 +177,14 @@ export default {
     },
 
     async saveUserInfo(updated) {
-      const result = await updateInfo("user", updated);
+      const result = await updateInfo('user', updated);
       if (!result.ok) {
         alert(result.message);
         return;
       }
       await this.userFullInfo();
       this.editMode = false;
-      alert("수정 완료");
+      alert('수정이 완료되었습니다.');
     },
 
     async submitPasswordChange(passwords) {
@@ -193,11 +197,11 @@ export default {
       const result = await updatePw(payload);
       console.log(result);
       if (!result.ok) {
-        alert('변경 실패');
+        alert('변경을 실패하였습니다.');
         return;
       }
 
-      alert('변경 성공');
+      alert('변경을 성공하였습니다.');
       this.showPwModal = false;
     },
 
@@ -207,8 +211,8 @@ export default {
         org_name: updated.orgName,
         department: updated.deptName,
       };
-      
-      const result = await updateInfo("org", updateData);
+
+      const result = await updateInfo('org', updateData);
       if (!result.ok) {
         alert(result.message);
         return;
@@ -221,16 +225,16 @@ export default {
       if (this.orgData.orgCode) {
         this.auth.updateOrgCode(this.orgData.orgCode);
       } else {
-        console.warn("[saveOrgInfo] orgData.orgCode가 없습니다.", this.orgData);
+        console.warn('[saveOrgInfo] orgData.orgCode가 없습니다.', this.orgData);
       }
 
       // 3) 화면 상태 정리
       this.orgEditMode = false;
-      alert("수정 완료");
+      alert('수정 완료');
     },
 
     async updateChild(childData) {
-      const result = await updateInfo("child", this.auth.role, childData);
+      const result = await updateInfo('child', this.auth.role, childData);
       if (!result.ok) {
         alert(result.message);
         return;
@@ -241,7 +245,7 @@ export default {
     // 자녀 추가
     async addChild(child) {
       try {
-        const today = dateFormat(new Date(), "yyyy-MM-dd");
+        const today = dateFormat(new Date(), 'yyyy-MM-dd');
         const childData = {
           user_code: this.auth.userCode,
           registered_date: today,
@@ -253,7 +257,7 @@ export default {
           await this.userFullInfo();
         }
       } catch (err) {
-        console.error("[ addChild 오류 ]", err);
+        console.error('[ addChild 오류 ]', err);
       }
     },
 
@@ -261,11 +265,11 @@ export default {
     async deleteChild(childCode) {
       const result = await deleteChild(childCode);
       if (!result.ok) {
-        alert("삭제 실패");
+        alert('삭제를 실패하였습니다.');
         return;
       }
       await this.userFullInfo();
-      alert("삭제 성공");
+      alert('삭제를 성공했습니다.');
     },
 
     async userFullInfo() {
@@ -277,7 +281,7 @@ export default {
 
         this.auth.userName = res[0].name;
         if (res.false) {
-          console.log("값 없음");
+          console.log('값 없음');
           return;
         }
 
@@ -292,8 +296,8 @@ export default {
 
         this.orgData = {
           orgCode: res[0].org_code,
-          orgName: res[0].org_name || "소속기관 없음",
-          managerName: res[0].manager_name || "담당자 미정",
+          orgName: res[0].org_name || '소속기관 없음',
+          managerName: res[0].manager_name || '담당자 미정',
           deptName: res[0].department,
           roleName: this.auth.role,
           phone: res[0].org_phone,
@@ -312,7 +316,7 @@ export default {
             disability_type: item.disability_type,
           }));
       } catch (err) {
-        console.error("[ loadUserFullInfo 오류 ]", err);
+        console.error('[ loadUserFullInfo 오류 ]', err);
       }
     },
   },

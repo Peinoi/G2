@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h5 class="font-weight-bolder mb-4">기관 회원 상세 정보</h5>
+    <!-- <h5 class="font-weight-bolder mb-4">개인 회원 상세 정보</h5> -->
 
     <!-- 이름 -->
     <material-input
@@ -19,7 +19,7 @@
         type="text"
         label="주민등록번호 앞자리"
         v-model="regFront"
-        @input="regFront = sanitizeNumber($event.target.value, 6)"
+        @input="regFront = regFront.replace(/[^0-9]/g, '').slice(0, 6)"
         size="lg"
         class="flex-grow-1"
       />
@@ -28,7 +28,7 @@
         type="password"
         label="주민등록번호 뒷자리"
         v-model="regBack"
-        @input="regBack = sanitizeNumber($event.target.value, 7)"
+        @input="regBack = regBack.replace(/[^0-9]/g, '').slice(0, 7)"
         size="lg"
         class="flex-grow-1"
       />
@@ -45,6 +45,18 @@
       @input="validatePhone"
     />
 
+    <!-- 이메일 -->
+    <div class="d-flex align-items-end gap-2 mb-3">
+      <material-input
+        id="email"
+        type="email"
+        label="이메일"
+        v-model="email"
+        size="lg"
+        class="flex-grow-1"
+      />
+    </div>
+
     <!-- 주소 -->
     <div class="d-flex align-items-end gap-2 mb-3">
       <material-input
@@ -60,7 +72,7 @@
         color="success"
         size="md"
         type="button"
-        class="py-2 px-3"
+        class="address-btn"
         @click="searchAddress"
       >
         주소검색
@@ -71,7 +83,7 @@
     <div class="input-group input-group-outline my-3">
       <label class="form-label"></label>
       <select v-model="org_name" class="form-control">
-        <option disabled value="">기관명을 선택하세요</option>
+        <option disabled value="">소속 기관(선택사항입니다.)</option>
         <option
           v-for="org in orgList"
           :key="org.org_name"
@@ -80,70 +92,6 @@
           {{ org.org_name }}
         </option>
       </select>
-    </div>
-
-    <!-- 부서명 -->
-    <material-input
-      id="department"
-      type="text"
-      label="부서명"
-      v-model="department"
-      size="lg"
-      class="mb-3"
-    />
-
-    <!-- 권한 -->
-    <div class="input-group input-group-outline my-3">
-      <label class="form-label"></label>
-      <select v-model="role" class="form-control">
-        <option disabled value="">권한을 선택하세요</option>
-        <option value="AA2">기관 담당자</option>
-        <option value="AA3">기관 관리자</option>
-      </select>
-    </div>
-
-    <!-- 이메일 -->
-    <div class="d-flex align-items-end gap-2 mb-3">
-      <material-input
-        id="email"
-        type="email"
-        label="이메일"
-        v-model="email"
-        size="lg"
-        class="flex-grow-1"
-      />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="sendVerification"
-      >
-        인증
-      </material-button>
-    </div>
-
-    <!-- 이메일 인증번호 입력칸 -->
-    <div class="d-flex align-items-end gap-2 mb-4" v-if="emailSent">
-      <material-input
-        id="email-code"
-        type="text"
-        label="인증번호 입력"
-        v-model="verifyCode"
-        size="lg"
-        class="flex-grow-1"
-      />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="verifyEmail"
-      >
-        인증 완료
-      </material-button>
     </div>
 
     <!-- 하단 버튼 -->
@@ -161,11 +109,14 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
-import { findAllOrg } from '../api/user';
+import { findAllOrg } from '../../api/user';
 
 export default {
-  name: 'SignUpOrgForm',
-  components: { MaterialInput, MaterialButton },
+  name: 'SignUpUserForm',
+  components: {
+    MaterialInput,
+    MaterialButton,
+  },
   props: { base: Object },
   data() {
     return {
@@ -177,32 +128,31 @@ export default {
       email: '',
       org_name: '',
       orgList: [],
-      department: '',
-      role: '',
-      emailSent: false,
+      role: 'AA1',
     };
   },
   methods: {
     searchAddress() {
-      // 주소검색
-      alert('주소 검색 기능 준비 중입니다.');
-    },
-    sendVerification() {
-      if (!this.email) {
-        return alert('이메일을 입력하세요.');
-      }
-      this.emailSent = true;
-      alert('인증번호가 발송되었습니다.');
-    },
-    verifyEmail() {
-      if (!this.verifyCode) {
-        return alert('인증번호를 입력하세요.');
-      }
-      alert('이메일 인증이 완료되었습니다.');
+      new window.daum.Postcode({
+        oncomplete: (data) => {
+          let addr = data.address;
+          if (data.buildingName != '') {
+            addr += `(${data.buildingName})`;
+          }
+          this.address = addr;
+        },
+      }).open();
     },
     submitForm() {
-      if (!this.name || !this.org_name) {
-        return alert('이름과 기관명을 입력하세요.');
+      if (
+        !this.name ||
+        !this.regFront ||
+        !this.regBack ||
+        !this.phone ||
+        !this.address ||
+        !this.email
+      ) {
+        return alert('필수 정보들을 입력해주세요.');
       }
 
       let formattedPhone = '';
@@ -226,21 +176,9 @@ export default {
         phone: formattedPhone,
         address: this.address,
         email: this.email,
-        org_name: this.org_name,
-        department: this.department,
         role: this.role,
+        org_name: this.org_name ? this.org_code : null,
       });
-    },
-    sanitizeNumber(value, maxLength) {
-      // 숫자만 남기기
-      let onlyNumber = value.replace(/[^0-9]/g, '');
-
-      // 글자수 제한
-      if (onlyNumber.length > maxLength) {
-        onlyNumber = onlyNumber.slice(0, maxLength);
-      }
-
-      return onlyNumber;
     },
     validatePhone() {
       // 하이픈 감지
@@ -268,3 +206,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.address-btn {
+  padding: 10px;
+  width: 100px;
+  height: 43px;
+}
+</style>
