@@ -49,6 +49,14 @@
             </span>
           </div>
 
+          <!-- 우선순위 -->
+          <div class="meta-item">
+            <span class="meta-label">우선순위</span>
+            <span class="meta-value">
+              {{ priorityLabel(submitInfo.level) }}
+            </span>
+          </div>
+
           <!-- 5. 상담지 제출일 -->
           <div class="meta-item">
             <span class="meta-label">상담지 제출일</span>
@@ -296,6 +304,7 @@ const submitInfo = ref({
   assigneeName: "", // 담당자
   disabilityType: "", // 장애 유형
   counselSubmitAt: "", // 상담지 제출일
+  level: "",
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -371,6 +380,7 @@ async function loadData() {
       assigneeName: basic.assigneeName || "",
       disabilityType: basic.disabilityType || "",
       counselSubmitAt: basic.counselSubmitAt || "",
+      level: basic.level || "",
     };
 
     // 2) 계획 상세 정보
@@ -413,6 +423,21 @@ async function loadData() {
     error.value = e.message || "지원계획 정보 조회 중 오류";
   } finally {
     loading.value = false;
+  }
+}
+
+function priorityLabel(code) {
+  const c = (code || "").toString().toUpperCase();
+
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
   }
 }
 
@@ -487,14 +512,14 @@ function validate() {
   if (!mainForm.value.publicContent.trim())
     return "계획 내용(일반용)을 입력해주세요.";
   if (!mainForm.value.privateContent.trim())
-    return "계획 내용(관자용)을 입력해주세요.";
+    return "계획 내용(관리자용)을 입력해주세요.";
 
   for (const p of planItems.value) {
     if (!p.goal.trim()) return "추가 계획의 목표를 입력해주세요.";
     if (!p.publicContent.trim())
       return "추가 계획의 내용(일반용)을 입력해주세요.";
     if (!p.privateContent.trim())
-      return "추가 계획의 내용(관자용)을 입력해주세요.";
+      return "추가 계획의 내용(관리자용)을 입력해주세요.";
   }
 
   return null;
@@ -545,7 +570,7 @@ async function submitAll() {
       await axios.post(`/api/plans/${planCode}/resubmit`, {
         requesterCode: 2, // TODO: 로그인 사용자 코드로 변경
       });
-      alert("재작성된 지원계획이 재승인 요청(CC6)으로 올라갔습니다.");
+      alert("재작성된 지원계획이 재승인 요청 되었습니다.");
     } else {
       alert("지원계획이 수정되었습니다.");
     }

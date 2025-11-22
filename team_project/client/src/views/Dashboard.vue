@@ -88,6 +88,7 @@
           :rows="applyRows"
           :maxRows="4"
           :user-role="userRole"
+          @row-click="goApplicationStatus"
         />
       </div>
 
@@ -230,33 +231,27 @@ export default {
       }
     },
 
-    // ───────────────── 라우팅 버튼 ─────────────────
+    // ───────────────── 라우팅 ─────────────────
     goEvent() {
       this.$router.push("/event/list");
     },
     goSupport() {
       this.$router.push("/sponsorprogramlist");
     },
-
-    // ───────────────── 이벤트 행 클릭 ─────────────────
     goEventDetail({ row }) {
-      const code = row.event_code;
-      if (!code) {
-        console.warn("event_code 없음:", row);
-        return;
+      if (row.event_code) {
+        this.$router.push(`/event/info/${row.event_code}`);
       }
-      this.$router.push(`/event/info/${code}`);
     },
-
-    // ───────────────── 후원 행 클릭 ─────────────────
     goSponsorDetail({ row }) {
-      const code = row.program_code;
-      if (!code) {
-        console.warn("program_code 없음:", row);
-        return;
+      if (row.program_code) {
+        this.$router.push(`/sponsordetail/${row.program_code}`);
       }
-      // ⚠ 실제 라우터 path에 맞게 수정해줘
-      this.$router.push(`/sponsordetail/${code}`);
+    },
+    goApplicationStatus() {
+      this.$router.push({
+        name: "ApplicationStatus",
+      });
     },
 
     // ───────────────── 신청 현황 조회 ─────────────────
@@ -271,7 +266,7 @@ export default {
       let loginId = null;
       try {
         const user = JSON.parse(userStr);
-        // 🔥 백엔드 WHERE parent.user_id = ? 이면 user_id 사용
+        // 백엔드 WHERE parent.user_id = ? 이면 user_id 사용
         loginId = user.user_id;
       } catch (e) {
         console.error("[Dashboard] user 파싱 실패:", e);
@@ -288,10 +283,7 @@ export default {
 
       try {
         const res = await axios.get("/api/applications/mine", {
-          params: {
-            loginId,
-            role: this.userRole,
-          },
+          params: { loginId, role: this.userRole },
         });
 
         const raw = res.data?.data ?? [];
@@ -299,36 +291,23 @@ export default {
 
         const sorted = list
           .filter((row) => row && row.submit_code)
-          .sort((a, b) => {
-            const da = new Date(a.survey_date || a.submit_at || 0);
-            const db = new Date(b.survey_date || b.submit_at || 0);
-            return db - da; // 최신 먼저
-          })
+          .sort(
+            (a, b) =>
+              new Date(b.survey_date || b.submit_at || 0) -
+              new Date(a.survey_date || a.submit_at || 0)
+          )
           .slice(0, 4);
 
         this.applyRows = sorted.map((row, idx) => {
-          let status = "-";
-
-          if (row.result_status) {
-            status = "결과";
-          } else if (row.plan_status) {
-            status = "계획";
-          } else if (row.counsel_status) {
-            status = "상담";
-          } else {
-            status = "접수";
-          }
-
           const dateStr = row.survey_date
             ? String(row.survey_date).substring(0, 10)
-            : "";
+            : "-";
 
           return {
             no: idx + 1,
             child_name: row.child_name || row.name,
-            org_name: row.org_name || "-",
             survey_date: dateStr,
-            status_label: status,
+            status_label: this.buildDashboardStatus(row),
           };
         });
       } catch (err) {
@@ -339,93 +318,111 @@ export default {
       }
     },
 
-    // ───────────────── 이벤트 목록 조회 ─────────────────
+    // ───────────────── 상태 유틸 ─────────────────
+    normalizeStatusList(raw) {
+      if (Array.isArray(raw)) return raw;
+      if (!raw) return [];
+      return String(raw)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    },
+
+    // ⭐ Dashboard 카드용 상태 요약
+    //   - 계획: 들어온 상태 개수 그대로 count
+    //   - 결과: CD4, CD5, CD6, CD7 만 "결과"로 인정 (CD3는 절대 결과로 안침)
+    buildDashboardStatus(row) {
+      const planList = this.normalizeStatusList(
+        row.plan_status_list || row.plan_status
+      );
+      const resultList = this.normalizeStatusList(
+        row.result_status_list || row.result_status
+      );
+
+      const planCount = planList.length;
+
+      // ✅ 여기서 CD3는 아예 빼고 세는 부분
+      const realResultCount = resultList.filter((code) =>
+        ["CD4", "CD5", "CD6", "CD7"].includes(code)
+      ).length;
+
+      const parts = [];
+      if (planCount > 0) parts.push(`계획 ${planCount}건`);
+      if (realResultCount > 0) parts.push(`결과 ${realResultCount}건`);
+
+      if (parts.length > 0) return parts.join(" / ");
+
+      // 둘 다 없으면 상담 유무 확인
+      if (row.counsel_status) return "상담 진행중";
+
+      return "접수 완료";
+    },
+
+    // ───────────────── 이벤트 / 후원 데이터 ─────────────────
     async fetchEventList() {
       this.loadingEvent = true;
-
       try {
         const res = await axios.get("/api/event/list");
         const raw = res.data?.data ?? [];
 
-        // 🔹 캐러셀 배너용 이벤트 세팅
         this.setupBannerEvents(raw);
 
         const sorted = raw
           .sort((a, b) => b.event_code - a.event_code)
           .slice(0, 4);
 
-        this.eventRows = sorted.map((row, idx) => {
-          const start = row.event_start_date
-            ? String(row.event_start_date).substring(0, 10)
-            : "-";
-
-          const end = row.event_end_date
-            ? String(row.event_end_date).substring(0, 10)
-            : "-";
-
-          return {
-            no: idx + 1,
-            event_code: row.event_code, // 상세 이동용
-            event_name: row.event_name,
-            period: `${start} ~ ${end}`,
-          };
-        });
+        this.eventRows = sorted.map((row, idx) => ({
+          no: idx + 1,
+          event_code: row.event_code,
+          event_name: row.event_name,
+          period: `${String(row.event_start_date).substring(0, 10)} ~ ${String(
+            row.event_end_date
+          ).substring(0, 10)}`,
+        }));
       } catch (e) {
         console.error("[Dashboard] 이벤트 목록 조회 실패:", e);
         this.eventRows = [];
-        this.bannerEvents = []; // 배너도 초기화
+        this.bannerEvents = [];
       } finally {
         this.loadingEvent = false;
       }
     },
 
-    // ───────────────── 후원(프로그램) 목록 조회 ─────────────────
     async fetchSponsorList() {
       this.loadingSponsor = true;
-
       try {
         const res = await axios.get("/api/sponsor");
-        // 라우터에서 { status, serviceSponsor } 로 내려주니까 여기!
         const raw = res.data?.serviceSponsor ?? [];
 
-        // 🔹 배너용 후원(진행/예정) 세팅
         await this.setupBannerSponsors(raw);
 
         const sorted = raw
           .sort((a, b) => b.program_code - a.program_code)
           .slice(0, 4);
 
-        this.sponsorRows = sorted.map((row, idx) => {
-          const start = row.start_date
-            ? String(row.start_date).substring(0, 10)
-            : "-";
-
-          const end = row.end_date
-            ? String(row.end_date).substring(0, 10)
-            : "-";
-
-          return {
-            no: idx + 1,
-            program_code: row.program_code, // 상세 이동용
-            program_name: row.program_name,
-            period: `${start} ~ ${end}`,
-          };
-        });
+        this.sponsorRows = sorted.map((row, idx) => ({
+          no: idx + 1,
+          program_code: row.program_code,
+          program_name: row.program_name,
+          period: `${String(row.start_date).substring(0, 10)} ~ ${String(
+            row.end_date
+          ).substring(0, 10)}`,
+        }));
       } catch (e) {
-        console.error("[Dashboard] 후원 프로그램 목록 조회 실패:", e);
+        console.error("[Dashboard] 후원 프로그램 조회 실패:", e);
         this.sponsorRows = [];
       } finally {
         this.loadingSponsor = false;
       }
     },
-    // 배너용 헬퍼
+
+    // 배너용 헬퍼 - 이벤트
     setupBannerEvents(events) {
       if (!Array.isArray(events)) {
         this.bannerEvents = [];
         return;
       }
 
-      // 오늘 날짜(시/분/초 제거)
       const today = new Date();
       const todayStr = today.toISOString().slice(0, 10);
       const todayDate = new Date(todayStr + "T00:00:00");
@@ -437,7 +434,6 @@ export default {
       };
 
       const candidates = events.filter((e) => {
-        // 이미지 없는 이벤트는 배너에서 제외
         if (!e.file_path) return false;
 
         const recruitStart = parseDateOnly(e.recruit_start_date);
@@ -467,7 +463,7 @@ export default {
       }));
     },
 
-    // 배너용 후원 (상세 API 호출해서 file_path 채우기)
+    // 배너용 헬퍼 - 후원 (상세 API 호출해서 file_path 채우기)
     async setupBannerSponsors(programs) {
       if (!Array.isArray(programs)) {
         this.bannerSponsors = [];
@@ -500,21 +496,18 @@ export default {
         return;
       }
 
-      // 2) 너무 많이 호출하지 않도록 상위 몇 개만 상세 조회 (예: 5개)
+      // 2) 상위 몇 개만 상세 조회 (예: 5개)
       const targetForDetail = timeFiltered.slice(0, 5);
 
       // 3) 각 프로그램에 대해 상세 API 호출해서 file_path 있는 것만 추림
       const detailResults = await Promise.all(
         targetForDetail.map(async (p) => {
           try {
-            // ⚠️ 여기 경로는 SponsorDetail에서 쓰는 상세 API와 맞춰줘야 함
             const res = await axios.get(`/api/sponsor/${p.program_code}`);
 
-            // 응답 구조는 실제 백엔드에 맞게 조정
             const detail =
               res.data?.serviceSponsor || res.data?.data || res.data || {};
 
-            // 첨부파일 리스트에서 첫 번째 이미지 사용 (필요 시 키 이름 맞추기)
             const attachments =
               detail.attachments || detail.attachmentList || detail.files || [];
             const first = Array.isArray(attachments) ? attachments[0] : null;
@@ -523,7 +516,6 @@ export default {
               first?.file_path || first?.filePath || first?.path || null;
 
             if (!filePath) {
-              // 이미지 없으면 배너 후보에서 제외
               return null;
             }
 
@@ -542,7 +534,6 @@ export default {
         })
       );
 
-      // 4) 실제로 이미지가 있는 프로그램들만 사용
       const withImage = detailResults.filter(Boolean);
 
       if (!withImage.length) {
@@ -550,7 +541,6 @@ export default {
         return;
       }
 
-      // 5) 랜덤 섞어서 최대 2개만 배너에 사용
       const shuffled = [...withImage].sort(() => Math.random() - 0.5);
       const selected = shuffled.slice(0, 2);
 
@@ -603,7 +593,7 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #ffffff; /* 비율 남는 공간 검정 (원하면 변경 가능) */
+  background: #ffffff;
 }
 
 /* 카드와 배너 간격 */

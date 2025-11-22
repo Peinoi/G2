@@ -93,6 +93,7 @@ async function listSupportPlansByRole(role, userId) {
       assiName: r.assi_name,
       orgName: r.org_name || null,
       childName: r.child_name || null,
+      level: r.level || null,
     }));
 
     return safeJSON(mapped);
@@ -112,6 +113,7 @@ async function listAssigneePlanCandidates(userId) {
       childName: r.child_name || null,
       writerName: r.writer_name || null,
       submitAt: r.submit_at,
+      level: r.level || null,
     }));
 
     return safeJSON(mapped);
@@ -224,9 +226,6 @@ async function savePlanWithItems(formJson, files) {
     // 3) 첨부파일 → attachment에 저장
     if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
-        const originalName = Buffer.from(file.originalname, "latin1").toString(
-          "utf8"
-        );
         const serverName = file.filename;
         const filePath = `/uploads/plans/${serverName}`;
 

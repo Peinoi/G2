@@ -17,7 +17,10 @@ const selectMyApplications = `
     , MAX(sr.result_code)                         AS result_code
     , MAX(sr.status)                              AS result_status
 
-    , MAX(cs.status)                              AS counsel_status   -- ✅ 추가
+, GROUP_CONCAT(DISTINCT sp.status)            AS plan_status_list  
+    , GROUP_CONCAT(DISTINCT sr.status)            AS result_status_list 
+
+    , MAX(cs.status)                              AS counsel_status  
   FROM survey_submission ss
 
   JOIN users parent
@@ -76,6 +79,9 @@ const selectAssiApplications = `
 
     , MAX(sr.result_code)                         AS result_code
     , MAX(sr.status)                              AS result_status
+
+, GROUP_CONCAT(DISTINCT sp.status) AS plan_status_list
+, GROUP_CONCAT(DISTINCT sr.status) AS result_status_list
 
     , MAX(cs.status) AS counsel_status
   FROM survey_submission ss
@@ -137,6 +143,9 @@ const selectOrgApplications = `
 
     , MAX(sr.result_code)                         AS result_code
     , MAX(sr.status)                              AS result_status
+
+, GROUP_CONCAT(DISTINCT sp.status) AS plan_status_list
+, GROUP_CONCAT(DISTINCT sr.status) AS result_status_list
 
     , MAX(cs.status) AS counsel_status
   FROM survey_submission ss
@@ -202,6 +211,10 @@ const selectAllApplications = `
 
     , MAX(sr.result_code)                         AS result_code
     , MAX(sr.status)                              AS result_status
+    
+    , GROUP_CONCAT(DISTINCT sp.status) AS plan_status_list
+, GROUP_CONCAT(DISTINCT sr.status) AS result_status_list
+
     , MAX(cs.status) AS counsel_status
   FROM survey_submission ss
 

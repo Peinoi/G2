@@ -58,6 +58,14 @@
             </span>
           </div>
 
+          <!-- 우선순위 -->
+          <div class="meta-item">
+            <span class="meta-label">우선순위</span>
+            <span class="meta-value">
+              {{ priorityLabel(submitInfo.level) }}
+            </span>
+          </div>
+
           <!-- 5. 상담지 제출일 -->
           <div class="meta-item">
             <span class="meta-label">상담지 제출일</span>
@@ -307,6 +315,7 @@ const submitInfo = ref({
   assigneeName: "",
   disabilityType: "",
   counselSubmitAt: "",
+  level: "",
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -366,6 +375,7 @@ async function loadData() {
       assigneeName: res.assigneeName || "-",
       disabilityType: res.disabilityType || "-",
       counselSubmitAt: res.counselSubmitAt || "",
+      level: res.level || "",
     };
 
     // 계획 작성일은 오늘 날짜로 기본 세팅
@@ -377,6 +387,21 @@ async function loadData() {
     error.value = e.message || "기본 정보 조회 중 오류";
   } finally {
     loading.value = false;
+  }
+}
+
+function priorityLabel(code) {
+  const c = (code || "").toString().toUpperCase();
+
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
   }
 }
 

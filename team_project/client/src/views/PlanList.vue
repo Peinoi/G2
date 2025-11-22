@@ -2,10 +2,10 @@
   <section class="p-6">
     <div class="page-shell">
       <!-- 상단 타이틀 + 역할 표시 -->
-      <header class="header-row mb-4">
-        <div class="header-title">
+      <header class="header-row mb-2">
+        <div class="header-title" v-if="selectedRole === 2">
           <h2 class="text-2xl md:text-3xl font-bold tracking-tight">
-            지원계획 목록
+            지원자 목록
           </h2>
         </div>
 
@@ -83,6 +83,7 @@
                   <th class="th-cell text-center w-14">No</th>
                   <th class="th-cell">지원자 이름</th>
                   <th class="th-cell">보호자 이름</th>
+                  <th class="th-cell">우선순위</th>
                   <th class="th-cell">조사지 제출일</th>
                   <th class="th-cell text-center w-28"></th>
                 </tr>
@@ -108,6 +109,11 @@
                   <!-- 보호자 이름 -->
                   <td class="td-cell">
                     {{ row.writerName || "-" }}
+                  </td>
+
+                  <!-- 우선순위 -->
+                  <td class="td-cell">
+                    {{ priorityLabel(row.level) }}
                   </td>
 
                   <!-- 조사지 제출일 -->
@@ -157,6 +163,11 @@
         </div>
       </div>
 
+      <div class="header-title mb-2">
+        <h2 class="text-2xl md:text-3xl font-bold tracking-tight">
+          지원계획 목록
+        </h2>
+      </div>
       <!-- 🔽 기존 지원계획 목록 (모든 역할용, 일반이 아닌 경우에만 필터) -->
       <div class="section-block section-block--plans">
         <!-- 🔍 검색 / 필터 / 정렬 (일반 이용자 제외) -->
@@ -181,7 +192,6 @@
                 @change="onFilterChange"
               >
                 <option value="ALL">전체 상태</option>
-                <option value="BEFORE">작성전</option>
                 <option value="REVIEW">검토중</option>
                 <option value="PROGRESS">진행중</option>
                 <option value="DONE">지원완료</option>
@@ -234,6 +244,7 @@
                   <th v-if="selectedRole === 4" class="th-cell">기관명</th>
                   <th class="th-cell">조사지 제출일</th>
                   <th class="th-cell">계획 작성일</th>
+                  <th class="th-cell">우선순위</th>
                   <th class="th-cell text-center">상태</th>
                   <th class="th-cell text-center w-28"></th>
                 </tr>
@@ -283,6 +294,11 @@
                         ? "-"
                         : formatDate(row.writtenAt)
                     }}
+                  </td>
+
+                  <!-- 우선순위 -->
+                  <td class="td-cell">
+                    {{ priorityLabel(row.level) }}
                   </td>
 
                   <!-- 상태 배지 -->
@@ -446,6 +462,20 @@ const formatDate = (v) => {
   return String(v).slice(0, 10);
 };
 
+function priorityLabel(code) {
+  const c = (code || "").toUpperCase();
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
+  }
+}
+
 function normStatus(raw) {
   return (raw ?? "").toString().trim().toUpperCase();
 }
@@ -480,16 +510,19 @@ function statusPillClass(code) {
   switch (normStatus(code)) {
     case "CC1":
     case "CC2":
-      return "status-pill--before";
+      return "p-gray";
     case "CC3":
+      return "p-yellow";
     case "CC4":
-      return "status-pill--review";
+      return "p-blue";
     case "CC5":
-      return "status-pill--done";
+      return "p-green";
     case "CC6":
-      return "status-pill--resubmit";
+      return "p-orange";
+    case "CC7":
+      return "p-red";
     default:
-      return "status-pill--default";
+      return "p-gray";
   }
 }
 
@@ -656,8 +689,6 @@ const filteredPlans = computed(() => {
     rows = rows.filter((row) => {
       const s = normStatus(row.status);
       switch (statusFilter.value) {
-        case "BEFORE":
-          return s === "CC1" || s === "CC2";
         case "REVIEW":
           return s === "CC3";
         case "PROGRESS":
@@ -947,21 +978,6 @@ section {
   white-space: nowrap;
 }
 
-.role-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 13px;
-  background-color: #f3f4f6;
-  color: #4b5563;
-}
-
-.role-warning {
-  font-size: 12px;
-  color: #b91c1c;
-}
-
 /* 🔍 필터 라인 */
 .filter-row {
   margin-bottom: 0.75rem;
@@ -1083,6 +1099,15 @@ section {
   text-align: center; /* ★ 중앙정렬 */
 }
 
+@media (max-width: 900px) {
+  .th-cell {
+    white-space: normal; /* 줄바꿈 허용 */
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.4rem 0.5rem;
+  }
+}
+
 /* 바디 셀 */
 .td-cell {
   padding: 0.7rem 0.9rem;
@@ -1116,55 +1141,6 @@ section {
   background-color: #f3f4f6;
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-}
-
-/* 상태 배지 공통 */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
-
-/* 상태별 톤 */
-.status-pill--before {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
-.status-pill--review {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-color: #d1d5db;
-}
-
-.status-pill--done {
-  background-color: #111827;
-  color: #f9f9fb;
-  border-color: #111827;
-}
-
-.status-pill--resubmit {
-  background-color: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
-
-.status-pill--rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.status-pill--default {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-color: #e5e7eb;
 }
 
 /* 클릭 가능한 배지 (반려) */

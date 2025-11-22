@@ -85,6 +85,10 @@
       <div v-else-if="!plans.length" class="empty-state">
         등록된 지원결과가 없습니다.
       </div>
+      <!-- ✅ 2) 데이터는 있는데, 필터/검색 결과가 0건인 경우 -->
+      <div v-else-if="!filteredPlans.length" class="empty-state">
+        등록된 지원결과가 없습니다.
+      </div>
 
       <!-- 목록 -->
       <div v-else class="table-wrapper">
@@ -99,6 +103,7 @@
                 <th v-if="selectedRole === 4" class="th-cell">기관명</th>
                 <th class="th-cell">계획 작성일</th>
                 <th class="th-cell">결과 작성일</th>
+                <th class="th-cell">우선순위</th>
                 <th class="th-cell text-center">상태</th>
                 <th class="th-cell text-center w-28"></th>
               </tr>
@@ -146,6 +151,11 @@
                       ? "-"
                       : formatDate(row.resultWrittenAt)
                   }}
+                </td>
+
+                <!-- 우선순위 -->
+                <td class="td-cell">
+                  {{ priorityLabel(row.level) }}
                 </td>
 
                 <!-- 상태 배지 -->
@@ -353,17 +363,17 @@ function statusPillClass(code) {
   switch (normStatus(code)) {
     case "CD1":
     case "CD3":
-      return "status-pill--review";
+      return "p-gray";
     case "CD4":
-      return "status-pill--review";
+      return "p-yellow";
     case "CD5":
-      return "status-pill--done";
+      return "p-green";
     case "CD6":
-      return "status-pill--resubmit";
+      return "p-orange";
     case "CD7":
-      return "status-pill--rejected";
+      return "p-red";
     default:
-      return "status-pill--default";
+      return "p-gray";
   }
 }
 
@@ -383,6 +393,13 @@ const searchPlaceholder = computed(() => {
 // 🔍 검색/필터/정렬 적용 리스트
 const filteredPlans = computed(() => {
   let rows = [...plans.value];
+
+  if (selectedRole.value === 1) {
+    rows = rows.filter((row) => {
+      const s = normStatus(row.status);
+      return s !== "CD1" && s !== "CD3";
+    });
+  }
 
   // 🔹 submitCode로 필터 (다른 화면에서 링크 타고 들어온 경우)
   if (filterSubmitCode.value) {
@@ -552,6 +569,20 @@ const loadList = async () => {
   }
 };
 
+function priorityLabel(code) {
+  const c = (code || "").toUpperCase();
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
+  }
+}
+
 // 첫 로딩
 onMounted(() => {
   try {
@@ -699,21 +730,6 @@ section {
   white-space: nowrap;
 }
 
-.role-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  background-color: #f3f4f6;
-  color: #4b5563;
-}
-
-.role-warning {
-  font-size: 0.7rem;
-  color: #b91c1c;
-}
-
 /* 🔍 필터 라인 */
 .filter-row {
   margin-bottom: 0.75rem;
@@ -834,6 +850,15 @@ section {
   white-space: nowrap;
 }
 
+@media (max-width: 900px) {
+  .th-cell {
+    white-space: normal; /* 줄바꿈 허용 */
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.4rem 0.5rem;
+  }
+}
+
 /* 바디 셀 */
 .td-cell {
   padding: 0.7rem 0.9rem;
@@ -867,55 +892,6 @@ section {
   background-color: #f3f4f6;
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
-}
-
-/* 상태 배지 공통 */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.7rem;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
-
-/* 상태별 톤 */
-.status-pill--before {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
-.status-pill--review {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-color: #d1d5db;
-}
-
-.status-pill--done {
-  background-color: #111827;
-  color: #f9fafb;
-  border-color: #111827;
-}
-
-.status-pill--resubmit {
-  background-color: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
-
-.status-pill--rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.status-pill--default {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-color: #e5e7eb;
 }
 
 /* 클릭 가능한 배지 (반려) */

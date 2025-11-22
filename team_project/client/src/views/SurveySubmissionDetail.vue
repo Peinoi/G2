@@ -17,8 +17,15 @@
       <header class="flex justify-between items-start detail-header">
         <h2 class="text-2xl font-semibold mb-1">조사지 답변</h2>
 
-        <span class="status-pill">
-          상태: {{ statusLabel(submission?.status) }}
+        <span
+          class="status-pill"
+          :class="
+            submission?.status === 'CA3'
+              ? 'status-pill--done'
+              : 'status-pill--pending'
+          "
+        >
+          {{ statusLabel(submission?.status) }}
         </span>
       </header>
 
@@ -357,15 +364,35 @@ section {
   border-bottom: 1px solid #e5e7eb;
 }
 
+/* ================================
+   🔘 조사지 상세 - 상태 배지 스타일
+   ================================ */
 .status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.7rem;
+  justify-content: center;
+  padding: 0.32rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.75rem;
-  background: #111827;
-  color: #f9fafb;
+  font-size: 13px; /* 살짝 작게 */
+  font-weight: 500;
+  border: 1px solid transparent;
+  min-width: auto; /* 길이 강제하지 않음 */
+  line-height: 1.1; /* 더 콤팩트하게 */
+  height: auto;
+}
+
+/* 미검토 (CA1) → Gray */
+.status-pill--pending {
+  background-color: #e4e6e1 !important;
+  border: 1px solid #d0d3cd !important;
+  color: #4b5563 !important;
+}
+
+/* 검토완료 (CA3) → Green */
+.status-pill--done {
+  background-color: #deeec8 !important;
+  border: 1px solid #bedca0 !important;
+  color: #3f7a3a !important;
 }
 
 /* 메타 정보 카드 */

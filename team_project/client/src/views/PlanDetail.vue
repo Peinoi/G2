@@ -28,16 +28,6 @@
         >
           수정하기
         </MaterialButton>
-
-        <!-- 재수정하기 (반려 시 담당자 전용) -->
-        <MaterialButton
-          v-else-if="role === 2 && status === 'CC7'"
-          color="dark"
-          size="sm"
-          @click="goEdit"
-        >
-          재수정하기
-        </MaterialButton>
       </div>
     </div>
 
@@ -51,7 +41,7 @@
 
         <!-- 상태 뱃지 -->
         <span class="status-pill" :class="statusClass(status)">
-          상태: {{ statusLabel(status) }}
+          {{ statusLabel(status) }}
         </span>
       </header>
 
@@ -103,7 +93,7 @@
             <!-- 4. 우선순위 -->
             <div class="meta-item">
               <span class="meta-label">우선순위</span>
-              <span class="meta-value">{{ basicInfo.priority || "-" }}</span>
+              <span class="meta-value">{{ priorityLabel }}</span>
             </div>
 
             <!-- 5. 상담지 제출일 -->
@@ -249,30 +239,44 @@
       </template>
     </div>
 
+    <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
+    <div
+      v-if="rejectionInfo.reason && (status === 'CC7' || status === 'CC6')"
+      class="rejection-card"
+    >
+      <div class="font-semibold mb-1 text-sm">반려 이력</div>
+
+      <div class="mb-1">
+        반려일자:
+        <span class="font-medium">
+          {{ formattedRejectionDate }}
+        </span>
+      </div>
+
+      <div>
+        <div class="font-medium">사유:</div>
+        <p class="whitespace-pre-line mt-1">
+          {{ rejectionInfo.reason }}
+        </p>
+      </div>
+    </div>
+
+    <!-- 재수정하기 (반려 시 담당자 전용) -->
+    <div class="right-wrap mt-2">
+      <MaterialButton
+        v-if="role === 2 && status === 'CC7'"
+        color="dark"
+        size="sm"
+        @click="goEdit"
+      >
+        재수정하기
+      </MaterialButton>
+    </div>
     <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
     <div
       v-if="role === 3 && (status === 'CC3' || status === 'CC6')"
       class="pt-4 border-t mt-2 space-y-3"
     >
-      <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
-      <div v-if="rejectionInfo && rejectionInfo.reason" class="rejection-card">
-        <div class="font-semibold mb-1 text-sm">반려 이력</div>
-
-        <div class="mb-1">
-          반려일자:
-          <span class="font-medium">
-            {{ formattedRejectionDate }}
-          </span>
-        </div>
-
-        <div>
-          <div class="font-medium">사유:</div>
-          <p class="whitespace-pre-line mt-1">
-            {{ rejectionInfo.reason }}
-          </p>
-        </div>
-      </div>
-
       <!-- 승인/반려 버튼 -->
       <div class="approve-actions">
         <MaterialButton
@@ -354,6 +358,20 @@ const basicInfo = ref({
   disabilityType: "",
   counselSubmitAt: "",
   priority: "",
+});
+
+const priorityLabel = computed(() => {
+  const p = (basicInfo.value.priority || "").toUpperCase();
+  switch (p) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
+  }
 });
 
 const formattedCounselSubmitAt = computed(() => {
@@ -497,8 +515,7 @@ onMounted(async () => {
     }
     await Promise.all(tasks);
 
-    // 관리자일 때만 반려 이력 조회
-    if (role.value === 3) {
+    if (role.value !== 1) {
       await loadRejectionInfo();
     }
   } catch (e) {
@@ -520,7 +537,7 @@ function statusLabel(code) {
     case "CC3":
       return "검토전";
     case "CC4":
-      return "진행중";
+      return "지원 진행중";
     case "CC5":
       return "검토완료";
     case "CC6":
@@ -537,17 +554,19 @@ function statusClass(code) {
   switch (c) {
     case "CC1":
     case "CC2":
-      return "status-pill--before";
+      return "p-gray";
     case "CC3":
-      return "status-pill--review";
-    case "CC7":
-      return "status-pill--rejected";
+      return "p-yellow";
+    case "CC4":
+      return "p-blue";
     case "CC5":
-      return "status-pill--done";
+      return "p-green";
     case "CC6":
-      return "status-pill--resubmit";
+      return "p-orange";
+    case "CC7":
+      return "p-red";
     default:
-      return "status-pill--default";
+      return "p-gray";
   }
 }
 
@@ -567,7 +586,7 @@ function goEdit() {
   if (!planCode) return;
 
   router.push({
-    name: "planEdit",
+    name: "plan-edit",
     params: { planCode },
     query: submitCode ? { submitCode, role: role.value } : { role: role.value },
   });
@@ -675,54 +694,6 @@ section {
   padding-bottom: 0.75rem;
   margin-bottom: 1.25rem;
   border-bottom: 1px solid #e5e7eb;
-}
-
-/* 상태 pill */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  border: 1px solid transparent;
-}
-
-/* 상태별 톤 (상담 상세와 통일) */
-.status-pill--before {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
-.status-pill--review {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-color: #d1d5db;
-}
-
-.status-pill--rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.status-pill--done {
-  background-color: #111827;
-  color: #f9fafb;
-  border-color: #111827;
-}
-
-.status-pill--resubmit {
-  background-color: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
-
-.status-pill--default {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-color: #e5e7eb;
 }
 
 /* 메타 정보 카드 */
@@ -841,6 +812,7 @@ section {
   padding: 0.9rem 1rem;
   font-size: 0.8rem;
   color: #b91c1c;
+  margin-top: 10px;
 }
 
 /* 승인/반려 버튼 줄 (가운데 정렬) */
@@ -901,5 +873,10 @@ section {
   font-size: 0.9rem;
   color: #111827;
   font-weight: 500;
+}
+
+.right-wrap {
+  display: flex !important;
+  justify-content: flex-end !important;
 }
 </style>

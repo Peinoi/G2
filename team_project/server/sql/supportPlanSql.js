@@ -8,36 +8,11 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
-    writer.name       AS writer_name,    -- 보호자 이름
+    c.child_name      AS child_name,
+    writer.name       AS writer_name,
     assi.name         AS assi_name,
-    org.org_name      AS org_name        -- 기관명
-  FROM support_plan sp
-  JOIN survey_submission ss
-    ON ss.submit_code = sp.submit_code
-  LEFT JOIN child c                      -- 🔥 child join
-    ON c.child_code = ss.child_code
-  JOIN users writer
-    ON writer.user_code = ss.written_by
-  LEFT JOIN users assi
-    ON assi.user_code = ss.assi_by
-  LEFT JOIN organization org
-    ON org.org_code = writer.org_code
-  ORDER BY sp.plan_code DESC
-`,
-
-  //담당자 목록
-  listSupportPlanByAssignee: `
-  SELECT
-    sp.plan_code,
-    sp.submit_code,
-    sp.status,
-    sp.written_at,
-    ss.submit_at,
-    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
-    writer.name       AS writer_name,    -- 보호자 이름
-    assi.name         AS assi_name,
-    org.org_name      AS org_name
+    org.org_name      AS org_name,
+    cp.level          AS level          -- 🔹 우선순위 추가
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
@@ -49,6 +24,45 @@ module.exports = {
     ON assi.user_code = ss.assi_by
   LEFT JOIN organization org
     ON org.org_code = writer.org_code
+  LEFT JOIN (
+    SELECT submit_code, MAX(level) AS level
+    FROM case_priority
+    GROUP BY submit_code
+  ) cp
+    ON cp.submit_code = sp.submit_code
+  ORDER BY sp.plan_code DESC
+`,
+
+  //담당자 목록
+  listSupportPlanByAssignee: `
+  SELECT
+    sp.plan_code,
+    sp.submit_code,
+    sp.status,
+    sp.written_at,
+    ss.submit_at,
+    c.child_name      AS child_name,
+    writer.name       AS writer_name,
+    assi.name         AS assi_name,
+    org.org_name      AS org_name,
+    cp.level          AS level          -- 🔹 우선순위
+  FROM support_plan sp
+  JOIN survey_submission ss
+    ON ss.submit_code = sp.submit_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
+  JOIN users writer
+    ON writer.user_code = ss.written_by
+  LEFT JOIN users assi
+    ON assi.user_code = ss.assi_by
+  LEFT JOIN organization org
+    ON org.org_code = writer.org_code
+  LEFT JOIN (
+    SELECT submit_code, MAX(level) AS level
+    FROM case_priority
+    GROUP BY submit_code
+  ) cp
+    ON cp.submit_code = sp.submit_code
   WHERE ss.assi_by = ?
   ORDER BY sp.plan_code DESC
 `,
@@ -61,10 +75,11 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
-    writer.name       AS writer_name,    -- 보호자 이름
+    c.child_name      AS child_name,
+    writer.name       AS writer_name,
     assi.name         AS assi_name,
-    org.org_name      AS org_name
+    org.org_name      AS org_name,
+    cp.level          AS level          -- 🔹 우선순위
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
@@ -76,6 +91,12 @@ module.exports = {
     ON assi.user_code = ss.assi_by
   LEFT JOIN organization org
     ON org.org_code = writer.org_code
+  LEFT JOIN (
+    SELECT submit_code, MAX(level) AS level
+    FROM case_priority
+    GROUP BY submit_code
+  ) cp
+    ON cp.submit_code = sp.submit_code
   WHERE ss.written_by = ?
   ORDER BY sp.plan_code DESC
 `,
@@ -88,10 +109,11 @@ module.exports = {
     sp.status,
     sp.written_at,
     ss.submit_at,
-    c.child_name      AS child_name,     -- 🔥 지원자(자녀)
-    writer.name       AS writer_name,    -- 보호자 이름
+    c.child_name      AS child_name,
+    writer.name       AS writer_name,
     assi.name         AS assi_name,
-    org.org_name      AS org_name
+    org.org_name      AS org_name,
+    cp.level          AS level          -- 🔹 우선순위
   FROM support_plan sp
   JOIN survey_submission ss
     ON ss.submit_code = sp.submit_code
@@ -103,37 +125,46 @@ module.exports = {
     ON assi.user_code = ss.assi_by
   LEFT JOIN organization org
     ON org.org_code = writer.org_code
+  LEFT JOIN (
+    SELECT submit_code, MAX(level) AS level
+    FROM case_priority
+    GROUP BY submit_code
+  ) cp
+    ON cp.submit_code = sp.submit_code
   WHERE org.org_code = ?
   ORDER BY sp.plan_code DESC
 `,
 
   // 🔹 담당자 상단 테이블용 (counsel_note.status = 'CB5')
   listAssigneePlanCandidates: `
-    SELECT
-      ss.submit_code,
-      ss.child_code,
-      ss.submit_at,
-      c.child_name           AS child_name,
-      writer.name            AS writer_name
-    FROM survey_submission ss
-    JOIN counsel_note cn
-      ON cn.submit_code = ss.submit_code
-    LEFT JOIN child c
-      ON c.child_code = ss.child_code
-    JOIN users writer
-      ON writer.user_code = ss.written_by
-    WHERE
-      ss.assi_by = ?
-      AND cn.status = 'CB5'
-    GROUP BY
-      ss.submit_code,
-      ss.child_code,
-      ss.submit_at,
-      c.child_name,
-      writer.name
-    ORDER BY
-      ss.submit_at DESC
-  `,
+  SELECT
+    ss.submit_code,
+    ss.child_code,
+    ss.submit_at,
+    c.child_name           AS child_name,
+    writer.name            AS writer_name,
+    MAX(cp.level)          AS level      -- 🔹 우선순위
+  FROM survey_submission ss
+  JOIN counsel_note cn
+    ON cn.submit_code = ss.submit_code
+  LEFT JOIN child c
+    ON c.child_code = ss.child_code
+  JOIN users writer
+    ON writer.user_code = ss.written_by
+  LEFT JOIN case_priority cp            -- 🔹 우선순위 조인
+    ON cp.submit_code = ss.submit_code
+  WHERE
+    ss.assi_by = ?
+    AND cn.status = 'CB5'
+  GROUP BY
+    ss.submit_code,
+    ss.child_code,
+    ss.submit_at,
+    c.child_name,
+    writer.name
+  ORDER BY
+    ss.submit_at DESC
+`,
 
   //기본정보
   getPlanBasicBySubmitCode: `

@@ -59,6 +59,14 @@
             </span>
           </div>
 
+          <!-- 우선순위 -->
+          <div class="meta-item">
+            <span class="meta-label">우선순위</span>
+            <span class="meta-value">
+              {{ priorityLabel(submitInfo.level) || "-" }}
+            </span>
+          </div>
+
           <!-- 5. 계획작성일 (계획서 작성/제출일) -->
           <div class="meta-item">
             <span class="meta-label">계획작성일</span>
@@ -91,16 +99,15 @@
 
       <!-- 메인 결과 카드 -->
       <div class="card-block space-y-4">
-        <!-- 계획했던 목표 -->
         <div class="form-group">
           <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
-          <MaterialInput
-            id="plan-goal"
-            variant="static"
-            size="default"
-            v-model="mainForm.goal"
-            placeholder="기존 지원계획에서 계획했던 목표를 입력하세요"
-          />
+
+          <select v-model="mainForm.goal" class="input goal-select">
+            <option value="">계획서 목표 선택</option>
+            <option v-for="goal in planGoals" :key="goal" :value="goal">
+              {{ goal }}
+            </option>
+          </select>
         </div>
 
         <!-- 결과 내용 (일반용) -->
@@ -222,13 +229,13 @@
 
         <div class="form-group">
           <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
-          <MaterialInput
-            :id="`result-item-goal-${item.id}`"
-            variant="static"
-            size="default"
-            v-model="item.goal"
-            placeholder="해당 결과에 해당하는 계획 목표를 입력하세요"
-          />
+
+          <select v-model="item.goal" class="input goal-select">
+            <option value="">계획서 목표 선택</option>
+            <option v-for="goal in planGoals" :key="goal" :value="goal">
+              {{ goal }}
+            </option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -294,10 +301,11 @@ import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
-import MaterialInput from "@/components/MaterialInput.vue";
 
 const route = useRoute();
 const router = useRouter();
+
+const planGoals = ref([]);
 
 const submitCode = Number(route.params.submitcode || 0);
 
@@ -308,6 +316,7 @@ const submitInfo = ref({
   assigneeName: "",
   disabilityType: "",
   planSubmitAt: "",
+  level: "",
 });
 
 const formattedPlanWrittenAt = computed(() => {
@@ -367,17 +376,46 @@ async function loadData() {
       assigneeName: res.assigneeName || "",
       disabilityType: res.disabilityType || "",
       planSubmitAt: res.planSubmitAt || "",
+      level: res.level || "",
     };
 
     // 결과 작성일 기본값이 없으면 오늘 날짜
     if (!mainForm.value.resultDate) {
       mainForm.value.resultDate = getTodayStr();
     }
+
+    if (Array.isArray(res.planGoals)) {
+      // null / 빈 문자열 제거
+      const goals = res.planGoals.map((g) => (g || "").trim()).filter((g) => g);
+
+      planGoals.value = [...new Set(goals)]; // 중복 제거
+    } else {
+      planGoals.value = [];
+    }
+
+    // ✅ 메인 목표 비어있으면 첫 번째 목표를 기본값으로
+    if (!mainForm.value.goal && planGoals.value.length > 0) {
+      mainForm.value.goal = planGoals.value[0];
+    }
   } catch (e) {
     console.error(e);
     error.value = e.message || "기본 정보 조회 중 오류";
   } finally {
     loading.value = false;
+  }
+}
+
+function priorityLabel(code) {
+  const c = (code || "").toUpperCase();
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
   }
 }
 
@@ -805,5 +843,37 @@ textarea {
   max-width: 110px;
   padding: 0.2rem 0.35rem;
   font-size: 0.75rem;
+}
+/* 목표 셀렉트 전용 스타일 */
+.goal-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  /* 기본 화살표 제거 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* 커스텀 화살표 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><polyline points='2,4 6,8 10,4' stroke='%239CA3AF' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+}
+
+.goal-select:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.1);
+}
+
+/* 옵션 텍스트 가독성 */
+.goal-select option {
+  font-size: 0.875rem;
 }
 </style>

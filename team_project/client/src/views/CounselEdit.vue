@@ -470,6 +470,7 @@ async function submitAll() {
       records: records.value,
       removeAttachmentCodes: removedAttachmentCodes.value,
       modifier,
+      requesterCode: modifier,
     };
 
     const formData = new FormData();
