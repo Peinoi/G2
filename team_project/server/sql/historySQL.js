@@ -22,6 +22,9 @@ const historyListBase = `
   LEFT JOIN organization org
     ON org.org_code = u.org_code
   WHERE 1=1
+    -- 🔹 변경 전 값이 없는(= 생성만 기록된) 이력은 제외
+    AND h.before_change IS NOT NULL
+    AND h.before_change <> ''
 `;
 
 // 카운트용 기본 SELECT
@@ -34,6 +37,9 @@ const historyCountBase = `
   LEFT JOIN organization org
     ON org.org_code = u.org_code
   WHERE 1=1
+    -- 🔹 목록과 동일하게, 변경 전 값이 없는 이력은 카운트에서도 제외
+    AND h.before_change IS NOT NULL
+    AND h.before_change <> ''
 `;
 
 const historyOrderByLatest = `

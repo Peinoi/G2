@@ -37,13 +37,13 @@ router.put("/:code/approve", async (req, res) => {
   try {
     const approvalCode = req.params.code;
 
-    // 로그인 사용자
-    const processorCode = req.user?.user_code; // ⭐ 처리자 user_code
+    // 🔹 프론트에서 넘겨준 처리자 user_code 사용
+    const processorCode = req.body?.processorCode;
 
     if (!processorCode) {
-      return res.status(401).json({
+      return res.status(400).json({
         status: "fail",
-        message: "로그인 정보가 없어 승인자를 확인할 수 없습니다.",
+        message: "처리자 코드(processorCode)가 없습니다.",
       });
     }
 
@@ -61,6 +61,7 @@ router.put("/:code/approve", async (req, res) => {
 
     return res.status(200).json({ status: "success" });
   } catch (err) {
+    console.error("[PUT /approvals/:code/approve] 실패:", err.stack || err);
     return res
       .status(500)
       .json({ status: "error", message: "승인 처리 중 오류" });
@@ -71,14 +72,12 @@ router.put("/:code/approve", async (req, res) => {
 router.put("/:code/reject", async (req, res) => {
   try {
     const approvalCode = req.params.code;
-    const { reason } = req.body || {};
-
-    const processorCode = req.user?.user_code; // ⭐ 처리자 user_code
+    const { reason, processorCode } = req.body || {};
 
     if (!processorCode) {
-      return res.status(401).json({
+      return res.status(400).json({
         status: "fail",
-        message: "로그인 정보가 없어 승인자를 확인할 수 없습니다.",
+        message: "처리자 코드(processorCode)가 없습니다.",
       });
     }
 
@@ -97,6 +96,7 @@ router.put("/:code/reject", async (req, res) => {
 
     return res.status(200).json({ status: "success" });
   } catch (err) {
+    console.error("[PUT /approvals/:code/reject] 실패:", err.stack || err);
     return res
       .status(500)
       .json({ status: "error", message: "반려 처리 중 오류" });
