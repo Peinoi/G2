@@ -51,7 +51,7 @@ async function verifyCode(data) {
   }
 }
 
-// 개인 회원d
+// 개인 회원
 async function addUser(userData) {
   const conn = await pool.getConnection();
   try {
