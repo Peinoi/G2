@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h5 class="font-weight-bolder mb-4">개인 회원 상세 정보</h5>
+    <!-- <h5 class="font-weight-bolder mb-4">개인 회원 상세 정보</h5> -->
 
     <!-- 이름 -->
     <material-input
@@ -35,14 +35,9 @@
     </div>
 
     <!-- 연락처 -->
-    <material-input
-      id="phone"
-      type="text"
-      label="연락처 ( - 없이 입력 )"
-      v-model="phone"
-      size="lg"
-      class="mb-3"
-      @input="validatePhone"
+    <sms-verification
+      v-model:phone="phone"
+      v-model:isVerified="isPhoneVerified"
     />
 
     <!-- 이메일 -->
@@ -55,38 +50,6 @@
         size="lg"
         class="flex-grow-1"
       />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="sendVerification"
-      >
-        인증
-      </material-button>
-    </div>
-
-    <!-- 이메일 인증번호 입력칸 -->
-    <div class="d-flex align-items-end gap-2 mb-4" v-if="emailSent">
-      <material-input
-        id="email-code"
-        type="text"
-        label="인증번호 입력"
-        v-model="verifyCode"
-        size="lg"
-        class="flex-grow-1"
-      />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="verifyEmail"
-      >
-        인증 완료
-      </material-button>
     </div>
 
     <!-- 주소 -->
@@ -104,21 +67,26 @@
         color="success"
         size="md"
         type="button"
-        class="py-2 px-3"
+        class="address-btn"
         @click="searchAddress"
       >
         주소검색
       </material-button>
     </div>
 
-    <!-- 소속 기관 코드 입력 -->
-    <div class="field">
-      <material-input
-        id="orgCode"
-        type="number"
-        label="소속 기관코드 (선택사항)"
-        v-model="org_code"
-      />
+    <!-- 기관명 (select box) -->
+    <div class="input-group input-group-outline my-3">
+      <label class="form-label"></label>
+      <select v-model="org_name" class="form-control">
+        <option disabled value="">소속 기관(선택사항입니다.)</option>
+        <option
+          v-for="org in orgList"
+          :key="org.org_name"
+          :value="org.org_name"
+        >
+          {{ org.org_name }}
+        </option>
+      </select>
     </div>
 
     <!-- 하단 버튼 -->
@@ -136,12 +104,15 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
+import SmsVerification from '../../components/SignUp/SmsVerification.vue';
+import { findAllOrg } from '../../api/user';
 
 export default {
   name: 'SignUpUserForm',
   components: {
     MaterialInput,
     MaterialButton,
+    SmsVerification,
   },
   props: { base: Object },
   data() {
@@ -150,30 +121,25 @@ export default {
       regFront: '',
       regBack: '',
       phone: '',
+      isPhoneVerified: false,
       address: '',
       email: '',
-      org_code: '',
+      org_name: '',
+      orgList: [],
       role: 'AA1',
-      emailSent: false, // 이메일 인증 여부(현재 미구현)
     };
   },
   methods: {
     searchAddress() {
-      alert('주소 검색 기능 준비 중');
-    },
-    sendVerification() {
-      if (!this.email) {
-        return alert('이메일을 입력하세요.');
-      }
-
-      this.emailSent = true;
-      alert('인증번호가 발송되었습니다.');
-    },
-    verifyEmail() {
-      if (!this.verifyCode) {
-        return alert('인증번호를 입력하세요.');
-      }
-      alert('이메일 인증이 완료되었습니다.');
+      new window.daum.Postcode({
+        oncomplete: (data) => {
+          let addr = data.address;
+          if (data.buildingName != '') {
+            addr += `(${data.buildingName})`;
+          }
+          this.address = addr;
+        },
+      }).open();
     },
     submitForm() {
       if (
@@ -184,7 +150,11 @@ export default {
         !this.address ||
         !this.email
       ) {
-        return alert('필수 정보를 입력하세요.');
+        return alert('필수 정보들을 입력해주세요.');
+      }
+
+      if (!this.isPhoneVerified) {
+        return alert('연락처를 확인해주세요.');
       }
 
       let formattedPhone = '';
@@ -198,8 +168,6 @@ export default {
           3,
           7
         )}-${this.phone.slice(7)}`;
-      } else {
-        return alert('전화번호는 10~11자리 숫자로 입력하세요.');
       }
 
       this.$emit('submit', {
@@ -209,25 +177,24 @@ export default {
         address: this.address,
         email: this.email,
         role: this.role,
-        org_code: this.org_code ? Number(this.org_code) : null,
+        org_name: this.org_name ? this.org_code : null,
       });
     },
-    validatePhone() {
-      // 하이픈 감지
-      if (this.phone.includes('-')) {
-        alert('- 없이 입력하세요.');
-        this.phone = this.phone.replace(/-/g, '');
-        return;
-      }
-
-      // 숫자만
-      this.phone = this.phone.replace(/[^0-9]/g, '');
-
-      // 11자리 제한
-      if (this.phone.length > 11) {
-        this.phone = this.phone.slice(0, 11);
-      }
+    async findOrgList() {
+      const result = await findAllOrg();
+      this.orgList = result;
     },
+  },
+  mounted() {
+    this.findOrgList();
   },
 };
 </script>
+
+<style scoped>
+.address-btn {
+  padding: 10px;
+  width: 100px;
+  height: 43px;
+}
+</style>

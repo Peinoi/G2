@@ -15,12 +15,12 @@ async function findUserId(id) {
 }
 
 // 개인 회원가입
-async function addUser(data) {
+async function addUser(conn, data) {
   try {
     const userData = [
-      data.org_code || null,
+      data.org_code,
       data.userId,
-      data.userPw,
+      data.hashedPw,
       data.role,
       data.name,
       data.ssn,
@@ -28,14 +28,11 @@ async function addUser(data) {
       data.address,
       data.email,
       null,
-      1, // is_active(승인 여부)
+      0, // is_active(승인 여부)
       0, // 로그인 실패 횟수
       data.joinDate, // 가입일
     ];
-
-    await pool.query(signUserSQL.INSERT_USER, userData);
-
-    return { ok: true, message: '회원가입 완료' };
+    return await conn.query(signUserSQL.INSERT_USER, userData);
   } catch (err) {
     console.error('[ addUser 실패 ] : ', err);
   }
@@ -59,22 +56,13 @@ async function findOrgCode(conn, orgName) {
   }
 }
 
-async function findUserCode(conn, userId) {
-  try {
-    const result = await conn.query(signUserSQL.FIND_USER_CODE, [userId]);
-    return result;
-  } catch (err) {
-    console.error('[ findUserCode 찾기 실패 ] : ', err);
-  }
-}
-
 // 기관 회원가입
 async function addOrg(conn, data) {
   try {
     const userData = [
       data.org_code,
       data.userId,
-      data.userPw,
+      data.hashedPw,
       data.role,
       data.name,
       data.ssn,
@@ -111,15 +99,8 @@ async function requestApproval(conn, data) {
 // 로그인
 async function authLogin(data) {
   try {
-    const result = await pool.query(signUserSQL.AUTH_LOGIN, [
-      data.userId,
-      data.userPw,
-    ]);
-    if (result.length == 0) {
-      console.log('값 없음');
-      return { ok: false, message: '로그인 실패' };
-    }
-    return { ok: true, message: '로그인 성공', ...result[0] };
+    const result = await pool.query(signUserSQL.AUTH_LOGIN, [data]);
+    return result;
   } catch (err) {
     console.error('[ authLogin 실패 ]', err);
   }
@@ -150,7 +131,7 @@ async function findPw(data) {
       data.phone,
     ]);
     if (result.length == 0) {
-      return { ok: false, message: '조건에 맞는 PW가 없습니다' };
+      return { ok: false, message: '조건에 맞는 데이터가 없습니다' };
     }
     return { ok: true, message: 'PW 찾기 성공' };
   } catch (err) {
@@ -161,16 +142,10 @@ async function findPw(data) {
 // pw 변경
 async function updatePw(data) {
   try {
-    const result = await pool.query(signUserSQL.FIND_RESET_PW, [
-      data.newPw,
+    return await pool.query(signUserSQL.FIND_RESET_PW, [
+      data.newHashPw,
       data.user_id,
-      data.name,
-      data.phone,
     ]);
-    if (result.affectedRows == 0) {
-      return { ok: false, message: 'PW 변경 실패' };
-    }
-    return { ok: true, message: 'PW 변경 성공' };
   } catch (err) {
     console.error('[ updatePw 실패 ]', err);
   }
@@ -181,7 +156,6 @@ module.exports = {
   addUser,
   findOrgList,
   findOrgCode,
-  findUserCode,
   addOrg,
   requestApproval,
   authLogin,

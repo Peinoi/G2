@@ -64,7 +64,7 @@ export default {
 }
 
 .modal-box {
-  width: 380px;
+  width: 400px;
   background: white;
   padding: 24px;
   border-radius: 12px;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h5 class="font-weight-bolder mb-4">기관 회원 상세 정보</h5>
+    <!-- <h5 class="font-weight-bolder mb-4">기관 회원 상세 정보</h5> -->
 
     <!-- 이름 -->
     <material-input
@@ -35,14 +35,9 @@
     </div>
 
     <!-- 연락처 -->
-    <material-input
-      id="phone"
-      type="text"
-      label="연락처 ( - 없이 입력 )"
-      v-model="phone"
-      size="lg"
-      class="mb-3"
-      @input="validatePhone"
+    <sms-verification
+      v-model:phone="phone"
+      v-model:isVerified="isPhoneVerified"
     />
 
     <!-- 주소 -->
@@ -58,9 +53,8 @@
       <material-button
         variant="gradient"
         color="success"
-        size="md"
         type="button"
-        class="py-2 px-3"
+        class="address-btn"
         @click="searchAddress"
       >
         주소검색
@@ -71,7 +65,7 @@
     <div class="input-group input-group-outline my-3">
       <label class="form-label"></label>
       <select v-model="org_name" class="form-control">
-        <option disabled value="">기관명을 선택하세요</option>
+        <option disabled value="">기관명을 선택해주세요</option>
         <option
           v-for="org in orgList"
           :key="org.org_name"
@@ -96,7 +90,7 @@
     <div class="input-group input-group-outline my-3">
       <label class="form-label"></label>
       <select v-model="role" class="form-control">
-        <option disabled value="">권한을 선택하세요</option>
+        <option disabled value="">권한을 선택해주세요</option>
         <option value="AA2">기관 담당자</option>
         <option value="AA3">기관 관리자</option>
       </select>
@@ -112,38 +106,6 @@
         size="lg"
         class="flex-grow-1"
       />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="sendVerification"
-      >
-        인증
-      </material-button>
-    </div>
-
-    <!-- 이메일 인증번호 입력칸 -->
-    <div class="d-flex align-items-end gap-2 mb-4" v-if="emailSent">
-      <material-input
-        id="email-code"
-        type="text"
-        label="인증번호 입력"
-        v-model="verifyCode"
-        size="lg"
-        class="flex-grow-1"
-      />
-      <material-button
-        variant="gradient"
-        color="success"
-        size="md"
-        type="button"
-        class="py-2 px-3"
-        @click="verifyEmail"
-      >
-        인증 완료
-      </material-button>
     </div>
 
     <!-- 하단 버튼 -->
@@ -161,11 +123,16 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
-import { findAllOrg } from '../api/user';
+import SmsVerification from '../../components/SignUp/SmsVerification.vue';
+import { findAllOrg } from '../../api/user';
 
 export default {
   name: 'SignUpOrgForm',
-  components: { MaterialInput, MaterialButton },
+  components: {
+    MaterialInput,
+    MaterialButton,
+    SmsVerification,
+  },
   props: { base: Object },
   data() {
     return {
@@ -173,6 +140,7 @@ export default {
       regFront: '',
       regBack: '',
       phone: '',
+      isPhoneVerified: false,
       address: '',
       email: '',
       org_name: '',
@@ -184,25 +152,23 @@ export default {
   },
   methods: {
     searchAddress() {
-      // 주소검색
-      alert('주소 검색 기능 준비 중입니다.');
-    },
-    sendVerification() {
-      if (!this.email) {
-        return alert('이메일을 입력하세요.');
-      }
-      this.emailSent = true;
-      alert('인증번호가 발송되었습니다.');
-    },
-    verifyEmail() {
-      if (!this.verifyCode) {
-        return alert('인증번호를 입력하세요.');
-      }
-      alert('이메일 인증이 완료되었습니다.');
+      new window.daum.Postcode({
+        oncomplete: (data) => {
+          let addr = data.address;
+          if (data.buildingName != '') {
+            addr += `(${data.buildingName})`;
+          }
+          this.address = addr;
+        },
+      }).open();
     },
     submitForm() {
       if (!this.name || !this.org_name) {
         return alert('이름과 기관명을 입력하세요.');
+      }
+
+      if (!this.isPhoneVerified) {
+        return alert('연락처를 확인해주세요.');
       }
 
       let formattedPhone = '';
@@ -216,14 +182,13 @@ export default {
           3,
           7
         )}-${this.phone.slice(7)}`;
-      } else {
-        return alert('전화번호는 10~11자리 숫자로 입력하세요.');
       }
 
       this.$emit('submit', {
         name: this.name,
         ssn: `${this.regFront}-${this.regBack}`,
         phone: formattedPhone,
+        isPhoneVerified: this.isPhoneVerified,
         address: this.address,
         email: this.email,
         org_name: this.org_name,
@@ -268,3 +233,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.address-btn {
+  padding: 10px;
+  width: 100px;
+  height: 43px;
+}
+</style>

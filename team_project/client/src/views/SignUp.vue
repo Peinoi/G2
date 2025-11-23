@@ -35,7 +35,9 @@
                 <div class="card card-plain">
                   <div class="pb-0 card-header bg-transparent mb-4">
                     <h4 class="font-weight-bolder">회원가입</h4>
-                    <p class="mb-0">대충 설명하는 곳</p>
+                    <p class="mb-0">
+                      아래의 항목들은 필수로 입력해주셔야 합니다.
+                    </p>
                   </div>
                   <div class="card-body">
                     <!-- from -->
@@ -59,7 +61,7 @@
                             variant="gradient"
                             color="success"
                             size="lg"
-                            class="py-2 px-3"
+                            class="check-btn"
                             type="button"
                             @click="checkId"
                           >
@@ -67,6 +69,28 @@
                           </material-button>
                         </div>
                       </div>
+                      <p
+                        v-if="idCheck"
+                        :style="{
+                          color: idCheck == 'true' ? '#2ecc71' : '#e74c3c',
+                          fontSize: '0.8rem',
+                          marginTop: '-10px',
+                          marginLeft: '4px',
+                        }"
+                      >
+                        <span>{{ idCheckMessage }}</span>
+                      </p>
+
+                      <p
+                        v-else
+                        :style="{
+                          fontSize: '0.8rem',
+                          marginTop: '-10px',
+                          marginLeft: '4px',
+                        }"
+                      >
+                        <span>{{ idCheckMessage }}</span>
+                      </p>
 
                       <!-- 비밀번호 -->
                       <div class="mb-3">
@@ -89,6 +113,28 @@
                           v-model="pwCheck"
                         />
                       </div>
+                      <p
+                        v-if="pwChecked"
+                        :style="{
+                          color: pwChecked == 'true' ? '#2ecc71' : '#e74c3c',
+                          fontSize: '0.8rem',
+                          marginTop: '-10px',
+                          marginLeft: '4px',
+                        }"
+                      >
+                        {{ pwCheckedMessage }}
+                      </p>
+
+                      <p
+                        v-else
+                        :style="{
+                          fontSize: '0.8rem',
+                          marginTop: '-10px',
+                          marginLeft: '4px',
+                        }"
+                      >
+                        {{ pwCheckedMessage }}
+                      </p>
 
                       <!-- 이용약관 체크박스 -->
                       <material-checkbox
@@ -96,13 +142,24 @@
                         class="font-weight-light"
                         v-model="agree"
                       >
-                        이용약관 동의합니다 체크박스
+                        이용약관에 동의합니다 |
                         <a
                           href="../../../pages/privacy.html"
                           class="text-dark font-weight-bolder"
-                          >대충 이건 이용약관</a
+                          >이용약관 확인</a
                         >
                       </material-checkbox>
+                      <p
+                        v-if="!agreeCheck"
+                        :style="{
+                          color: '#e74c3c',
+                          fontSize: '0.8rem',
+                          marginTop: '-10px',
+                          marginLeft: '4px',
+                        }"
+                      >
+                        {{ agreeCheckMessage }}
+                      </p>
 
                       <!-- 가입 유형 선택 -->
                       <div class="d-flex justify-content-between gap-3 mt-4">
@@ -148,11 +205,11 @@
                   </div>
                   <div class="px-1 pt-0 text-center card-footer px-lg-2">
                     <p class="mx-auto mb-4 text-sm">
-                      이미 계정이 있어요?
+                      계정이 있으신가요? |
                       <router-link
                         :to="{ name: 'SignIn' }"
                         class="text-success text-gradient font-weight-bold"
-                        >그냥 로그인 ㄱㄱ</router-link
+                        >로그인</router-link
                       >
                     </p>
                   </div>
@@ -173,8 +230,8 @@ import MaterialCheckbox from '@/components/MaterialCheckbox.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
 const body = document.getElementsByTagName('body')[0];
 import { mapMutations } from 'vuex';
-import SignUpUserForm from '@/components/SignUpUserForm.vue';
-import SignUpOrgForm from '@/components/SignUpOrgForm.vue';
+import SignUpUserForm from '@/components/SignUp/SignUpUserForm.vue';
+import SignUpOrgForm from '@/components/SignUp/SignUpOrgForm.vue';
 import { checkId as checkUserId, addUser, addOrg } from '../api/user';
 import dateFormat from '../utils/dateFormat';
 
@@ -197,14 +254,30 @@ export default {
       userPw: '',
       pwCheck: '',
       agree: false,
-      idChecked: false, // 중복 확인 여부
-      idAvailable: false, // ← 사용 가능 여부
+      idCheck: null,
+      idCheckMessage: '사용 가능한 아이디인지 확인해주세요.',
+      pwChecked: null,
+      pwCheckedMessage: '비밀번호를 확인해주세요.',
+      agreeCheck: true,
+      agreeCheckMessage: '',
     };
   },
   watch: {
     userId() {
-      this.idChecked = false;
-      this.idAvailable = false;
+      this.idCheck = null;
+      this.idCheckMessage = '사용 가능한 아이디인지 확인해주세요.';
+    },
+    pwCheck() {
+      if (this.pwCheck == '') {
+        this.pwChecked = null;
+        this.pwCheckedMessage = '비밀번호를 확인해주세요.';
+      } else if (this.userPw != this.pwCheck) {
+        this.pwChecked = 'false';
+        this.pwCheckedMessage = '비밀번호가 틀립니다.';
+      } else {
+        this.pwChecked = 'true';
+        this.pwCheckedMessage = '비밀번호가 일치합니다.';
+      }
     },
   },
   beforeMount() {
@@ -223,44 +296,41 @@ export default {
     // 중복확인
     async checkId() {
       if (!this.userId) {
-        alert('입력된 아이디가 없음');
+        this.idCheck = 'false';
+        this.idCheckMessage = '아이디를 입력해주세요.';
         return;
       }
       try {
         const result = await checkUserId(this.userId);
-        this.idChecked = true;
-        // ok -> 사용 가능한지 체크
         if (result.ok) {
-          this.idAvailable = true;
-          alert('사용 가능');
+          this.idCheck = 'true';
+          this.idCheckMessage = '사용 가능한 아이디입니다.';
         } else {
-          this.idAvailable = false;
-          alert('이미 사용중인 아이디');
+          this.idCheck = 'false';
+          this.idCheckMessage = '이미 사용 중인 아이디입니다.';
         }
       } catch (err) {
-        alert('중복확인 오류');
+        alert('중복확인 오류가 발생하였습니다.');
       }
     },
 
     goToStep(type) {
       // 중복확인 검사
-      if (!this.idChecked) {
-        return alert('아이디 중복확인 ㄱㄱ');
+      if (this.idCheck != 'true') {
+        this.idCheck = 'false';
+        this.idCheckMessage = '아이디를 확인해주세요.';
+        return;
       }
-      if (!this.idAvailable) {
-        return alert('사용할 수 없는 아이디');
-      }
-      if (!this.userId || !this.userPw) {
-        return alert('입력된 아이디와 비밀번호가 없음.');
-      }
-      if (this.userPw !== this.pwCheck) {
-        return alert('비밀번호가 불일치.');
+      if (this.pwChecked != 'true') {
+        this.pwChecked = 'false';
+        this.pwCheckedMessage = '비밀번호를 확인해주세요.';
+        return;
       }
       if (!this.agree) {
-        return alert('이용약관 동의 ㄱㄱ');
+        this.agreeCheck = false;
+        this.agreeCheckMessage = '이용약관에 동의해주셔야 이용이 가능합니다.';
+        return;
       }
-
-      alert('다음 페이지로 이동합니다');
       this.step = type; // user / org
     },
 
@@ -277,14 +347,14 @@ export default {
           };
           const result = await addUser(payload);
 
-          if (result.ok) {
-            alert('회원가입 성공. 로그인 페이지로 이동');
-            this.$router.push({ name: 'SignIn' });
-          } else {
-            alert('회원가입 실패 : ', result.message);
+          if (!result.ok) {
+            alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
+            return;
           }
+          this.$router.push({ name: 'SignIn' });
+          alert('회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.');
         } catch (err) {
-          alert('회원가입 오류 발생');
+          alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
         }
       }
       // 기관 회원
@@ -300,17 +370,24 @@ export default {
 
           const result = await addOrg(payload);
 
-          if (result.ok) {
-            alert('회원가입 성공. 로그인 페이지로 이동');
-            this.$router.push({ name: 'SignIn' });
-          } else {
-            alert('기관 회원가입 실패: ' + result.message);
+          if (!result.ok) {
+            alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
           }
+          this.$router.push({ name: 'SignIn' });
+          alert('회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.');
         } catch (err) {
-          alert('기관 회원가입 중 오류 발생');
+          alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
         }
       }
     },
   },
 };
 </script>
+
+<style scoped>
+.check-btn {
+  padding: 10px;
+  width: 80px;
+  height: 45px;
+}
+</style>

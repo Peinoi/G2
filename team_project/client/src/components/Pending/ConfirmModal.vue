@@ -7,12 +7,18 @@
         <h4 class="modal-title">담당자 배정 확인</h4>
 
         <p class="modal-text">
-          <strong
-            >{{ pendingItem.childName }}의 담당자: {{ selectedManager }}</strong
-          ><br />
-          ㄹㅇ?
+          <strong>{{
+            pendingItem.childName
+              ? pendingItem.childName
+              : pendingItem.writerName
+          }}</strong>
+          님의 담당자를
           <br />
-          한 번 배정되면 절대 못 바꿔요
+          <strong>{{ pendingItem.managerName }}</strong> 님으로
+          배정하시겠습니까?
+
+          <br />
+          배정이 확정되면 <strong>변경이 불가하니</strong> 재차 확인해주세요.
         </p>
 
         <div class="modal-actions">
@@ -31,13 +37,20 @@
         <h4 class="modal-title">배정 완료</h4>
 
         <p class="modal-text">
-          <strong>{{ pendingItem.childName }}</strong> 건의 담당자 배정이
+          <strong>{{
+            pendingItem.childName
+              ? pendingItem.childName
+              : pendingItem.writerName
+          }}</strong>
+          님의 담당자가
+          <br />
+          <strong>{{ pendingItem.managerName }}</strong> 님으로 배정이
           완료되었습니다.
         </p>
 
         <div class="modal-actions">
           <button
-            class="modal-btn modal-btn-primary"
+            class="modal-btn modal-btn-success"
             @click="$emit('closeDone')"
           >
             확인
@@ -74,7 +87,7 @@ export default {
 }
 
 .modal-box {
-  width: 360px;
+  width: 400px;
   background: white;
   padding: 24px;
   border-radius: 12px;

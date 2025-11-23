@@ -19,25 +19,6 @@
                 <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">
                   장애 행복 복지 지원
                 </h4>
-
-                <!-- 소셜 로그인 버튼 -->
-                <!-- <div class="row mt-3">
-                  <div class="col-2 text-center ms-auto">
-                    <a class="btn btn-link px-3" href="javascript:;">
-                      <i class="fab fa-facebook text-white text-lg"></i>
-                    </a>
-                  </div>
-                  <div class="col-2 text-center px-1">
-                    <a class="btn btn-link px-3" href="javascript:;">
-                      <i class="fab fa-github text-white text-lg"></i>
-                    </a>
-                  </div>
-                  <div class="col-2 text-center me-auto">
-                    <a class="btn btn-link px-3" href="javascript:;">
-                      <i class="fab fa-google text-white text-lg"></i>
-                    </a>
-                  </div>
-                </div> -->
               </div>
             </div>
 
@@ -87,7 +68,6 @@
                   >
                 </p>
 
-                <!-- id / pw 찾기 아직 구현 못 함, 내일(18일) 구현하기 -->
                 <p class="mt-4 text-sm text-center">
                   <a
                     href="#"
@@ -116,7 +96,7 @@
         <div class="custom-modal">
           <h5 class="font-weight-bolder mb-3">아이디 찾기</h5>
 
-          <!-- <p class="text-sm text-secondary">멀 보노</p> -->
+          <p class="text-sm text-secondary">아래의 항목을 모두 입력해주세요.</p>
 
           <material-input
             type="text"
@@ -150,7 +130,9 @@
           <div v-if="findPwStep === 1">
             <h5 class="font-weight-bolder mb-3">비밀번호 찾기 (1/2)</h5>
 
-            <!-- <p class="text-sm text-secondary">나는 문어</p> -->
+            <p class="text-sm text-secondary">
+              아래의 항목을 모두 입력해주세요.
+            </p>
 
             <material-input
               type="text"
@@ -185,7 +167,9 @@
           <div v-else-if="findPwStep === 2">
             <h5 class="font-weight-bolder mb-3">비밀번호 재설정 (2/2)</h5>
 
-            <!-- <p class="text-sm text-secondary">꿈을 꾸는 문어</p> -->
+            <p class="text-sm text-secondary">
+              새로 사용하실 비밀번호를 입력해주세요.
+            </p>
 
             <material-input
               type="password"
@@ -212,70 +196,12 @@
         </div>
       </div>
     </div>
-    <!-- <footer class="footer position-absolute bottom-2 py-2 w-100">
-      <div class="container">
-        <div class="row align-items-center justify-content-lg-between">
-          <div class="col-12 col-md-6 my-auto">
-            <div class="copyright text-center text-sm text-white text-lg-start">
-              © {{ new Date().getFullYear() }}, made with
-              <i class="fa fa-heart" aria-hidden="true"></i> by
-              <a
-                href="https://www.creative-tim.com"
-                class="font-weight-bold text-white"
-                target="_blank"
-                >Creative Tim</a
-              >
-              for a better web.
-            </div>
-          </div>
-          <div class="col-12 col-md-6">
-            <ul
-              class="nav nav-footer justify-content-center justify-content-lg-end"
-            >
-              <li class="nav-item">
-                <a
-                  href="https://www.creative-tim.com"
-                  class="nav-link text-white"
-                  target="_blank"
-                  >Creative Tim</a
-                >
-              </li>
-              <li class="nav-item">
-                <a
-                  href="https://www.creative-tim.com/presentation"
-                  class="nav-link text-white"
-                  target="_blank"
-                  >About Us</a
-                >
-              </li>
-              <li class="nav-item">
-                <a
-                  href="https://www.creative-tim.com/blog"
-                  class="nav-link text-white"
-                  target="_blank"
-                  >Blog</a
-                >
-              </li>
-              <li class="nav-item">
-                <a
-                  href="https://www.creative-tim.com/license"
-                  class="nav-link pe-0 text-white"
-                  target="_blank"
-                  >License</a
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </footer> -->
   </div>
 </template>
 
 <script>
 import Navbar from '@/examples/PageLayout/Navbar.vue';
 import MaterialInput from '@/components/MaterialInput.vue';
-// import MaterialSwitch from '@/components/MaterialSwitch.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
 import { mapMutations } from 'vuex';
 import { useAuthStore } from '../store/authLogin';
@@ -318,7 +244,7 @@ export default {
   methods: {
     async login() {
       if (!this.userId || !this.userPw) {
-        alert('아이디 및 비밀번호 입력해주세요');
+        alert('아이디 및 비밀번호를 입력해주세요');
         return;
       }
 
@@ -387,7 +313,7 @@ export default {
         alert('조건에 맞는 값이 없습니다');
         return;
       }
-      alert(`아이디는 ${result.user_id} 입니다.`);
+      alert(`귀하의 아이디는 ${result.user_id} 입니다.`);
     },
 
     async findPw() {
@@ -403,7 +329,6 @@ export default {
         alert('조건에 맞는 값이 없습니다');
         return;
       }
-      alert('다음 페이지로 이동');
       this.findPwStep = 2;
     },
 
@@ -416,8 +341,6 @@ export default {
       }
       const result = await findIdPw('findResetPw', {
         user_id: this.findPwUserId,
-        name: this.findPwName,
-        phone: this.findPwPhone,
         newPw: this.findPwNewPw,
       });
       if (!result.ok) {
@@ -430,10 +353,23 @@ export default {
     },
 
     toggleIdModal() {
+      this.findResetModal();
       this.showFindIdModal = !this.showFindIdModal;
     },
     togglePwModal() {
+      this.findResetModal();
       this.showFindPwModal = !this.showFindPwModal;
+    },
+
+    findResetModal() {
+      this.findIdName = '';
+      this.findIdPhone = '';
+      this.findPwUserId = '';
+      this.findPwName = '';
+      this.findPwPhone = '';
+      this.findPwNewPw = '';
+      this.findPwNewPwCheck = '';
+      this.findPwStep = 1;
     },
 
     ...mapMutations(['toggleEveryDisplay', 'toggleHideConfig']),
@@ -442,21 +378,19 @@ export default {
 </script>
 
 <style>
-/* [추가] 모달 배경 스타일 */
 .custom-modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* 반투명 검은색 배경 */
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1050; /* 다른 요소 위에 표시되도록 높게 설정 */
+  z-index: 1050;
 }
 
-/* [추가] 모달 본체 스타일 */
 .custom-modal {
   background: white;
   padding: 30px;

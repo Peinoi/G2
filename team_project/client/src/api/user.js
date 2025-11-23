@@ -11,6 +11,17 @@ export async function checkId(id) {
   }
 }
 
+// 회원가입 -> SMS 인증
+export async function sendSMS(data) {
+  const result = await axios.post('/api/user/sendSMS', { data });
+  return result.data;
+}
+
+export async function verifySMS(phone, code) {
+  const result = await axios.post('/api/user/verifySMS', { phone, code });
+  return result.data;
+}
+
 // 회원가입 -> 개인 회원
 export async function addUser(userData) {
   try {

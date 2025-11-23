@@ -86,7 +86,7 @@
                 :class="color ? color : 'text-body'"
                 style="cursor: pointer"
               >
-                로그 아웃
+                로그아웃
                 <i
                   class="material-icons"
                   :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"
@@ -280,24 +280,24 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from "../Breadcrumbs.vue";
-import { mapMutations, mapState } from "vuex";
-import { useAuthStore } from "@/store/authLogin";
-import { roleMenu } from "@/examples/Menu/roleMenu";
+import Breadcrumbs from '../Breadcrumbs.vue';
+import { mapMutations, mapState } from 'vuex';
+import { useAuthStore } from '@/store/authLogin';
+import { roleMenu } from '@/examples/Menu/roleMenu';
 
 export default {
-  name: "navbar",
+  name: 'navbar',
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ["minNav", "color"],
+  props: ['minNav', 'color'],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
+    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
 
     toggleSidebar() {
       this.navbarMinimize();
@@ -307,17 +307,17 @@ export default {
       // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
       if (this.piniaLogin.isLogin) {
         this.piniaLogin.logout();
-        alert("로그아웃 완료");
+        alert('로그아웃 완료');
       }
 
-      this.$router.push({ name: "SignIn" });
+      this.$router.push({ name: 'SignIn' });
     },
   },
   components: {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(["isRTL", "isAbsolute"]),
+    ...mapState(['isRTL', 'isAbsolute']),
 
     currentRouteName() {
       return this.$route.name;
@@ -469,7 +469,7 @@ export default {
   color: #344767 !important;
 }
 
-.nav-link.font-weight-bold[style*="cursor: pointer"]:hover {
+.nav-link.font-weight-bold[style*='cursor: pointer']:hover {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
