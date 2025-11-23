@@ -144,7 +144,7 @@
                       >
                         이용약관에 동의합니다 |
                         <a
-                          href="../../../pages/privacy.html"
+                          href="#"
                           class="text-dark font-weight-bolder"
                           >이용약관 확인</a
                         >
