@@ -74,9 +74,10 @@
         </ul>
       </div>
 
-      <div class="actions">
+      <!-- 등록 버튼 -->
+      <div class="submit-wrapper">
         <button type="submit" class="btn-submit">
-          {{ isUpdated ? "수정 저장" : "등록" }}
+          {{ isUpdated ? "수정" : "등록" }}
         </button>
 
         <!-- 승인/반려 버튼 : 권한에 따라 보여주면 됩니다 (여기선 예시로 isAdmin 사용) -->
@@ -395,11 +396,11 @@ button {
   color: #fff;
 }
 .btn-submit {
-  width: 100%;
-  background: #4caf50;
-  color: #fff;
+  width: auto;
+  background-color: #4caf50;
+  color: white;
   font-size: 18px;
-  padding: 10px;
+  padding: 10px 20px;
   margin-top: 10px;
 }
 
@@ -426,5 +427,10 @@ button {
   gap: 8px;
   justify-content: flex-end;
   margin-top: 8px;
+}
+.submit-wrapper {
+  display: flex;
+  justify-content: center; /* 수평 중앙 정렬 */
+  margin-top: 20px; /* 버튼 위 여백 */
 }
 </style>
