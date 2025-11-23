@@ -191,7 +191,8 @@ const selectManagerAll = `
     user_code
    ,name
   FROM users
-  WHERE role = 'AA2'   
+  WHERE role = 'AA2'
+  AND is_active = 1
 `;
 
 // 이벤트 단건조회
@@ -217,6 +218,14 @@ FROM event e
 LEFT JOIN organization org ON e.org_code = org.org_code
 LEFT JOIN users u ON e.user_code = u.user_code
 WHERE e.event_code = ?
+`;
+
+// 결과보고서 승인 유무
+const selectResultStatus = `
+  SELECT e.event_code
+		    ,er.result_status
+  FROM event e
+  join event_result er on e.event_code = er.event_code
 `;
 
 // 이벤트 등록
@@ -263,6 +272,9 @@ SELECT
     ea.sub_event_code,
     e.event_name,
     se.sub_event_name,
+    se.sub_event_start_date,
+    se.sub_event_end_date,
+    se.sub_recruit_count,
     -- 신청일정
     CASE
         WHEN ea.apply_type = 'DD1' THEN 
@@ -589,6 +601,7 @@ const selectAttendance = `
       -- 이벤트 / 서브 이벤트 / 매니저
       e.event_code,
       e.event_name,
+      e.user_code,
       u.name AS manager_name,
       se.sub_event_code,
       se.sub_event_name
@@ -606,6 +619,42 @@ const selectAttendance = `
     AND (u.name LIKE ? OR ? IS NULL)
   ORDER BY ea.apply_date DESC
   LIMIT ? OFFSET ?
+`;
+
+// 내가 등록한 이벤트 참가자 목록
+const selectMyAttendance = `
+  SELECT 
+      ea.apply_code,
+      ea.apply_date,
+      ea.apply_status,
+      ea.attend_status,
+
+      -- 신청자 정보
+      u2.name AS applicant_name,
+      u2.ssn AS applicant_ssn,
+      u2.phone AS applicant_phone,
+      u2.address AS applicant_address,
+      u2.email AS applicant_email,
+      u2.org_code AS applicant_org_code,
+
+      -- 자녀 정보 (한 명)
+      c.child_name,
+      c.gender AS child_gender,
+      c.ssn AS child_ssn,
+
+      -- 이벤트 / 서브 이벤트 / 매니저
+      e.event_code,
+      e.event_name,
+      e.user_code,
+      u.name AS manager_name
+
+  FROM event_apply ea
+  LEFT JOIN users u2 ON ea.user_code = u2.user_code
+  LEFT JOIN child c ON u2.user_code = c.user_code
+  LEFT JOIN event e ON ea.event_code = e.event_code
+  LEFT JOIN users u ON e.user_code = u.user_code
+  WHERE ea.event_code = ?
+  ORDER BY ea.apply_date DESC
 `;
 
 // 참가자/자녀 단건 조회
@@ -731,4 +780,6 @@ module.exports = {
   // getApprovalForMyApply,
   updateApprovalApproveForMyApply,
   updateApprovalRejectForMyApply,
+  selectMyAttendance,
+  selectResultStatus,
 };

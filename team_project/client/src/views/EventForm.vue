@@ -41,6 +41,7 @@
               type="date"
               v-model="eventInfo.recruit_start_date"
               :min="dateFormat(today, 'yyyy-MM-dd')"
+              required
             />
           </div>
           <div>
@@ -51,6 +52,7 @@
               :min="
                 eventInfo.recruit_start_date || dateFormat(today, 'yyyy-MM-dd')
               "
+              required
             />
           </div>
 
@@ -61,6 +63,7 @@
               type="date"
               v-model="eventInfo.event_start_date"
               :min="getNextDay(eventInfo.recruit_end_date)"
+              required
             />
           </div>
           <div>
@@ -69,6 +72,7 @@
               type="date"
               v-model="eventInfo.event_end_date"
               :min="eventInfo.event_start_date"
+              required
             />
           </div>
         </div>
@@ -95,6 +99,7 @@
                 type="text"
                 v-model="item.name"
                 placeholder="세부 이벤트명 입력"
+                required
               />
             </div>
             <div>
@@ -103,6 +108,7 @@
                 type="number"
                 v-model="item.max_participants"
                 placeholder="인원"
+                required
               />
             </div>
             <div>
@@ -111,6 +117,7 @@
                 type="datetime-local"
                 v-model="item.start"
                 :min="eventInfo.event_start_date + 'T00:00'"
+                required
               />
             </div>
             <div>
@@ -119,6 +126,7 @@
                 type="datetime-local"
                 v-model="item.end"
                 :min="item.start"
+                required
               />
             </div>
           </div>
@@ -159,7 +167,7 @@
           <select v-model="manager.user_code">
             <option disabled value="">매니저 선택</option>
             <option
-              v-for="m in managerList"
+              v-for="m in filteredManagerList"
               :key="m.user_code"
               :value="m.user_code"
             >
@@ -258,6 +266,15 @@ const addTime = () => {
 };
 const removeTime = (index) => eventTimes.value.splice(index, 1);
 
+// 서브매니저 선택 시 본인은 제외
+const filteredManagerList = computed(() => {
+  return managerList.value.filter(
+    (m) =>
+      m.user_code !== user_code && // 본인 제외
+      m.user_code !== eventInfo.value.user_code // 메인 매니저 제외
+  );
+});
+
 // 세부 이벤트 총 참여자 합계 계산
 const totalSubParticipants = computed(() =>
   eventTimes.value.reduce(
@@ -268,8 +285,36 @@ const totalSubParticipants = computed(() =>
 
 // 등록/수정
 const submitForm = async () => {
-  // ✅ 세부 이벤트 인원 합계 체크
+  // ✅ 최대 참여자 1명 이상 체크
+  if (
+    !eventInfo.value.max_participants ||
+    Number(eventInfo.value.max_participants) < 1
+  ) {
+    alert("이벤트 최대 참여자는 최소 1명 이상이어야 합니다.");
+    return;
+  }
+
+  // ✅ 예약제일 때 세부 이벤트 최소 1개 이상 체크
   if (eventInfo.value.event_type === "DD2") {
+    if (eventTimes.value.length === 0) {
+      alert("예약제 이벤트는 최소 1개의 세부 이벤트를 등록해야 합니다.");
+      return;
+    }
+
+    // 각 세부 이벤트 필수 입력 체크
+    for (const item of eventTimes.value) {
+      if (!item.name || !item.start || !item.end) {
+        alert(`세부 이벤트 모든 항목을 입력해야 합니다.`);
+        return;
+      }
+
+      if (Number(item.max_participants) < 1) {
+        alert(`세부 이벤트 최대 참여자는 최소 1명 이상이어야 합니다.`);
+        return;
+      }
+    }
+
+    // ✅ 세부 이벤트 인원 합계 체크
     if (totalSubParticipants.value > Number(eventInfo.value.max_participants)) {
       alert(
         `세부 이벤트 총 인원(${totalSubParticipants.value}명)이 이벤트 최대 인원(${eventInfo.value.max_participants}명)을 초과했습니다.`
@@ -277,7 +322,6 @@ const submitForm = async () => {
       return;
     }
   }
-
   try {
     const formData = new FormData();
 

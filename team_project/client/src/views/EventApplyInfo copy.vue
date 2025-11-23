@@ -1,123 +1,184 @@
 <template>
   <section class="p-6 max-w-5xl mx-auto space-y-6">
     <!-- 상단 액션라인 -->
-    <div class="flex justify-between items-center">
+    <div class="form-action">
       <MaterialButton color="dark" size="sm" variant="outlined" @click="goBack">
         ← 목록으로
       </MaterialButton>
-
-      <div class="flex items-center gap-2">
-        <!-- 일반 사용자 신청 버튼 -->
-        <MaterialButton v-if="canApply" @click="applySimple"
-          >신청하기</MaterialButton
-        >
-
-        <MaterialButton v-else-if="applied" disabled>신청 완료</MaterialButton>
-
-        <!-- 작성자 버튼 -->
-        <MaterialButton v-if="canEdit" @click="goEdit">수정하기</MaterialButton>
-
-        <MaterialButton v-if="canReEdit" @click="goEdit"
-          >재수정하기</MaterialButton
-        >
-
-        <!-- 관리자 승인/반려 -->
-        <MaterialButton v-if="isAdmin" @click="handleApprove"
-          >승인</MaterialButton
-        >
-
-        <MaterialButton v-if="isAdmin" @click="handleReject"
-          >반려</MaterialButton
-        >
-      </div>
     </div>
 
-    <!-- 이벤트 기본정보 카드 -->
-    <div class="detail-card space-y-4">
-      <header class="flex justify-between items-center">
-        <h2 class="text-2xl font-semibold">이벤트 상세</h2>
+    <!-- 1. 메인 이벤트 카드 -->
+    <div class="detail-card">
+      <header class="flex justify-between items-center detail-header">
+        <h2 class="text-2xl font-semibold">메인 이벤트 정보</h2>
         <span class="status-pill" :class="statusClass(event.register_status)">
           {{ event.register_status_name }}
         </span>
       </header>
 
+      <!-- 대표 이미지 -->
       <div class="event-main-image">
         <img v-if="mainImage" :src="mainImage" alt="대표 이미지" />
         <div v-else class="no-image">이미지 없음</div>
       </div>
 
-      <div class="meta-card">
-        <div class="meta-row">
-          <span>이벤트명</span><span>{{ event.event_name }}</span>
-        </div>
-        <div class="meta-row">
-          <span>기관명</span><span>{{ event.org_name }}</span>
-        </div>
-        <div class="meta-row">
-          <span>매니저</span><span>{{ event.main_manager_name }}</span>
-        </div>
-        <div class="meta-row">
-          <span>장소</span><span>{{ event.event_location }}</span>
-        </div>
-        <div class="meta-row">
-          <span>최대 참여자</span><span>{{ event.max_participants }}</span>
-        </div>
-      </div>
+      <!-- 기본 정보 -->
+      <div class="meta-card improved-meta">
+        <div class="info-grid">
+          <div class="info-label">이벤트명</div>
+          <div class="info-value">{{ event.event_name }}</div>
 
-      <div class="block-card">
-        <div class="field-block">
-          <div class="field-label">모집 기간</div>
-          <div class="field-value">
+          <div class="info-label">기관명</div>
+          <div class="info-value">{{ event.org_name }}</div>
+
+          <div class="info-label">장소</div>
+          <div class="info-value">{{ event.event_location }}</div>
+
+          <div class="info-label">최대 참여자</div>
+          <div class="info-value">{{ event.max_participants }}</div>
+
+          <div class="info-label">모집 기간</div>
+          <div class="info-value">
             {{ formatDate(event.recruit_start_date) }} ~
             {{ formatDate(event.recruit_end_date) }}
           </div>
-        </div>
-        <div class="field-block">
-          <div class="field-label">진행 기간</div>
-          <div class="field-value">
+
+          <div class="info-label">진행 기간</div>
+          <div class="info-value">
             {{ formatDate(event.event_start_date) }} ~
             {{ formatDate(event.event_end_date) }}
           </div>
         </div>
       </div>
 
+      <!-- 내용 (가독성 개선된 별도 박스) -->
+      <div class="content-block">
+        <div class="content-title">내용</div>
+        <div class="content-box whitespace-pre-line">
+          {{ event.event_content }}
+        </div>
+      </div>
+
+      <!-- 첨부파일 -->
       <div class="block-card">
         <div class="field-block">
-          <div class="field-label">내용</div>
-          <div class="field-value whitespace-pre-line">
-            {{ event.event_content }}
+          <div class="field-label">첨부파일</div>
+
+          <div v-if="event.attachments?.length">
+            <ul class="file-list">
+              <li v-for="file in event.attachments" :key="file.server_filename">
+                <span class="file-name" @click="previewFile(file)">
+                  {{ file.original_filename }}
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div v-else class="text-xs text-gray-400">
+            첨부된 파일이 없습니다.
           </div>
         </div>
-      </div>
 
-      <!-- 예약 일정 카드 -->
-      <div
-        v-if="event.event_type === 'DD2' && event.sub_events.length"
-        class="block-card"
-      >
-        <div class="field-block">
-          <div class="field-label">예약 가능한 일정</div>
-          <FullCalendar ref="calendarRef" :options="calendarOptions" />
-        </div>
-      </div>
-
-      <!-- 첨부파일 카드 -->
-      <div v-if="event.attachments.length" class="block-card">
-        <div class="field-block">
-          <div class="field-label">첨부파일</div>
-          <ul class="file-list">
-            <li v-for="file in event.attachments" :key="file.server_filename">
-              <span class="file-name" @click="previewFile(file)">
-                {{ file.original_filename }}
-              </span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- 이미지 미리보기 모달 -->
+        <!-- 이미지 미리보기 -->
         <div v-if="previewImage" class="preview-modal" @click="closePreview">
           <img :src="previewImage" class="preview-img" />
         </div>
+      </div>
+    </div>
+
+    <!-- 2. 세부 이벤트 정보 테이블 -->
+    <div v-if="event.sub_events.length" class="detail-card">
+      <h2 class="text-xl font-semibold mb-4">세부 이벤트 정보</h2>
+
+      <table class="sub-event-table">
+        <thead>
+          <tr>
+            <th>세부이벤트코드</th>
+            <th>세부이벤트명</th>
+            <th>시행기간</th>
+            <th>모집인원</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="sub in event.sub_events" :key="sub.sub_event_code">
+            <td>{{ sub.sub_event_code }}</td>
+            <td>{{ sub.sub_event_name }}</td>
+            <td>
+              {{ sub.sub_event_start_date }} ~ {{ sub.sub_event_end_date }}
+            </td>
+            <td>{{ sub.sub_recruit_count }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 3. 매니저 정보 -->
+    <div
+      class="detail-card"
+      v-if="mainManager.manager_name || subManagers.length"
+    >
+      <h2 class="text-lg font-semibold mb-4">매니저 정보</h2>
+
+      <!-- 메인 매니저 -->
+      <div v-if="mainManager.manager_name" class="meta-card mb-4">
+        <h5>메인 매니저 정보</h5>
+        <div class="meta-row">
+          <span>이름</span><span>{{ mainManager.manager_name }}</span>
+        </div>
+        <div class="meta-row">
+          <span>부서</span><span>{{ mainManager.department }}</span>
+        </div>
+        <div class="meta-row">
+          <span>이메일</span><span>{{ mainManager.email }}</span>
+        </div>
+        <div class="meta-row">
+          <span>전화번호</span><span>{{ mainManager.phone }}</span>
+        </div>
+      </div>
+
+      <!-- 서브 매니저 -->
+      <div v-if="subManagers.length" class="meta-card">
+        <h5>서브 매니저 정보</h5>
+
+        <table class="manager-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>부서</th>
+              <th>이메일</th>
+              <th>전화번호</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="mgr in subManagers" :key="mgr.manager_num">
+              <td>{{ mgr.manager_name }}</td>
+              <td>{{ mgr.department }}</td>
+              <td>{{ mgr.email }}</td>
+              <td>{{ mgr.phone }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. 관리자 승인/반려 -->
+    <div class="pt-4 border-t mt-2 space-y-3" v-if="isAdmin">
+      <div class="approve-actions">
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleApprove"
+        >
+          승인
+        </MaterialButton>
+        <MaterialButton
+          color="dark"
+          size="sm"
+          class="px-4"
+          @click="handleReject"
+        >
+          반려
+        </MaterialButton>
       </div>
     </div>
   </section>
@@ -127,14 +188,10 @@
 import { ref, onMounted, nextTick, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
-import FullCalendar from "@fullcalendar/vue3";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const route = useRoute();
 const router = useRouter();
-const calendarRef = ref(null);
 
 // 로그인 유저 코드
 const getLoginUserCode = () => {
@@ -147,6 +204,7 @@ const getLoginUserCode = () => {
     return null;
   }
 };
+const userCode = getLoginUserCode();
 
 // 로그인 권한
 const getLoginRole = () => {
@@ -159,10 +217,9 @@ const getLoginRole = () => {
     return null;
   }
 };
+const role = ref(getLoginRole());
 
 const eventCode = Number(route.params.eventCode || 0);
-const role = ref(Number(route.query.role || 1)); // 1: 일반, 2: 작성자, 3: 관리자
-const loginRole = ref(getLoginRole());
 
 const event = ref({
   sub_events: [],
@@ -178,44 +235,21 @@ const previewImage = ref("");
 // 파일 미리보기
 const previewFile = (file) => {
   const ext = file.original_filename.split(".").pop().toLowerCase();
-
-  // 이미지면 모달로 보기
   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
     previewImage.value = file.file_path;
     return;
   }
-
-  // PDF면 새 창 미리보기
   if (ext === "pdf") {
     window.open(file.file_path, "_blank");
     return;
   }
-
-  // 그 외 파일은 다운로드
   window.location.href = file.file_path;
 };
+const closePreview = () => (previewImage.value = "");
 
-const closePreview = () => {
-  previewImage.value = "";
-};
-
-// 상태 버튼 표시
-const canApply = computed(
-  () =>
-    loginRole.value === "AA1" &&
-    event.value.event_type === "DD1" &&
-    !isApplied.value
-);
-const applied = computed(() => loginRole.value === "AA1" && isApplied.value);
-const canEdit = computed(
-  () => role.value === 2 && event.value.register_status === "BA2"
-);
-const canReEdit = computed(
-  () => role.value === 2 && event.value.register_status === "BA3"
-);
-
+// 관리자 권한
 const isAdmin = computed(
-  () => loginRole.value === "AA3" && event.value.register_status !== "BA2"
+  () => role.value === "AA3" && event.value.register_status !== "BA2"
 );
 
 // 상태 Pill 클래스
@@ -235,117 +269,47 @@ const statusClass = (status) => {
 // 날짜 포맷
 const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 
+// 매니저 필터링
+const mainManager = computed(
+  () => event.value.sub_managers?.find((m) => m.manager_type === "DA1") || {}
+);
+const subManagers = computed(
+  () => event.value.sub_managers?.filter((m) => m.manager_type === "DA2") || []
+);
+
 // 이벤트 조회
 const fetchEvent = async () => {
   try {
-    console.log("eventCode >>>", eventCode);
-
-    const userCode = getLoginUserCode();
     const res = await axios.get(`/api/event/${eventCode}`, {
       params: { user_code: userCode },
     });
     event.value = res.data.data || {};
     isApplied.value = !!event.value.alreadyApplied;
 
-    // 대표 이미지
     const img = event.value.attachments.find((x) =>
       /\.(jpg|jpeg|png|gif)$/i.test(x.original_filename)
     );
     mainImage.value = img ? img.file_path : "";
-
-    // 캘린더 이벤트
-    calendarOptions.value.events = (event.value.sub_events || []).map((s) => ({
-      id: String(s.sub_event_code),
-      title: s.sub_event_name,
-      start: s.sub_event_start_date,
-      end: s.sub_event_end_date,
-      extendedProps: { code: s.sub_event_code, isApplied: !!s.applied },
-      color: s.applied ? "gray" : undefined,
-    }));
-
     await nextTick();
   } catch (err) {
     console.error("fetchEvent error:", err);
   }
 };
 
-// 단순 신청
-const applyEvent = async ({ sub_event_code = null }) => {
-  const userCode = getLoginUserCode();
-  if (!userCode) return alert("로그인 상태가 아닙니다.");
-
-  const res = await axios.post("/api/event/apply", {
-    apply_type: event.value.event_type,
-    event_code: event.value.event_code,
-    sub_event_code,
-    user_code: userCode,
-  });
-
-  if (res.data && res.data.status) {
-    alert("신청 완료! 내 신청 내역에 등록되었습니다.");
-    return true;
-  } else {
-    alert("신청 실패: " + res.data.message);
-    return false;
-  }
-};
-
-// 신청 버튼
-const applySimple = async () => {
-  if (loginRole.value !== "AA1")
-    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
-
-  if (isApplied.value) return alert("이미 신청했습니다.");
-
-  const ok = await applyEvent({});
-  if (ok) isApplied.value = true;
-};
-
-// 캘린더 클릭 예약
-const onEventClick = async (info) => {
-  if (loginRole.value !== "AA1")
-    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
-
-  if (info.event.extendedProps.isApplied)
-    return alert("이미 신청한 일정입니다.");
-
-  const confirmApply = confirm(`일정 "${info.event.title}" 예약하시겠습니까?`);
-  if (!confirmApply) return;
-
-  const success = await applyEvent({
-    sub_event_code: info.event.extendedProps.code,
-  });
-  if (!success) return;
-
-  // UI 업데이트
-  info.event.setProp("color", "gray");
-  info.event.setExtendedProp("isApplied", true);
-
-  const idx = event.value.sub_events.findIndex(
-    (s) => s.sub_event_code === info.event.extendedProps.code
-  );
-  if (idx !== -1) event.value.sub_events[idx].applied = true;
-
-  calendarRef.value.getApi().render();
-};
-
-// 승인 (관리자)
+// 승인/반려
 const handleApprove = async () => {
   try {
     const res = await axios.post(`/api/event/${eventCode}/approve`);
     if (res.data.success) {
       alert("승인되었습니다.");
       await fetchEvent();
-    } else {
-      alert(res.data.message || "승인 실패");
-    }
+    } else alert(res.data.message || "승인 실패");
   } catch (err) {
     console.error(err);
     alert("서버 오류: " + (err.message || ""));
   }
 };
 
-// 반려 (관리자)
 const handleReject = async () => {
   const reason = prompt("반려 사유를 입력해주세요:");
   if (!reason) return;
@@ -354,9 +318,7 @@ const handleReject = async () => {
     if (res.data.success) {
       alert("반려 처리되었습니다.");
       await fetchEvent();
-    } else {
-      alert(res.data.message || "반려 실패");
-    }
+    } else alert(res.data.message || "반려 실패");
   } catch (err) {
     console.error(err);
     alert("서버 오류: " + (err.message || ""));
@@ -365,49 +327,97 @@ const handleReject = async () => {
 
 // 화면 이동
 const goBack = () => router.back();
-const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
-// FullCalendar 옵션
-const calendarOptions = ref({
-  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: "dayGridMonth",
-  events: [],
-  eventClick: onEventClick,
-});
-
-onMounted(fetchEvent);
+onMounted(() => fetchEvent());
 </script>
 
 <style scoped>
-/* 카드 공통 스타일 */
-.detail-card,
-.block-card,
+section {
+  color: #111827;
+}
+
+.form-action {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.detail-card {
+  background: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.detail-card + .detail-card {
+  margin-top: 2rem;
+}
+
+.detail-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .meta-card {
   background: #fff;
   border-radius: 0.9rem;
   border: 1px solid #e5e7eb;
-  padding: 1.5rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-}
-.block-card {
   padding: 1rem;
+  margin-bottom: 1rem;
 }
-.meta-card .meta-row {
+.meta-card h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.meta-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
 }
-.meta-card .meta-row span:first-child {
+.meta-row span:first-child {
   color: #6b7280;
 }
-.meta-card .meta-row span:last-child {
+.meta-row span:last-child {
   color: #111827;
+}
+
+/* ============================
+   📌 메인이벤트 내용 가독성 박스 추가
+   ============================ */
+.content-block {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem; /* 🔥 이거 추가 */
+}
+
+.content-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #6b7280;
+}
+
+.content-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.7rem;
+  padding: 1rem;
+  min-height: 120px;
+  max-height: 350px;
+  overflow-y: auto;
+  color: #111827;
+  line-height: 1.45;
 }
 
 /* 상태 Pill */
 .status-pill {
   display: inline-flex;
   align-items: center;
+  gap: 0.25rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
   font-size: 0.75rem;
@@ -428,13 +438,7 @@ onMounted(fetchEvent);
   color: #b91c1c;
   border-color: #fecaca;
 }
-.status-pill--resubmit {
-  background: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
 
-/* 이미지 영역 */
 .event-main-image {
   width: 100%;
   height: 300px;
@@ -450,7 +454,6 @@ onMounted(fetchEvent);
   object-fit: cover;
 }
 
-/* 첨부파일 리스트 */
 .file-list {
   margin-top: 0.5rem;
   color: #374151;
@@ -461,8 +464,83 @@ onMounted(fetchEvent);
 .file-list li + li {
   margin-top: 0.25rem;
 }
-.file-list a {
-  color: #2563eb;
-  text-decoration: underline;
+
+.sub-event-table,
+.manager-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+.sub-event-table th,
+.sub-event-table td,
+.manager-table th,
+.manager-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+.sub-event-table th,
+.manager-table th {
+  background: #f3f4f6;
+}
+
+.approve-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.preview-img {
+  max-width: 90%;
+  max-height: 90%;
+}
+
+/* =============================
+   📌 기본정보 가독성 개선 스타일
+   ============================= */
+.improved-meta {
+  padding: 0; /* 외곽 패딩 제거 */
+  overflow: hidden;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr; /* 라벨 160px, 값 나머지 */
+  border: 1px solid #e5e7eb;
+  border-radius: 0.8rem;
+}
+
+.info-label {
+  background: #f9fafb;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+}
+
+.info-value {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 마지막 row border 제거 */
+.info-label:nth-last-child(2),
+.info-value:last-child {
+  border-bottom: none;
 }
 </style>

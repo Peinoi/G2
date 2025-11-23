@@ -135,6 +135,9 @@ async function selectEventOneFull(event_code, user_code) {
   try {
     conn = await pool.getConnection();
 
+    // 결과보고서 승인 유무
+    const resultStatus = await conn.query(eventSQL.selectResultStatus);
+
     // 1️⃣ 이벤트 단건조회
     const rows = await conn.query(eventSQL.selectEventOne, [event_code]);
     const event = rows[0];
@@ -212,6 +215,7 @@ async function selectEventOneFull(event_code, user_code) {
         attachments,
         sub_managers: subManagers,
         alreadyApplied: false, // 예약제 버튼
+        resultStatus,
       };
     }
 
@@ -222,6 +226,7 @@ async function selectEventOneFull(event_code, user_code) {
       attachments,
       sub_managers: subManagers,
       alreadyApplied, // 신청제 버튼
+      resultStatus,
     };
     // 반환
   } catch (err) {
@@ -1155,6 +1160,40 @@ async function selectAttendance(filters) {
 }
 
 // ==========================
+// 내가 등록한 이벤트 참가자 목록 조회
+// ==========================
+async function selectMyAttendance(eventCode) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+
+    const rows = await conn.query(eventSQL.selectMyAttendance, [eventCode]);
+
+    for (const apply of rows) {
+      apply.apply_status_name = await commonCodeService.getCodeName(
+        "DE",
+        apply.apply_status
+      );
+      apply.attend_status_name = await commonCodeService.getCodeName(
+        "DG",
+        apply.attend_status
+      );
+      apply.child_gender_name = await commonCodeService.getCodeName(
+        "AC",
+        apply.child_gender
+      );
+    }
+
+    return rows;
+  } catch (err) {
+    console.error("[eventMapper.js || selectAttendance 실패]", err.message);
+    throw err;
+  } finally {
+    if (conn) conn && conn.release();
+  }
+}
+
+// ==========================
 // 참가자/자녀 단건 조회
 // ==========================
 async function selectAttendanceOne(apply_code) {
@@ -1278,4 +1317,5 @@ module.exports = {
   selectAttendanceOne,
   approveMyApply,
   rejectMyApply,
+  selectMyAttendance,
 };

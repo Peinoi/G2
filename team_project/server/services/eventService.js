@@ -308,6 +308,17 @@ async function getAttendance(filters) {
   }
 }
 
+// 내가 등록한 이벤트 참가자 목록 조회
+async function getMyAttendance(eventCode) {
+  try {
+    const result = await eventMapper.selectMyAttendance(eventCode);
+    return result;
+  } catch (err) {
+    console.error("[eventService.js || getMyAttendance 실패]", err.message);
+    throw err;
+  }
+}
+
 // 신청자/자녀 조회
 async function getAttendanceOne(apply_code) {
   try {
@@ -361,4 +372,5 @@ module.exports = {
   getAttendanceOne,
   approveMyApply,
   rejectMyApply,
+  getMyAttendance,
 };

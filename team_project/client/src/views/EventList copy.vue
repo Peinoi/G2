@@ -1,22 +1,30 @@
 <template>
   <div class="event-list">
-    <!-- 상단: 이벤트 목록 제목 + 이벤트 등록 버튼 -->
     <div class="top-bar">
       <h2>이벤트 목록</h2>
-      <div v-if="isManager" class="add-event-wrapper">
+      <!-- 담당자 전용 영역: 이벤트 등록 버튼 -->
+      <div v-if="isManager" class="addEvent">
         <MaterialButton
           color="dark"
           size="sm"
           class="px-4"
           @click="goToEventAdd()"
+          >이벤트 등록</MaterialButton
         >
-          이벤트 등록
-        </MaterialButton>
       </div>
     </div>
 
     <!-- 검색 조건 -->
     <div class="search-form">
+      <!-- <select v-model="filters.recruit_status">
+        <option value="">모집상태 선택</option>
+        <option value="DC1">모집예정</option>
+        <option value="DC2">모집중</option>
+        <option value="DC3">모집마감</option>
+        <option value="DC4">진행중</option>
+        <option value="DC5">종료</option>
+      </select> -->
+
       <!-- 모집기간 -->
       <div class="form-field">
         <label>모집기간</label>
@@ -66,21 +74,20 @@
         <MaterialButton
           color="dark"
           size="sm"
-          class="material-button"
           @click="resetFilters"
+          style="height: 42px; line-height: 42px; padding: 0 20px"
+          >초기화</MaterialButton
         >
-          초기화
-        </MaterialButton>
       </div>
     </div>
 
-    <!-- 카드 목록 -->
     <div class="cards">
       <div
         class="card"
         v-for="event in events"
         :key="event.event_code"
         @click="goToEventInfo(event.event_code)"
+        style="cursor: pointer"
       >
         <div class="card-image">
           <img
@@ -119,6 +126,7 @@ import MaterialButton from "@/components/MaterialButton.vue";
 
 const router = useRouter();
 
+// 로그인 권한
 const getLoginRole = () => {
   const userStr = localStorage.getItem("user");
   if (!userStr) return null;
@@ -130,14 +138,20 @@ const getLoginRole = () => {
   }
 };
 const loginRole = ref(getLoginRole());
-const isManager = computed(() => loginRole.value === "AA2");
+const isManager = computed(() => {
+  // 로그인 권한이 AA2일때만 버튼 보여주기
+  return loginRole.value === "AA2";
+});
 
 const goToEventAdd = () => {
   router.push({ name: "EventAdd" });
 };
 
 const goToEventInfo = (event_code) => {
-  if (!event_code) return;
+  if (!event_code) {
+    console.warn("eventCode가 없습니다!");
+    return;
+  }
   router.push({
     name: "EventInfo",
     params: { eventCode: event_code },
@@ -145,6 +159,8 @@ const goToEventInfo = (event_code) => {
 };
 
 const events = ref([]);
+
+// 검색 조건
 const filters = ref({
   recruit_status: "",
   recruit_start_date: "",
@@ -156,8 +172,9 @@ const filters = ref({
 
 const fetchEvents = async () => {
   try {
+    // 쿼리스트링으로 전달
     const query = new URLSearchParams(filters.value).toString();
-    const res = await axios.get(`/api/event/list?${query}`);
+    const res = await axios.get(`/api/event/list?${query}`); // 백엔드에서 위 쿼리 결과 반환
     events.value = res.data.data;
   } catch (err) {
     console.error("이벤트 메인 조회 실패", err);
@@ -177,8 +194,16 @@ const resetFilters = () => {
   fetchEvents();
 };
 
-watch(filters, fetchEvents, { deep: true });
+// filters 변경 시 자동으로 fetchEvents 호출
+watch(
+  filters,
+  () => {
+    fetchEvents();
+  },
+  { deep: true } // filters 안의 속성까지 모두 감시
+);
 
+// 날짜 포맷
 const formatDate = (dateStr) => {
   if (!dateStr) return "";
   return dateFormat(dateStr, "yyyy-MM-dd");
@@ -197,25 +222,19 @@ onMounted(() => {
   font-family: "Noto Sans KR", sans-serif;
 }
 
-/* 상단 바: 제목 + 버튼 */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
-.top-bar h2 {
+h2 {
   font-size: 28px;
   font-weight: 700;
   color: #1f2937;
   margin: 0;
-}
-
-/* 이벤트 등록 버튼 */
-.add-event-wrapper {
-  display: flex;
-  justify-content: flex-end;
+  text-align: left;
 }
 
 /* 검색 폼 */
@@ -264,18 +283,19 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-/* 초기화 버튼 */
+/* 데스크탑 - 초기화 버튼 높이 input과 동일하게 */
 .form-actions .material-button {
-  height: 42px;
+  height: 42px; /* input 높이와 동일 */
+  min-height: 42px;
+  padding: 0 20px; /* 가로 비율 맞춤 */
   line-height: 42px;
-  padding: 0 20px;
   font-size: 14px;
   border-radius: 6px;
 }
 
 .form-actions {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-end; /* 이 줄이 버튼을 input과 세로선상에 맞춥니다. */
   gap: 8px;
 }
 
@@ -343,6 +363,12 @@ onMounted(() => {
   color: #4b5563;
 }
 
+/* 담당자 전용 버튼 */
+.addEvent {
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
 /* 모바일 대응 */
 @media (max-width: 640px) {
   .search-form {
@@ -351,10 +377,18 @@ onMounted(() => {
     padding: 12px;
   }
 
+  .form-actions {
+    display: flex;
+    align-items: center; /* 버튼과 input 세로 중앙 정렬 */
+    gap: 8px;
+  }
+
+  /* 초기화 버튼 높이 input과 동일하게 맞추기 */
   .form-actions .material-button {
-    height: 42px !important;
-    line-height: 42px !important;
-    padding: 0 16px !important;
+    height: 42px !important; /* input과 동일 높이 */
+    min-height: 42px !important;
+    padding: 0 16px !important; /* 좌우 여백 */
+    line-height: 42px !important; /* 텍스트 세로 중앙 정렬 */
     font-size: 14px !important;
     border-radius: 6px !important;
   }
