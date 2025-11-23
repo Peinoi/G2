@@ -1,123 +1,93 @@
 <template>
-  <div class="apv-page">
-    <h3 class="fw-bold text-start text-dark mb-4">담당자 배정 목록</h3>
+  <section class="p-6 max-w-6xl mx-auto pb-0">
+    <div class="page-inner">
+      <h3 class="fw-bold text-start text-dark mb-4">담당자 배정 목록</h3>
 
-    <div class="apv-toolbar">
-      <div class="apv-filters">
-        <select v-model="stateInput" class="apv-select">
-          <option value="">전체</option>
-          <option value="미검토">미검토</option>
-          <option value="검토완료">검토완료</option>
-        </select>
+      <div class="apv-toolbar">
+        <div class="apv-filters">
+          <select v-model="stateInput" class="apv-select">
+            <option value="">전체</option>
+            <option value="미검토">미검토</option>
+            <option value="검토완료">검토완료</option>
+          </select>
 
-        <input
-          v-model.trim="searchChildInput"
-          class="apv-input"
-          placeholder="신청자명"
-          @keyup.enter="searchList"
-        />
+          <input
+            v-model.trim="searchChildInput"
+            class="apv-input"
+            placeholder="신청자명"
+            @keyup.enter="searchList"
+          />
 
-        <input
-          v-model.trim="searchManagerInput"
-          class="apv-input"
-          placeholder="담당자명"
-          @keyup.enter="searchList"
-        />
+          <input
+            v-model.trim="searchManagerInput"
+            class="apv-input"
+            placeholder="담당자명"
+            @keyup.enter="searchList"
+          />
+        </div>
+        <button class="apv-btn apv-btn-outline" @click="searchList">
+          조회
+        </button>
       </div>
-      <button class="apv-btn apv-btn-outline" @click="searchList">조회</button>
-    </div>
 
-    <div class="apv-table-wrap">
-      <table class="apv-table">
-        <thead>
-          <tr>
-            <th
-              style="
-                width: 50px;
-                min-width: 50px;
-                max-width: 50px;
-                overflow: hidden;
-              "
-            >
-              순번
-            </th>
-            <th
-              style="
-                width: 120px;
-                min-width: 120px;
-                max-width: 120px;
-                overflow: hidden;
-              "
-            >
-              이름
-            </th>
-            <th
-              style="
-                width: 120px;
-                min-width: 120px;
-                max-width: 120px;
-                overflow: hidden;
-              "
-            >
-              신청일
-            </th>
-            <th
-              style="
-                width: 120px;
-                min-width: 120px;
-                max-width: 120px;
-                overflow: hidden;
-              "
-            >
-              담당자
-            </th>
+      <div class="table-card">
+        <table class="nice-table">
+          <thead>
+            <tr>
+              <th class="th-cell text-center w-14">No</th>
+              <th class="th-cell">이름</th>
+              <th class="th-cell">신청일</th>
+              <th class="th-cell">담당자</th>
+              <th class="th-cell text-center">단계</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in list" :key="item.id">
+              <td class="td-cell text-center">
+                {{ (currentPage - 1) * pageSize + index + 1 }}
+              </td>
+              <td class="td-cell text-left">
+                {{ item.childName ? item.childName : item.writerName }}
+              </td>
+              <td class="td-cell text-left">{{ item.submitAt }}</td>
+              <td class="td-cell text-center">{{ item.managerName }}</td>
+              <td class="apv-actions-cell">
+                {{ item.status }}
 
-            <th style="width: 200px">단계</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, index) in list" :key="item.id">
-            <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-            <td>{{ item.childName ? item.childName : item.writerName }}</td>
-            <td>{{ item.submitAt }}</td>
-            <td>{{ item.managerName }}</td>
-            <td class="apv-actions-cell">
-              {{ item.status }}
-
-              <div class="status-change-btns">
-                <span
-                  v-if="item.status === '검토완료'"
-                  class="apv-disabled-text"
-                >
-                  변경불가
-                </span>
-                <div v-else>
-                  <template v-for="key in allStatusKeys" :key="key">
-                    <button
-                      v-if="item.status !== key"
-                      :class="[
-                        'apv-btn',
-                        'apv-btn-sm',
-                        { 'apv-btn-success': key == '검토완료' },
-                      ]"
-                      @click="changeStatus(item, key)"
-                    >
-                      {{ key == "미검토" ? "미검토" : key }}
-                    </button>
-                  </template>
+                <div class="status-change-btns">
+                  <span
+                    v-if="item.status === '검토완료'"
+                    class="apv-disabled-text"
+                  >
+                    변경불가
+                  </span>
+                  <div v-else>
+                    <template v-for="key in allStatusKeys" :key="key">
+                      <button
+                        v-if="item.status !== key"
+                        :class="[
+                          'apv-btn',
+                          'apv-btn-sm',
+                          { 'apv-btn-success': key == '검토완료' },
+                        ]"
+                        @click="changeStatus(item, key)"
+                      >
+                        {{ key == '미검토' ? '미검토' : key }}
+                      </button>
+                    </template>
+                  </div>
                 </div>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="filteredList.length === 0">
-            <td colspan="5" class="text-center">
-              조회된 대기자 목록이 없습니다.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+            </tr>
+            <tr v-if="filteredList.length === 0">
+              <td colspan="5" class="text-center">
+                조회된 대기자 목록이 없습니다.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-
     <div class="pagination-wrap">
       <button
         class="page-btn"
@@ -144,7 +114,7 @@
         &gt;
       </button>
     </div>
-  </div>
+  </section>
 
   <!-- 모달 -->
   <!-- 매니저 선택 -->
@@ -180,23 +150,23 @@ import {
   getPendingList,
   searchManagers,
   changeStatus as changeStatusApi,
-} from "../api/pending";
-import ManagersModal from "./Pending/ManagerSelectModal.vue";
-import ConfirmModal from "./Pending/ConfirmModal.vue";
+} from '../api/pending';
+import ManagersModal from './Pending/ManagerSelectModal.vue';
+import ConfirmModal from './Pending/ConfirmModal.vue';
 
 export default {
-  name: "PendingApproval",
+  name: 'PendingApproval',
   data() {
     return {
       // input 바인딩되는 값(데이터만 변경, computed에 영향 X)
-      stateInput: "",
-      searchChildInput: "",
-      searchManagerInput: "",
+      stateInput: '',
+      searchChildInput: '',
+      searchManagerInput: '',
 
       // 실제 검색 값 (fetchList에서만 변경)
-      stateActive: "",
-      searchChildActive: "",
-      searchManagerActive: "",
+      stateActive: '',
+      searchChildActive: '',
+      searchManagerActive: '',
 
       // 페이징
       pageSize: 10,
@@ -205,9 +175,9 @@ export default {
       listRaw: [],
 
       statusMap: {
-        검토완료: { label: "승인완료", class: "apv-state-CA3" },
+        검토완료: { label: '승인완료', class: 'apv-state-CA3' },
       },
-      allStatusKeys: ["검토완료"],
+      allStatusKeys: ['검토완료'],
 
       // 모달 관련
       // -> 담당자 리스트
@@ -217,10 +187,10 @@ export default {
       showConfirmModal: false,
       showDoneModal: false,
 
-      confirmMode: "confirm",
+      confirmMode: 'confirm',
 
       managers: [],
-      selectedManager: "",
+      selectedManager: '',
       pendingItem: null,
     };
   },
@@ -236,12 +206,12 @@ export default {
           !this.stateActive || item.status === this.stateActive;
         const searchChild =
           !this.searchChildActive ||
-          (item.childName || item.writerName || "").includes(
+          (item.childName || item.writerName || '').includes(
             this.searchChildActive.trim()
           );
         const searchManager =
           !this.searchManagerActive ||
-          (item.managerName || "").includes(this.searchManagerActive.trim());
+          (item.managerName || '').includes(this.searchManagerActive.trim());
 
         return searchStatus && searchChild && searchManager;
       });
@@ -273,16 +243,16 @@ export default {
       this.searchChildActive = this.searchChildInput;
       this.searchManagerActive = this.searchManagerInput;
 
-      const data = JSON.parse(localStorage.getItem("user"));
+      const data = JSON.parse(localStorage.getItem('user'));
       const result = await getPendingList(data.org_code);
 
       this.listRaw = result.map((item) => ({
         submit_code: item.submit_code,
         childName: item.child_name,
         writerName: item.writer_name,
-        submitAt: item.submit_at?.split(" ")[0],
+        submitAt: item.submit_at?.split(' ')[0],
         managerName: item.manager_name,
-        status: this.changeCode("load", item.status),
+        status: this.changeCode('load', item.status),
       }));
       // 검색 후 1페이지로 이동
       this.currentPage = 1;
@@ -301,11 +271,11 @@ export default {
 
     // 상태값 코드 <-> 텍스트 변경 함수
     changeCode(type, code) {
-      if (type == "change") {
-        const result = code == "미검토" ? "CA1" : "CA3";
+      if (type == 'change') {
+        const result = code == '미검토' ? 'CA1' : 'CA3';
         return result;
       }
-      const result = code == "CA1" ? "미검토" : "검토완료";
+      const result = code == 'CA1' ? '미검토' : '검토완료';
       return result;
     },
 
@@ -313,12 +283,12 @@ export default {
     async changeStatus(item) {
       // org_code 추출
       // -> 모달창 출력
-      const data = JSON.parse(localStorage.getItem("user"));
+      const data = JSON.parse(localStorage.getItem('user'));
       const managers = await searchManagers(data.org_code);
       this.managers = managers;
       this.pendingItem = item;
 
-      this.selectedManager = "";
+      this.selectedManager = '';
       this.showManagerModal = true;
     },
 
@@ -328,7 +298,7 @@ export default {
       this.selectedManager = managerName;
 
       this.showManagerModal = false;
-      this.confirmMode = "confirm";
+      this.confirmMode = 'confirm';
       this.showConfirmModal = true;
     },
 
@@ -337,7 +307,7 @@ export default {
     async finalApproval() {
       const res = {
         submit_code: this.pendingItem.submit_code,
-        status: "CA3",
+        status: 'CA3',
         assi_by: this.selectedManager,
       };
 
@@ -346,11 +316,11 @@ export default {
       this.showConfirmModal = false;
 
       if (!result.ok) {
-        alert("배정 실패");
+        alert('배정 실패');
         return;
       }
 
-      this.confirmMode = "done";
+      this.confirmMode = 'done';
       this.showDoneModal = true;
       this.fetchList();
     },
@@ -369,9 +339,14 @@ export default {
 </script>
 
 <style scoped>
+.page-inner {
+  max-width: 1600px;
+  height: 670px;
+  margin: 0 auto;
+}
 .apv-page {
-  font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕",
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕',
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
@@ -422,51 +397,18 @@ export default {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.apv-btn-outline:hover {
-  background: #f0f0f0;
-  border-color: #c0c0c0;
-  color: #333;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.apv-table-wrap {
-  overflow-x: auto;
-  min-height: 560px;
-}
-
-.apv-table {
-  table-layout: fixed;
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.apv-table th,
-.apv-table td {
-  padding: 10px 10px;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
-  font-size: 14px;
-}
-
 .apv-table th {
   background-color: #f8f9fa;
   font-weight: 700;
   color: #344767;
 }
 
-.apv-table td:last-child,
-.apv-table th:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* 단계 셀 정렬 및 버튼 스타일 */
 .apv-actions-cell {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
   padding-top: 10px !important;
   padding-bottom: 10px !important;
 }
@@ -483,18 +425,6 @@ export default {
 .status-change-btns {
   display: flex;
   gap: 4px;
-}
-
-/* 첨부파일 링크 버튼 스타일 */
-.apv-btn-link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #1a73e8;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 14px;
-  text-align: left;
 }
 
 /* 버튼 오버라이드 */
@@ -546,7 +476,6 @@ export default {
   justify-content: center;
   align-items: center;
   gap: 5px;
-  margin-top: 20px;
   padding: 0 10px;
 }
 
@@ -574,5 +503,55 @@ export default {
 .page-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.table-card {
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+/* nice-table */
+.nice-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* th */
+.th-cell {
+  padding: 0.7rem 0.9rem;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* td */
+.td-cell {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 행 stripe + hover */
+.table-row-item:nth-child(even) {
+  background-color: #f9fafb;
+}
+.table-row-item:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
 }
 </style>

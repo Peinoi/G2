@@ -16,6 +16,31 @@ router.get('/checkid', async (req, res) => {
   }
 });
 
+// SMS 인증
+router.post('/verifySMS', async (req, res) => {
+  try {
+    const result = await userService.verifyCode(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('[ authUser.js -> verifySMS 라우터 오류 ]', err);
+    res
+      .status(500)
+      .json({ ok: false, message: '[ authUser.js -> verifySMS 라우터 오류 ]' });
+  }
+});
+
+router.post('/sendSMS', async (req, res) => {
+  try {
+    const result = await userService.sendCode(req.body);
+    res.send(result);
+  } catch (err) {
+    console.error('[ authUser.js -> sendSMS 라우터 오류 ]', err);
+    res
+      .status(500)
+      .json({ ok: false, message: '[ authUser.js -> sendSMS 라우터 오류 ]' });
+  }
+});
+
 // 개인 회원가입
 router.post('/addUser', async (req, res) => {
   try {

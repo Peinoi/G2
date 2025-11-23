@@ -302,7 +302,6 @@ export default {
       }
       try {
         const result = await checkUserId(this.userId);
-        // ok -> 사용 가능한지 체크
         if (result.ok) {
           this.idCheck = 'true';
           this.idCheckMessage = '사용 가능한 아이디입니다.';

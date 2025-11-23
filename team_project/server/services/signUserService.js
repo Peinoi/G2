@@ -1,5 +1,6 @@
 const pool = require('../configs/db');
 const code = require('../configs/code');
+const smsUtils = require('../utils/sms');
 const signUserMapper = require('../mappers/signUserMapper');
 const { hashPw, checkPw } = require('../utils/crypto');
 
@@ -10,6 +11,43 @@ async function checkId(id) {
     return result;
   } catch (err) {
     console.error('[ checkId 오류 ] : ', err);
+  }
+}
+
+// sms 인증
+function getSmsCode() {
+  return String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+}
+
+async function sendCode(phone) {
+  try {
+    const code = getSmsCode();
+    if (phone.data.length < 10) {
+      return {
+        ok: false,
+        message: '인증코드 전송 실패 : 연락처는 10~11자로 입력하셔야 됩니다.',
+      };
+    }
+    smsUtils.makeCode(phone.data, code);
+    console.log(`[ Test SMS Code : ${code} ]`);
+    return { ok: true, message: '인증코드 전송 완료' };
+  } catch (err) {
+    console.error('[ sendCode 오류 ] : ', err);
+  }
+}
+
+async function verifyCode(data) {
+  try {
+    const result = smsUtils.verifiedCode(data.phone, data.code);
+    if (!result) {
+      return {
+        ok: false,
+        message: '전화번호 인증 실패 : 올바른 인증코드를 입력해주세요.',
+      };
+    }
+    return { ok: true, message: '전화번호 인증 완료' };
+  } catch (err) {
+    console.error('[ verifyCode 오류 ] : ', err);
   }
 }
 
@@ -134,4 +172,13 @@ async function findIdPw(type, data) {
   }
 }
 
-module.exports = { checkId, addUser, findOrg, addOrg, login, findIdPw };
+module.exports = {
+  checkId,
+  sendCode,
+  verifyCode,
+  addUser,
+  findOrg,
+  addOrg,
+  login,
+  findIdPw,
+};

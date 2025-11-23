@@ -86,7 +86,7 @@
                 :class="color ? color : 'text-body'"
                 style="cursor: pointer"
               >
-                로그 아웃
+                로그아웃
                 <i
                   class="material-icons"
                   :class="isRTL ? 'ms-sm-2' : 'me-sm-1'"

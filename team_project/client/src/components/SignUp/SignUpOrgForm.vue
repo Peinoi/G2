@@ -35,14 +35,9 @@
     </div>
 
     <!-- 연락처 -->
-    <material-input
-      id="phone"
-      type="text"
-      label="연락처 ( - 없이 입력 )"
-      v-model="phone"
-      size="lg"
-      class="mb-3"
-      @input="validatePhone"
+    <sms-verification
+      v-model:phone="phone"
+      v-model:isVerified="isPhoneVerified"
     />
 
     <!-- 주소 -->
@@ -128,11 +123,16 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
+import SmsVerification from '../../components/SignUp/SmsVerification.vue';
 import { findAllOrg } from '../../api/user';
 
 export default {
   name: 'SignUpOrgForm',
-  components: { MaterialInput, MaterialButton },
+  components: {
+    MaterialInput,
+    MaterialButton,
+    SmsVerification,
+  },
   props: { base: Object },
   data() {
     return {
@@ -140,6 +140,7 @@ export default {
       regFront: '',
       regBack: '',
       phone: '',
+      isPhoneVerified: false,
       address: '',
       email: '',
       org_name: '',
@@ -166,6 +167,10 @@ export default {
         return alert('이름과 기관명을 입력하세요.');
       }
 
+      if (!this.isPhoneVerified) {
+        return alert('연락처를 확인해주세요.');
+      }
+
       let formattedPhone = '';
       if (this.phone.length === 10) {
         formattedPhone = `${this.phone.slice(0, 3)}-${this.phone.slice(
@@ -177,14 +182,13 @@ export default {
           3,
           7
         )}-${this.phone.slice(7)}`;
-      } else {
-        return alert('전화번호는 10~11자리 숫자로 입력하세요.');
       }
 
       this.$emit('submit', {
         name: this.name,
         ssn: `${this.regFront}-${this.regBack}`,
         phone: formattedPhone,
+        isPhoneVerified: this.isPhoneVerified,
         address: this.address,
         email: this.email,
         org_name: this.org_name,

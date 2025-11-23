@@ -35,14 +35,9 @@
     </div>
 
     <!-- 연락처 -->
-    <material-input
-      id="phone"
-      type="text"
-      label="연락처 ( - 없이 입력 )"
-      v-model="phone"
-      size="lg"
-      class="mb-3"
-      @input="validatePhone"
+    <sms-verification
+      v-model:phone="phone"
+      v-model:isVerified="isPhoneVerified"
     />
 
     <!-- 이메일 -->
@@ -109,6 +104,7 @@
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
 import MaterialButton from '@/components/MaterialButton.vue';
+import SmsVerification from '../../components/SignUp/SmsVerification.vue';
 import { findAllOrg } from '../../api/user';
 
 export default {
@@ -116,6 +112,7 @@ export default {
   components: {
     MaterialInput,
     MaterialButton,
+    SmsVerification,
   },
   props: { base: Object },
   data() {
@@ -124,6 +121,7 @@ export default {
       regFront: '',
       regBack: '',
       phone: '',
+      isPhoneVerified: false,
       address: '',
       email: '',
       org_name: '',
@@ -155,6 +153,10 @@ export default {
         return alert('필수 정보들을 입력해주세요.');
       }
 
+      if (!this.isPhoneVerified) {
+        return alert('연락처를 확인해주세요.');
+      }
+
       let formattedPhone = '';
       if (this.phone.length === 10) {
         formattedPhone = `${this.phone.slice(0, 3)}-${this.phone.slice(
@@ -166,8 +168,6 @@ export default {
           3,
           7
         )}-${this.phone.slice(7)}`;
-      } else {
-        return alert('전화번호는 10~11자리 숫자로 입력하세요.');
       }
 
       this.$emit('submit', {
@@ -179,22 +179,6 @@ export default {
         role: this.role,
         org_name: this.org_name ? this.org_code : null,
       });
-    },
-    validatePhone() {
-      // 하이픈 감지
-      if (this.phone.includes('-')) {
-        alert('- 없이 입력하세요.');
-        this.phone = this.phone.replace(/-/g, '');
-        return;
-      }
-
-      // 숫자만
-      this.phone = this.phone.replace(/[^0-9]/g, '');
-
-      // 11자리 제한
-      if (this.phone.length > 11) {
-        this.phone = this.phone.slice(0, 11);
-      }
     },
     async findOrgList() {
       const result = await findAllOrg();
