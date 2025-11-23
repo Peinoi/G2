@@ -233,18 +233,18 @@
         </div>
       </div>
 
-      <div v-show="!approval_mode" class="button-group-footer">
-        <button
-          class="primary-button"
-          @click="programAdd()"
-          :disabled="isLocked"
-        >
-          {{ isEditMode ? "수정" : "등록" }}
-        </button>
+    <div v-show="!approval_mode" class="button-group-footer">
+    <button
+        class="primary-button"
+        @click="programAdd()"
+        :disabled="isLocked"
+        v-show="canEditOrRegister"
+    >
+        {{ isEditMode ? "수정" : "등록" }}
+    </button>
 
-        <button class="secondary-button" @click="goList()">닫기</button>
-      </div>
-
+    <button class="secondary-button" @click="goList()">닫기</button>
+</div>
       <div v-show="approval_mode" class="button-group-footer">
         <!-- 승인 버튼 | AA4이면 숨김 -->
         <button
@@ -294,9 +294,28 @@ const router = useRouter();
 const userDataString = localStorage.getItem("user");
 const userData = JSON.parse(userDataString);
 const userRole = userData.role;
-const isLocked = computed(() => {
-  return isEditMode.value && formData.value.approval_status === "승인대기중";
+
+
+
+const canEditOrRegister = computed(() => {
+  // 1. 승인 모드 (approval_mode)가 아닐 때만 해당
+  if (approval_mode.value) return false;
+
+  // 2. 등록 모드 (isEditMode가 false)일 때는 항상 표시 (등록 가능)
+  if (!isEditMode.value) return true;
+
+  // 3. 수정 모드 (isEditMode가 true)일 때
+  //  '승인전' 또는 '반려' 상태일 때만 true (수정 가능)
+  const status = formData.value.approval_status;
+  return status === "승인전" || status === "반려";
 });
+
+// isLocked 계산된 속성 정의
+const isLocked = computed(() => {
+ return isEditMode.value && formData.value.approval_status === "승인대기중";
+});
+
+
 //승인 반려
 let approval_mode = ref(false);
 let rejectModal = ref(false);
