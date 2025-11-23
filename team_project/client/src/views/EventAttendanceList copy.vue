@@ -53,7 +53,7 @@
 
         <tbody>
           <tr
-            v-for="(row, idx) in filteredRows"
+            v-for="(row, idx) in rows"
             :key="row.apply_code || idx"
             class="priority-row"
             @click="viewApplyDetail(row.apply_code, row.event_code)"
@@ -68,7 +68,7 @@
               <span
                 :class="['priority-badge', stateBadgeClass(row.apply_status)]"
               >
-                {{ codeLabel(row.apply_status_name || "") }}
+                {{ codeLabel(row.apply_status_name) }}
               </span>
             </td>
 
@@ -81,8 +81,8 @@
             </td> -->
           </tr>
 
-          <tr v-if="filteredRows.length === 0">
-            <td class="priority-empty" colspan="6">조회 결과가 없습니다.</td>
+          <tr v-if="rows.length === 0">
+            <td class="priority-empty" colspan="7">조회 결과가 없습니다.</td>
           </tr>
         </tbody>
       </table>
@@ -127,29 +127,6 @@ const filters = ref({
 });
 
 const rows = ref([]);
-const filteredRows = computed(() => {
-  // 로그인 정보
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const role = user.role;
-  const userCode = user.user_code;
-
-  let list = rows.value;
-
-  // role 필터
-  if (role === "AA2") {
-    list = list.filter((r) => r.user_code === userCode);
-  } else if (role !== "AA3") {
-    return [];
-  }
-
-  // 상태 필터
-  if (filters.value.applyStatus) {
-    list = list.filter((r) => r.apply_status === filters.value.applyStatus);
-  }
-
-  return list;
-});
-
 const totalCount = ref(0);
 
 // 페이징
@@ -442,7 +419,6 @@ onMounted(load);
   color: #4b5563;
   border-color: #e5e7eb;
 }
-
 * {
   font-size: 15px;
 }

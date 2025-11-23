@@ -1,7 +1,9 @@
 <template>
   <section class="apply-page">
-    <h2 class="page-title">이벤트 계획 / 결과 목록</h2>
-
+    <h2 class="page-title" v-if="role === 'AA2'">내 요청 목록</h2>
+    <h2 class="page-title" v-if="role === 'AA3'">
+      이벤트 계획/결과 승인 요청 관리
+    </h2>
     <div class="table-wrap">
       <table class="apply-table">
         <thead>
@@ -112,18 +114,20 @@ const getLoginRole = () => {
   }
 };
 
+const user_code = getLoginUserCode();
+const role = getLoginRole();
+
 const formatDate = (v) => (v ? String(v).slice(0, 10) : "-");
 
 const loadEvents = async () => {
   try {
-    const user_code = getLoginUserCode();
     if (!user_code) {
       alert("로그인 상태가 아닙니다.");
       return;
     }
 
-    const params = { role: getLoginRole(), user_code };
-    if (getLoginRole() !== "AA3") params.user_code = user_code;
+    const params = { role, user_code };
+    if (role !== "AA3") params.user_code = user_code;
 
     const res = await axios.get("/api/event/applyResult", { params });
     events.value = res.data.data || [];

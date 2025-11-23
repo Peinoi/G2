@@ -57,10 +57,16 @@ export const eventMenu = [
     role: ["AA2"],
   },
   {
-    label: "계획/결과 목록",
+    label: "내 요청 목록",
     path: "/event/apply-result",
     collapseRef: "EventApplyResult",
-    role: ["AA2", "AA3"],
+    role: ["AA2"],
+  },
+  {
+    label: "승인 요청 관리",
+    path: "/event/apply-result",
+    collapseRef: "EventApplyResult",
+    role: ["AA3"],
   },
   // {
   //   label: '담당자 목록',

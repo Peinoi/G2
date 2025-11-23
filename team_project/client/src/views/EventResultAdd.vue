@@ -11,7 +11,7 @@
             <select v-model="form.event_code" required>
               <option value="">이벤트 선택</option>
               <option
-                v-for="ev in myEvents"
+                v-for="ev in filteredMyEvents"
                 :value="ev.event_code"
                 :key="ev.event_code"
               >
@@ -176,6 +176,11 @@ const form = ref({
   result_content: "",
   report_register_date: new Date(),
   user_code: user_code,
+});
+
+// 이미 결과보고서 작성한 이벤트는 제외
+const filteredMyEvents = computed(() => {
+  return myEvents.value.filter((ev) => ev.event_result_code === null);
 });
 
 // 작성일 포맷
