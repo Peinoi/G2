@@ -142,12 +142,13 @@
                         class="font-weight-light"
                         v-model="agree"
                       >
-                        이용약관에 동의합니다 |
-                        <a
+                        이용약관에 동의합니다
+                        <!-- <a
                           href="../../../pages/privacy.html"
                           class="text-dark font-weight-bolder"
-                          >이용약관 확인</a
                         >
+                          | 이용약관 확인</a
+                        > -->
                       </material-checkbox>
                       <p
                         v-if="!agreeCheck"
@@ -249,6 +250,17 @@ export default {
   },
   data() {
     return {
+      // step: 1,
+      // userId: 'test12',
+      // userPw: '123',
+      // pwCheck: '123',
+      // agree: true,
+      // idCheck: 'true',
+      // idCheckMessage: '사용 가능한 아이디인지 확인해주세요.',
+      // pwChecked: 'true',
+      // pwCheckedMessage: '비밀번호를 확인해주세요.',
+      // agreeCheck: true,
+      // agreeCheckMessage: '',
       step: 1,
       userId: '',
       userPw: '',
@@ -372,6 +384,7 @@ export default {
 
           if (!result.ok) {
             alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
+            return;
           }
           this.$router.push({ name: 'SignIn' });
           alert('회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.');

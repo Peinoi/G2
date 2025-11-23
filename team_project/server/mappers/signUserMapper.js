@@ -15,24 +15,10 @@ async function findUserId(id) {
 }
 
 // 개인 회원가입
-async function addUser(conn, data) {
+async function addUser(conn, dataParams) {
   try {
-    const userData = [
-      data.org_code,
-      data.userId,
-      data.hashedPw,
-      data.role,
-      data.name,
-      data.ssn,
-      data.phone,
-      data.address,
-      data.email,
-      null,
-      0, // is_active(승인 여부)
-      0, // 로그인 실패 횟수
-      data.joinDate, // 가입일
-    ];
-    return await conn.query(signUserSQL.INSERT_USER, userData);
+    const result = await conn.query(signUserSQL.INSERT_USER, dataParams);
+    return result;
   } catch (err) {
     console.error('[ addUser 실패 ] : ', err);
   }
@@ -57,25 +43,10 @@ async function findOrgCode(conn, orgName) {
 }
 
 // 기관 회원가입
-async function addOrg(conn, data) {
+async function addOrg(conn, dataParams) {
   try {
-    const userData = [
-      data.org_code,
-      data.userId,
-      data.hashedPw,
-      data.role,
-      data.name,
-      data.ssn,
-      data.phone,
-      data.address,
-      data.email,
-      data.department,
-      0, // is_active(승인 여부)
-      0, // 로그인 실패 횟수
-      data.joinDate, // 가입일
-    ];
-
-    return await conn.query(signUserSQL.INSERT_USER, userData);
+    const result = await conn.query(signUserSQL.INSERT_USER, dataParams);
+    return result;
   } catch (err) {
     console.error('[ insertOrgUser 실패 ]', err);
   }
