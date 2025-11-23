@@ -14,7 +14,8 @@ SELECT
   writer.name      AS writer_name,    -- 보호자
   c.child_name     AS child_name,     -- 자녀
   assi.name        AS assi_name,
-  org.org_name     AS org_name
+  org.org_name     AS org_name,
+  cp.level         AS level           -- ⭐ 우선순위
 
 FROM support_result sr
 JOIN support_plan sp
@@ -29,12 +30,15 @@ LEFT JOIN users assi
   ON assi.user_code = sr.assi_by
 LEFT JOIN organization org
   ON org.org_code = writer.org_code
+LEFT JOIN case_priority cp
+  ON cp.submit_code = sp.submit_code   -- ⭐ 우선순위 조인
+  AND cp.is_current = 'Y'
 
 ORDER BY sr.result_code DESC
 `,
 
   listSupportResultByAssignee: `
-SELECT
+SELECT DISTINCT
   sr.result_code,
   sr.plan_code,
   sp.submit_code,
@@ -46,7 +50,8 @@ SELECT
   writer.name      AS writer_name,
   c.child_name     AS child_name,
   assi.name        AS assi_name,
-  org.org_name     AS org_name
+  org.org_name     AS org_name,
+  cp.level         AS level           -- ⭐ 우선순위
 
 FROM support_result sr
 JOIN support_plan sp
@@ -61,6 +66,9 @@ LEFT JOIN users assi
   ON assi.user_code = sr.assi_by
 LEFT JOIN organization org
   ON org.org_code = writer.org_code
+LEFT JOIN case_priority cp
+  ON cp.submit_code = sp.submit_code   -- ⭐ 우선순위 조인
+  AND cp.is_current = 'Y'
 
 WHERE sr.assi_by = ?
 
@@ -81,7 +89,8 @@ SELECT
   writer.name      AS writer_name,
   c.child_name     AS child_name,
   assi.name        AS assi_name,
-  org.org_name     AS org_name
+  org.org_name     AS org_name,
+  cp.level         AS level           -- ⭐ 우선순위
 
 FROM support_result sr
 JOIN support_plan sp
@@ -96,6 +105,9 @@ LEFT JOIN users assi
   ON assi.user_code = sr.assi_by
 LEFT JOIN organization org
   ON org.org_code = writer.org_code
+LEFT JOIN case_priority cp
+  ON cp.submit_code = sp.submit_code   -- ⭐ 우선순위 조인
+  AND cp.is_current = 'Y'
 
 WHERE ss.written_by = ?
 
@@ -104,7 +116,7 @@ ORDER BY sr.result_code DESC
 
   // 🔹 목록: 기관 관리자용 (같은 기관 소속 전체)
   listSupportResultByOrg: `
-SELECT
+SELECT 
   sr.result_code,
   sr.plan_code,
   sp.submit_code,
@@ -116,7 +128,9 @@ SELECT
   writer.name      AS writer_name,
   c.child_name     AS child_name,
   assi.name        AS assi_name,
-  org.org_name     AS org_name
+  org.org_name     AS org_name,
+  cp.level         AS level           -- ⭐ 우선순위
+  
 
 FROM support_result sr
 JOIN support_plan sp
@@ -131,6 +145,9 @@ LEFT JOIN users assi
   ON assi.user_code = sr.assi_by
 LEFT JOIN organization org
   ON org.org_code = writer.org_code
+LEFT JOIN case_priority cp
+  ON cp.submit_code = sp.submit_code   -- ⭐ 우선순위 조인
+  AND cp.is_current = 'Y'
 
 WHERE writer.org_code = ?
 
@@ -337,6 +354,14 @@ ORDER BY sr.result_code DESC
     ssn,
     child_name,
     COALESCE(c.disability_type, u.disability_type)
+`,
+
+  getPlanGoalsBySubmitCode: `
+  SELECT spi.item_title
+  FROM support_plan sp
+  JOIN support_plan_item spi
+    ON spi.plan_code = sp.plan_code
+  WHERE sp.submit_code = ?
 `,
 
   // 🔹 result_code 로 support_result 한 건 조회

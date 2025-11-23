@@ -500,20 +500,6 @@ section {
   align-items: flex-end;
 }
 
-/* 역할 pill */
-.role-pill {
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #e5e7eb;
-}
-
-.role-sub {
-  margin-top: 2px;
-  color: #9ca3af;
-}
-
 /* 액션 라인 */
 .action-row {
   margin-top: 0.25rem;
@@ -558,6 +544,15 @@ section {
   white-space: nowrap;
 }
 
+@media (max-width: 900px) {
+  .th-cell {
+    white-space: normal; /* 줄바꿈 허용 */
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.4rem 0.5rem;
+  }
+}
+
 /* 바디 셀 */
 .td-cell {
   padding: 0.65rem 0.9rem;
@@ -599,37 +594,25 @@ section {
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
 }
 
-/* 상태 뱃지 */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4.2rem;
-  padding: 0.12rem 0.6rem;
-  border-radius: 999px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
-
-/* 미검토 */
+/* 미검토(CA1) → Gray pastel */
 .status-pending {
-  background-color: #fef9c3;
-  border-color: #facc15;
-  color: #854d0e;
+  background-color: #e4e6e1 !important; /* p-bg-gray */
+  border-color: #d0d3cd !important; /* p-border-gray */
+  color: #4b5563 !important; /* p-text-gray */
 }
 
-/* 검토완료 */
+/* 검토완료(CA3) → Green pastel */
 .status-done {
-  background-color: #111827;
-  border-color: #111827;
-  color: #f9fafb;
+  background-color: #deeec8 !important; /* p-bg-green */
+  border-color: #bedca0 !important; /* p-border-green */
+  color: #3f7a3a !important; /* p-text-green */
 }
 
-/* 기타 */
+/* 기타 코드용 기본 */
 .status-default {
-  background-color: #e5e7eb;
-  border-color: #d1d5db;
-  color: #4b5563;
+  background-color: #f2f3f5 !important;
+  border-color: #d6d9df !important;
+  color: #646b78 !important;
 }
 
 /* 공통 폰트 정리 (헤더/바디 같이) */

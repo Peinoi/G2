@@ -151,10 +151,10 @@
                       class="w-full input-basic"
                       @change="onChangeType(it)"
                     >
-                      <option value="TEXT">TEXT (단답)</option>
-                      <option value="TEXTAREA">TEXTAREA (서술)</option>
-                      <option value="RADIO">RADIO (단일 선택)</option>
-                      <option value="CHECKBOX">CHECKBOX (다중 선택)</option>
+                      <option value="TEXT">단답형</option>
+                      <option value="TEXTAREA">서술형</option>
+                      <option value="RADIO">단일 선택</option>
+                      <option value="CHECKBOX">다중 선택</option>
                     </select>
                   </div>
 

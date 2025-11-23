@@ -75,7 +75,7 @@ router.get("/assignee", async (req, res) => {
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: "userId가 필요합니다.",
+        message: "로그인 아이디가 필요합니다.",
       });
     }
 
@@ -98,7 +98,7 @@ router.get("/:submitCode", async (req, res) => {
     if (!submitCode) {
       return res
         .status(400)
-        .json({ success: false, message: "submitCode가 필요합니다." });
+        .json({ success: false, message: "제출코드가 필요합니다." });
     }
 
     const result = await supportPlanService.getPlanBasic(submitCode);
@@ -149,7 +149,7 @@ router.get("/detail/:planCode", async (req, res) => {
     if (!planCode) {
       return res
         .status(400)
-        .json({ success: false, message: "planCode가 필요합니다." });
+        .json({ success: false, message: "계획코드가 필요합니다." });
     }
 
     const result = await supportPlanService.getPlanDetail(planCode);
@@ -171,7 +171,7 @@ router.put("/:planCode", upload.array("planFiles"), async (req, res) => {
     if (!planCode) {
       return res
         .status(400)
-        .json({ success: false, message: "planCode가 필요합니다." });
+        .json({ success: false, message: "계획코드가 필요합니다." });
     }
 
     const raw = req.body.formJson || "{}";
@@ -204,7 +204,7 @@ router.post("/:planCode/resubmit", async (req, res) => {
     if (!planCode) {
       return res
         .status(400)
-        .json({ success: false, message: "유효한 planCode가 아닙니다." });
+        .json({ success: false, message: "유효한 계획서 코드가 아닙니다." });
     }
     if (!requesterCode) {
       // 나중에 로그인 붙이면 req.user.user_code 같은 걸로 대체

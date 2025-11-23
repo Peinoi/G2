@@ -49,6 +49,14 @@
             </span>
           </div>
 
+          <!-- 우선순위 -->
+          <div class="meta-item">
+            <span class="meta-label">우선순위</span>
+            <span class="meta-value">
+              {{ priorityLabel(submitInfo.level) || "-" }}
+            </span>
+          </div>
+
           <!-- 5. 계획작성일 -->
           <div class="meta-item">
             <span class="meta-label">계획작성일</span>
@@ -83,14 +91,14 @@
       <div class="card-block space-y-4">
         <!-- 결과 목표 -->
         <div class="form-group">
-          <label class="block text-sm mb-1 font-medium">결과 목표</label>
-          <MaterialInput
-            id="result-goal"
-            variant="static"
-            size="default"
-            v-model="mainForm.goal"
-            placeholder="지원결과의 목표(또는 달성 정도)를 입력하세요"
-          />
+          <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
+
+          <select v-model="mainForm.goal" class="input goal-select">
+            <option value="">계획서 목표 선택</option>
+            <option v-for="goal in planGoals" :key="goal" :value="goal">
+              {{ goal }}
+            </option>
+          </select>
         </div>
 
         <!-- 결과 내용 (일반용) -->
@@ -224,14 +232,14 @@
         </div>
 
         <div class="form-group">
-          <label class="block text-sm mb-1 font-medium">결과 목표</label>
-          <MaterialInput
-            :id="`result-item-goal-${item.id}`"
-            variant="static"
-            size="default"
-            v-model="item.goal"
-            placeholder="추가 결과의 목표/내용 요약을 입력하세요"
-          />
+          <label class="block text-sm mb-1 font-medium">계획했던 목표</label>
+
+          <select v-model="item.goal" class="input goal-select">
+            <option value="">추가 결과의 계획 목표 선택</option>
+            <option v-for="goal in planGoals" :key="goal" :value="goal">
+              {{ goal }}
+            </option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -250,7 +258,7 @@
 
         <div class="form-group">
           <label class="block text-sm mb-1 font-medium">
-            결과 내용 (관자용)
+            결과 내용 (관리자용)
           </label>
           <MaterialTextarea
             :id="`result-item-private-${item.id}`"
@@ -297,13 +305,14 @@ import axios from "axios";
 
 import MaterialButton from "@/components/MaterialButton.vue";
 import MaterialTextarea from "@/components/MaterialTextarea.vue";
-import MaterialInput from "@/components/MaterialInput.vue";
 
 const route = useRoute();
 const router = useRouter();
 
 const user = JSON.parse(localStorage.getItem("user") || "{}");
 const modifier = Number(user.user_code || 0);
+
+const planGoals = ref([]);
 
 // 라우터에서 받은 값들
 const resultCode = Number(route.params.resultCode || 0);
@@ -317,6 +326,7 @@ const submitInfo = ref({
   assigneeName: "",
   disabilityType: "",
   planSubmitAt: "",
+  level: "",
 });
 
 const formattedPlanSubmitAt = computed(() => {
@@ -391,6 +401,7 @@ async function loadData() {
       assigneeName: basicResData.assigneeName || "",
       disabilityType: basicResData.disabilityType || "",
       planSubmitAt: basicResData.planSubmitAt || "",
+      level: basicResData.level || "",
     };
 
     // 2) 결과 상세 정보
@@ -437,11 +448,44 @@ async function loadData() {
         originalFilename: a.originalFilename,
         url: a.url,
       })) || [];
+
+    // 🔹 계획 목표 목록 세팅
+    if (Array.isArray(basicResData.planGoals)) {
+      const goals = basicResData.planGoals
+        .map((g) => (g || "").trim())
+        .filter((g) => g);
+
+      let uniq = [...new Set(goals)];
+
+      // 수정 화면에서 기존 저장된 goal이 목록에 없으면 포함시켜주기
+      if (mainForm.value.goal && !uniq.includes(mainForm.value.goal)) {
+        uniq = [mainForm.value.goal, ...uniq];
+      }
+
+      planGoals.value = uniq;
+    } else {
+      // planGoals가 아예 안 내려오는데 기존 goal이 있으면 그거라도 보여주기
+      planGoals.value = mainForm.value.goal ? [mainForm.value.goal] : [];
+    }
   } catch (e) {
     console.error(e);
     error.value = e.message || "지원결과 정보 조회 중 오류";
   } finally {
     loading.value = false;
+  }
+}
+
+function priorityLabel(code) {
+  const c = (code || "").toUpperCase();
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
   }
 }
 
@@ -536,14 +580,14 @@ function validate() {
   if (!mainForm.value.publicContent.trim())
     return "결과 내용(일반용)을 입력해주세요.";
   if (!mainForm.value.privateContent.trim())
-    return "결과 내용(관자용)을 입력해주세요.";
+    return "결과 내용(관리자용)을 입력해주세요.";
 
   for (const p of resultItems.value) {
     if (!p.goal.trim()) return "추가 결과의 목표를 입력해주세요.";
     if (!p.publicContent.trim())
       return "추가 결과의 내용(일반용)을 입력해주세요.";
     if (!p.privateContent.trim())
-      return "추가 결과의 내용(관자용)을 입력해주세요.";
+      return "추가 결과의 내용(관리자용)을 입력해주세요.";
   }
 
   return null;
@@ -841,5 +885,37 @@ textarea {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+/* 목표 셀렉트 전용 스타일 */
+.goal-select {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background-color: #fff;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  /* 기본 화살표 제거 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* 커스텀 화살표 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><polyline points='2,4 6,8 10,4' stroke='%239CA3AF' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+}
+
+.goal-select:focus {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.1);
+}
+
+/* 옵션 텍스트 */
+.goal-select option {
+  font-size: 0.875rem;
 }
 </style>

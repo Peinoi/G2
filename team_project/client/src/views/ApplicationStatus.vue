@@ -21,8 +21,8 @@
               <th>기관</th>
               <th>지원 신청일</th>
               <th>우선순위</th>
-              <th>계획</th>
-              <th>결과</th>
+              <th>계획 현황</th>
+              <th>결과 현황</th>
             </tr>
           </thead>
 
@@ -64,12 +64,11 @@
 
               <!-- 지원 계획 상태 -->
               <td class="as-link" @click="goPlanDetail(row.submit_code)">
-                {{ convertPlanStatus(row.plan_status) }}
+                {{ summarizePlanStatus(row.plan_status_list || []) }}
               </td>
-
-              <!-- 지원 결과 상태 -->
+              <!-- 지원결과 -->
               <td class="as-link" @click="goResultDetail(row.submit_code)">
-                {{ convertResultStatus(row.result_status) }}
+                {{ summarizeResultStatus(row.result_status_list || []) }}
               </td>
             </tr>
           </tbody>
@@ -112,41 +111,72 @@ const convertPriority = (code) => {
   }
 };
 
-// 지원 계획 상태 매핑 (CC)
-const convertPlanStatus = (code) => {
+function normalizeStatusList(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (!raw) return [];
+  return String(raw)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// plan_status 하나의 코드 → 그룹
+function mapPlanGroup(code) {
   switch (code) {
     case "CC1":
-      return "작성 전";
     case "CC2":
-      return "작성 전";
+      return "NONE"; // 작성 전
     case "CC3":
-      return "검토중";
     case "CC4":
-      return "진행중";
+      return "ONGOING"; // 검토중/진행중
     case "CC5":
-      return "지원완료";
+      return "DONE"; // 지원완료
     default:
-      return "-";
+      return "NONE";
   }
-};
+}
 
-// 지원 결과 상태 매핑 (CD)
-const convertResultStatus = (code) => {
+function summarizePlanStatus(planStatusesRaw) {
+  const planStatuses = normalizeStatusList(planStatusesRaw); // 👈 문자열 → 배열 변환
+  const groups = planStatuses.map(mapPlanGroup);
+  const total = planStatuses.length;
+
+  if (total === 0) return "-";
+  if (groups.includes("ONGOING")) return `진행 ${total}건`;
+  if (groups.includes("DONE")) return `완료 ${total}건`;
+  return "-";
+}
+
+function mapResultGroup(code) {
   switch (code) {
     case "CD1":
-      return "작성 전";
     case "CD2":
-      return "작성 전";
     case "CD3":
-      return "지원중";
+      return "NONE"; // 작성 전
     case "CD4":
-      return "승인요청";
+      return "ONGOING"; // 지원중/승인요청
     case "CD5":
-      return "지원완료";
+      return "DONE"; // 지원완료
     default:
-      return "-";
+      return "NONE";
   }
-};
+}
+
+function summarizeResultStatus(resultStatusesRaw) {
+  const resultStatuses = normalizeStatusList(resultStatusesRaw);
+
+  // 🔥 CD3는 카운트 자체에서 제외
+  const filtered = resultStatuses.filter((code) => code !== "CD3");
+
+  const total = filtered.length;
+  if (total === 0) return "-";
+
+  const groups = filtered.map(mapResultGroup);
+
+  if (groups.includes("ONGOING")) return `진행 ${total}건`;
+  if (groups.includes("DONE")) return `완료 ${total}건`;
+  return "-";
+}
 
 // 이동 함수
 const goSurveyDetail = (submitCode) => {
@@ -215,75 +245,163 @@ onMounted(() => {
 <style scoped>
 .as-page {
   padding: 24px;
+  color: #111827;
+  font-size: 15px;
 }
 
+/* 페이지 제목 */
 .as-title {
   font-size: 20px;
-  font-weight: bold;
+  font-weight: 700;
   margin-bottom: 16px;
+  letter-spacing: -0.02em;
 }
 
+/* 권한 없음 박스 */
 .as-no-auth {
-  padding: 30px;
-  border: 1px solid #ddd;
-  background: #fff8f8;
-  border-radius: 10px;
+  padding: 30px 20px;
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+  background: #f9fafb;
   text-align: center;
+  color: #4b5563;
 }
 
-/*** 테이블 ***/
+/*** 테이블 카드 래퍼 (조사지 목록이랑 비슷한 카드 느낌) ***/
 .as-table-wrap {
-  overflow-x: auto;
+  margin-top: 8px;
+  border-radius: 0.9rem;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden; /* 둥근 모서리에 맞게 잘리도록 */
 }
 
+/*** 테이블 기본 ***/
 .as-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 14px;
 }
 
 .as-table th,
 .as-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #f0f0f0;
+  font-family:
+    "Noto Sans KR",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  text-align: center;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
+/*** 헤더 셀 (nice-table th-cell 느낌) ***/
 .as-table thead th {
-  background: #fafafa;
+  padding: 0.7rem 0.9rem;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
 }
 
+/*** 바디 셀 (nice-table td-cell 느낌) ***/
+.as-table tbody td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+  vertical-align: middle;
+}
+
+/*** 행 스타일 + 줄무늬 + hover 효과 ***/
+.as-table tbody tr {
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+.as-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.as-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.as-table tbody tr:hover {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+/*** 로딩/빈 상태 셀 ***/
 .as-empty {
   text-align: center;
   padding: 20px;
-  color: #777;
+  color: #9ca3af;
 }
 
-/*** 링크 스타일 ***/
+/*** 링크 스타일 (계획/결과/조사지 상세 이동용) ***/
 .as-link {
-  color: #409eff;
+  color: #111827;
   cursor: pointer;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-/*** 우선순위 태그 ***/
+.as-link:hover {
+  color: #030712;
+}
+
+/*** 우선순위 태그 (살짝 pill 느낌 유지) ***/
 .as-tag {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 999px;
   font-size: 12px;
-  color: white;
+  color: #ffffff;
 }
 
+/* 긴급 */
 .lvl-BB1 {
-  background: #ff4d4f; /* 빨강: 긴급 */
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
+/* 중점 */
 .lvl-BB2 {
-  background: #fa8c16; /* 주황: 중점 */
+  background-color: #fce8a1 !important;
+  color: #b0681b !important;
+  border: 1px solid #e6c77b !important;
 }
 
+/* 준비 */
 .lvl-BB3 {
-  background: #52c41a; /* 초록: 준비 */
+  background-color: #e4f0ff !important;
+  color: #476c99 !important;
+  border: 1px solid #a5c3da !important;
+}
+
+/*** 반응형: 화면 좁을 때 헤더 글씨/패딩 줄이기 ***/
+@media (max-width: 900px) {
+  .as-table thead th {
+    white-space: normal;
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .as-table tbody td {
+    font-size: 13px;
+    padding: 0.5rem 0.6rem;
+  }
 }
 </style>

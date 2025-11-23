@@ -2,7 +2,7 @@
   <section class="p-6">
     <div class="page-shell">
       <!-- 헤더 -->
-      <header class="mb-4 header-row">
+      <header class="mb-2 header-row">
         <div class="header-title">
           <h2
             class="text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap align-middle"
@@ -772,6 +772,15 @@ section {
   text-align: center; /* ★ 중앙 정렬 */
 }
 
+@media (max-width: 900px) {
+  .th-cell {
+    white-space: normal; /* 줄바꿈 허용 */
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.4rem 0.5rem;
+  }
+}
+
 /* 바디 셀 */
 .td-cell {
   padding: 0.7rem 0.9rem;
@@ -822,51 +831,36 @@ section {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.2rem 0.7rem;
+  padding: 0.32rem 0.75rem;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 13px; /* 살짝 작게 */
   font-weight: 500;
   border: 1px solid transparent;
+  min-width: auto; /* 길이 강제하지 않음 */
+  line-height: 1.1; /* 더 콤팩트하게 */
+  height: auto;
 }
-
-/* 상태별 톤 (무채색 + 살짝만 강조) */
+/* 상담전 (CB1, CB2) - 회색 */
 .status-pill--before {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
+  background-color: #f2f3f5; /* p-bg-gray */
+  color: #646b78; /* p-text-gray */
+  border-color: #d6d9df; /* p-border-gray */
 }
 
+/* 검토전 (CB3) - 노랑 */
 .status-pill--review {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-color: #d1d5db;
+  background-color: #fff7d1; /* p-bg-yellow */
+  color: #a07c18; /* p-text-yellow */
+  border-color: #f3db85; /* p-border-yellow */
 }
 
+/* 반려 (CB4) - 빨강 + 클릭 가능 */
 .status-pill--rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
+  background-color: #fab39f; /* p-bg-red */
+  color: #8a2e2e; /* p-text-red */
+  border-color: #e28f7f; /* p-border-red */
 }
 
-.status-pill--done {
-  background-color: #111827;
-  color: #f9fafb;
-  border-color: #111827;
-}
-
-.status-pill--resubmit {
-  background-color: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
-
-.status-pill--default {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-color: #e5e7eb;
-}
-
-/* 클릭 가능한 배지 (반려) */
 .status-pill--clickable {
   cursor: pointer;
   transition:
@@ -880,6 +874,26 @@ section {
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16);
 }
 
+/* 검토완료 (CB5) - 초록 */
+.status-pill--done {
+  background-color: #deeec8 !important;
+  border: 1px solid #bedca0 !important;
+  color: #3f7a3a !important;
+}
+
+/* 재승인요청 (CB6) - 주황 */
+.status-pill--resubmit {
+  background-color: #fce8a1; /* p-bg-orange */
+  color: #b0681b; /* p-text-orange */
+  border-color: #f3d488; /* p-border-orange */
+}
+
+/* 기타 기본값 - 연한 회색 */
+.status-pill--default {
+  background-color: #e4e6e1 !important;
+  border: 1px solid #d0d3cd !important;
+  color: #4b5563 !important;
+}
 /* 공통 폰트 정리 */
 table th,
 table td {

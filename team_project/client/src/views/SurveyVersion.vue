@@ -189,6 +189,15 @@ section {
   text-align: center; /* ★ 중앙 정렬 */
 }
 
+@media (max-width: 900px) {
+  .th-cell {
+    white-space: normal; /* 줄바꿈 허용 */
+    font-size: 13px;
+    line-height: 1.3;
+    padding: 0.4rem 0.5rem;
+  }
+}
+
 /* 바디 셀 */
 .td-cell {
   padding: 0.7rem 0.9rem;
@@ -258,19 +267,25 @@ table td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.2rem 0.55rem;
+  padding: 0.32rem 0.75rem;
   border-radius: 999px;
-  font-size: 15px;
+  font-size: 13px; /* 살짝 작게 */
   font-weight: 500;
+  border: 1px solid transparent;
+  min-width: auto; /* 길이 강제하지 않음 */
+  line-height: 1.1; /* 더 콤팩트하게 */
+  height: auto;
 }
 
 .badge-active {
-  background-color: #111827;
-  color: #f9fafb;
+  background-color: #deeec8 !important; /* green pastel */
+  border: 1px solid #bedca0 !important;
+  color: #3f7a3a !important;
 }
 
 .badge-inactive {
-  background-color: #e5e7eb;
-  color: #4b5563;
+  background-color: #e4e6e1 !important; /* gray pastel */
+  border: 1px solid #d0d3cd !important;
+  color: #4b5563 !important;
 }
 </style>

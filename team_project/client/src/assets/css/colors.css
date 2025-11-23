@@ -1,215 +1,59 @@
 /* ===========================
-   🎨 공통 파스텔 팔레트 유틸
+   🎨 공통 파스텔 팔레트 (이미지 톤에 맞게 조정)
    =========================== */
 
-/* ---------------------------
-   🔴 Pastel Red
-   --------------------------- */
-.p-bg-red {
-  background-color: #fee2e2 !important;
-}
-.p-text-red {
-  color: #b91c1c !important;
-}
-.p-border-red {
-  border-color: #fca5a5 !important;
+/* 🔴 Red */
+.p-red {
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
-.p-bg-red-hover:hover {
-  background-color: #fca5a5 !important;
+/* 🟠 Orange / Yellow-ish */
+.p-orange {
+  background-color: #fce8a1 !important;
+  color: #b0681b !important;
+  border: 1px solid #e6c77b !important;
 }
 
-/* ---------------------------
-   🟠 Pastel Orange
-   --------------------------- */
-.p-bg-orange {
-  background-color: #ffe4c7 !important;
-}
-.p-text-orange {
-  color: #9a3412 !important;
-}
-.p-border-orange {
-  border-color: #fdba74 !important;
+/* 🟡 Yellow (조금 더 밝은 버전이 필요할 때) */
+.p-yellow {
+  background-color: #fff7d1 !important;
+  color: #a07c18 !important;
+  border: 1px solid #f3db85 !important;
 }
 
-.p-bg-orange-hover:hover {
-  background-color: #fdba74 !important;
+/* 🟢 Green */
+.p-green {
+  background-color: #deeec8 !important;
+  color: #3f7a3a !important;
+  border: 1px solid #bedca0 !important;
 }
 
-/* ---------------------------
-   🟡 Pastel Yellow
-   --------------------------- */
-.p-bg-yellow {
-  background-color: #fef9c3 !important;
-}
-.p-text-yellow {
-  color: #854d0e !important;
-}
-.p-border-yellow {
-  border-color: #fde047 !important;
+/* 🔵 Blue */
+.p-blue {
+  background-color: #e4f0ff !important;
+  color: #476c99 !important;
+  border: 1px solid #a5c3da !important;
 }
 
-.p-bg-yellow-hover:hover {
-  background-color: #fde047 !important;
+/* ⚪ Gray */
+.p-gray {
+  background-color: #e4e6e1 !important;
+  color: #4b5563 !important;
+  border: 1px solid #d0d3cd !important;
 }
 
-/* ---------------------------
-   🟢 Pastel Green
-   --------------------------- */
-.p-bg-green {
-  background-color: #dcfce7 !important;
-}
-.p-text-green {
-  color: #166534 !important;
-}
-.p-border-green {
-  border-color: #86efac !important;
-}
-
-.p-bg-green-hover:hover {
-  background-color: #86efac !important;
-}
-
-/* ---------------------------
-   🔵 Pastel Blue
-   --------------------------- */
-.p-bg-blue {
-  background-color: #dbeafe !important;
-}
-.p-text-blue {
-  color: #1e3a8a !important;
-}
-.p-border-blue {
-  border-color: #93c5fd !important;
-}
-
-.p-bg-blue-hover:hover {
-  background-color: #93c5fd !important;
-}
-
-/* ---------------------------
-   ⚪ Pastel Gray
-   --------------------------- */
-.p-bg-gray {
-  background-color: #f3f4f6 !important;
-}
-.p-text-gray {
-  color: #374151 !important;
-}
-.p-border-gray {
-  border-color: #d1d5db !important;
-}
-
-.p-bg-gray-hover:hover {
-  background-color: #e5e7eb !important;
-}
-
-/* ===========================
-   🎯 Components: Buttons / Badge 공통 스타일
-   =========================== */
-.p-pill {
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  font-weight: 500;
-  font-size: 0.85rem;
-  border: 1px solid transparent;
+.status-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-/* 버튼 스타일 확장 */
-.p-btn {
-  cursor: pointer;
-  transition: 0.15s ease;
-  font-weight: 600;
-  padding: 0.4rem 0.9rem;
-  border-radius: 8px;
+  padding: 0.32rem 0.75rem !important;
+  border-radius: 999px;
+  font-size: 13px !important;
+  font-weight: 500;
   border: 1px solid transparent;
-}
-
-/* Badge 스타일 확장 */
-.p-badge {
-  padding: 0.25rem 0.6rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* ================================
-   🔴 Pastel Button - Red
-   ================================ */
-.p-btn-red {
-  background-color: #cc7676 !important;
-  color: #b91c1c !important;
-  border: 1px solid #cc7676 !important;
-}
-.p-btn-red:hover {
-  background-color: #cc7676 !important;
-  color: white !important;
-}
-
-/* ================================
-   🟠 Pastel Button - Orange
-   ================================ */
-.p-btn-orange {
-  background-color: #ffe4c7 !important;
-  color: #9a3412 !important;
-  border: 1px solid #fdba74 !important;
-}
-.p-btn-orange:hover {
-  background-color: #fdba74 !important;
-  color: white !important;
-}
-
-/* ================================
-   🟡 Pastel Button - Yellow
-   ================================ */
-.p-btn-yellow {
-  background-color: #fef9c3 !important;
-  color: #854d0e !important;
-  border: 1px solid #fde047 !important;
-}
-.p-btn-yellow:hover {
-  background-color: #fde047 !important;
-  color: white !important;
-}
-
-/* ================================
-   🟢 Pastel Button - Green
-   ================================ */
-.p-btn-green {
-  background-color: #dcfce7 !important;
-  color: #166534 !important;
-  border: 1px solid #86efac !important;
-}
-.p-btn-green:hover {
-  background-color: #86efac !important;
-  color: white !important;
-}
-
-/* ================================
-   🔵 Pastel Button - Blue
-   ================================ */
-.p-btn-blue {
-  background-color: #dbeafe !important;
-  color: #1e3a8a !important;
-  border: 1px solid #93c5fd !important;
-}
-.p-btn-blue:hover {
-  background-color: #93c5fd !important;
-  color: white !important;
-}
-
-/* ================================
-   ⚪ Pastel Button - Gray
-   ================================ */
-.p-btn-gray {
-  background-color: #f3f4f6 !important;
-  color: #374151 !important;
-  border: 1px solid #d1d5db !important;
-}
-.p-btn-gray:hover {
-  background-color: #e5e7eb !important;
-  color: #111827 !important;
+  min-width: auto; /* 길이 강제하지 않음 */
+  line-height: 1.1; /* 더 콤팩트하게 */
+  height: auto;
 }

@@ -93,6 +93,7 @@ async function listSupportResultsByRole(role, userId) {
       writerName: r.writer_name,
       assiName: r.assi_name,
       orgName: r.org_name ?? null,
+      level: r.level ?? null,
     }));
 
     return safeJSON(mapped);
@@ -114,20 +115,27 @@ async function getResultBasic(submitCode) {
       );
     }
 
+    const goalRows = await conn.query(sql.getPlanGoalsBySubmitCode, [
+      submitCode,
+    ]);
+
+    const planGoals = (goalRows || [])
+      .map((r) => (r.item_title || "").trim())
+      .filter((v) => v) // 빈 문자열 제거
+      .filter((v, idx, arr) => arr.indexOf(v) === idx); // 중복 제거
+
     return safeJSON({
       submitCode: row.submit_code,
 
-      // 기본정보 카드
-      childName: row.child_name || "", // 지원자 이름
-      guardianName: row.guardian_name || "", // 보호자 이름
-      assigneeName: row.assignee_name || "", // 담당자 이름
-      disabilityType: row.disability_type || "", // 장애유형
+      childName: row.child_name || "",
+      guardianName: row.guardian_name || "",
+      assigneeName: row.assignee_name || "",
+      disabilityType: row.disability_type || "",
       level: row.level || "",
-
-      ssnFront: row.ssn,
-      counselSubmitAt: row.counsel_submit_at,
       planSubmitAt: row.plan_submit_at,
-      resultWrittenAt: row.result_written_at,
+
+      // ✅ 프론트에서 쓰는 배열
+      planGoals,
     });
   } finally {
     conn.release();

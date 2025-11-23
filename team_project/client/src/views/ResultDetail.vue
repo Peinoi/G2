@@ -51,7 +51,7 @@
 
         <!-- 상태 뱃지 -->
         <span class="status-pill" :class="statusClass(status)">
-          상태: {{ statusLabel(status) }}
+          {{ statusLabel(status) }}
         </span>
       </header>
 
@@ -100,11 +100,11 @@
               </span>
             </div>
 
-            <!-- 4. 장애유형 -->
+            <!-- 우선순위 -->
             <div class="meta-item">
               <span class="meta-label">우선순위</span>
               <span class="meta-value">
-                {{ basicInfo.level || "-" }}
+                {{ priorityLabel(basicInfo.level) || "-" }}
               </span>
             </div>
 
@@ -134,16 +134,10 @@
         <div v-if="isTemp" class="info-card muted-info">
           <template v-if="status === 'CD1'">
             이 지원결과는 <strong>임시 저장</strong> 상태입니다.<br />
-            목표, 내용 및 첨부파일은
-            <span class="font-semibold">[작성하기]</span>
-            화면에서만 확인·수정할 수 있습니다.
           </template>
 
           <template v-else>
             이 지원결과는 아직 <strong>작성 전</strong> 상태입니다.<br />
-            목표, 내용 및 첨부파일은
-            <span class="font-semibold">[작성하기]</span>
-            버튼을 눌러 작성해 주세요.
           </template>
         </div>
 
@@ -485,6 +479,20 @@ async function loadRejectionInfo() {
   }
 }
 
+function priorityLabel(code) {
+  const c = (code || "").toUpperCase();
+  switch (c) {
+    case "BB1":
+      return "긴급";
+    case "BB2":
+      return "중점";
+    case "BB3":
+      return "계획";
+    default:
+      return "-";
+  }
+}
+
 onMounted(async () => {
   try {
     loading.value = true;
@@ -539,17 +547,17 @@ function statusClass(code) {
   switch (c) {
     case "CD1":
     case "CD3":
-      return "status-pill--before";
+      return "p-gray";
     case "CD4":
-      return "status-pill--review";
-    case "CD7":
-      return "status-pill--rejected";
+      return "p-yellow";
     case "CD5":
-      return "status-pill--done";
+      return "p-green";
     case "CD6":
-      return "status-pill--resubmit";
+      return "p-orange";
+    case "CD7":
+      return "p-red";
     default:
-      return "status-pill--default";
+      return "p-gray";
   }
 }
 
@@ -682,54 +690,6 @@ section {
   padding-bottom: 0.75rem;
   margin-bottom: 1.25rem;
   border-bottom: 1px solid #e5e7eb;
-}
-
-/* 상태 pill */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  border: 1px solid transparent;
-}
-
-/* 상태별 톤 (계획 상세와 통일) */
-.status-pill--before {
-  background-color: #f3f4f6;
-  color: #4b5563;
-  border-color: #e5e7eb;
-}
-
-.status-pill--review {
-  background-color: #e5e7eb;
-  color: #111827;
-  border-color: #d1d5db;
-}
-
-.status-pill--rejected {
-  background-color: #fef2f2;
-  color: #b91c1c;
-  border-color: #fecaca;
-}
-
-.status-pill--done {
-  background-color: #111827;
-  color: #f9fafb;
-  border-color: #111827;
-}
-
-.status-pill--resubmit {
-  background-color: #fefce8;
-  color: #854d0e;
-  border-color: #fef3c7;
-}
-
-.status-pill--default {
-  background-color: #f3f4f6;
-  color: #374151;
-  border-color: #e5e7eb;
 }
 
 /* 메타 정보 카드 */
