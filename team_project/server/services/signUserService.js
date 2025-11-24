@@ -1,6 +1,7 @@
 const pool = require('../configs/db');
 const code = require('../configs/userRoleCode');
 const smsUtil = require('../utils/sms');
+const { sendSms } = require('../utils/solapi');
 const signUserMapper = require('../mappers/signUserMapper');
 const { hashPw, checkPw } = require('../utils/crypto');
 const { INSERT_DATA } = require('../configs/insertData');
@@ -31,8 +32,17 @@ async function sendCode(phone) {
         message: '인증코드 전송 실패 : 연락처는 10~11자로 입력하셔야 됩니다.',
       };
     }
+    const textMsg = `[ 인증번호 : ${code} ]`;
+    const result = await sendSms(phone.data, textMsg);
+
+    if (!result.ok) {
+      return {
+        ok: false,
+        message: '문자 발송 실패 (Solapi)',
+      };
+    }
     smsUtil.makeCode(phone.data, code);
-    console.log(`[ Test SMS Code : ${code} ]`);
+
     return { ok: true, message: '인증코드 전송 완료' };
   } catch (err) {
     console.error('[ sendCode 오류 ] : ', err);

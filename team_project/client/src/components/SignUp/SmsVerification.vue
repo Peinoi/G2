@@ -12,14 +12,14 @@
         class="mb-3"
         @input="validatePhone"
       />
-      <!-- <material-button
+      <material-button
         color="success"
         class="sms-btn"
         :disabled="localIsVerified"
         @click="sendCode"
       >
         인증번호 전송
-      </material-button> -->
+      </material-button>
     </div>
     <!-- 안내 메시지 -->
     <p
@@ -35,7 +35,7 @@
     </p>
 
     <!-- 인증번호 -->
-    <!-- <div class="d-flex gap-2 mb-3">
+    <div class="d-flex gap-2 mb-3">
       <material-input
         label="인증번호 6자리"
         v-model="smsCode"
@@ -50,7 +50,7 @@
       >
         인증 확인
       </material-button>
-    </div> -->
+    </div>
 
     <!-- 안내 메시지 -->
     <p
@@ -69,14 +69,14 @@
 
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
-// import MaterialButton from '@/components/MaterialButton.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
 import { sendSMS, verifySMS } from '../../api/user';
 
 export default {
   name: 'SmsVerification',
   components: {
     MaterialInput,
-    // MaterialButton,
+    MaterialButton,
   },
   props: {
     phone: String,

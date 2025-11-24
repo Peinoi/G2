@@ -143,13 +143,11 @@
                         v-model="agree"
                       >
                         이용약관에 동의합니다
-                        <!-- <a
-                          href="../../../pages/privacy.html"
-                          class="text-dark font-weight-bolder"
+                        <a type="button" @click="showTermsModal">
+                          | [이용약관(클릭 시 이용약관이 표시됩니다.)]</a
                         >
-                          | 이용약관 확인</a
-                        > -->
                       </material-checkbox>
+
                       <p
                         v-if="!agreeCheck"
                         :style="{
@@ -345,9 +343,10 @@ export default {
       // agreeCheck: true,
       // agreeCheckMessage: '',
       step: 1,
-      userId: "",
-      userPw: "",
-      pwCheck: "",
+      org_name: '',
+      userId: '',
+      userPw: '',
+      pwCheck: '',
       agree: false,
       idCheck: null,
       idCheckMessage: "사용 가능한 아이디인지 확인해주세요.",
@@ -389,6 +388,9 @@ export default {
   methods: {
     ...mapMutations(["toggleEveryDisplay", "toggleHideConfig"]),
 
+    showTermsModal() {
+      this.showTerms = true;
+    },
     // 중복확인
     async checkId() {
       if (!this.userId) {
@@ -435,6 +437,7 @@ export default {
       if (type == "user") {
         try {
           const payload = {
+            org_name: this.org_name,
             userId: this.userId,
             userPw: this.userPw,
             agree: this.agree,

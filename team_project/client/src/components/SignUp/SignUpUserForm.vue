@@ -131,7 +131,7 @@ export default {
       regFront: '',
       regBack: '',
       phone: '',
-      isPhoneVerified: true,
+      isPhoneVerified: false,
       address: '',
       email: '',
       org_name: '',
@@ -187,7 +187,7 @@ export default {
         address: this.address,
         email: this.email,
         role: this.role,
-        org_name: this.org_name ? this.org_code : null,
+        org_name: this.org_name || null,
       });
     },
     async findOrgList() {
