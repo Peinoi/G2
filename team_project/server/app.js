@@ -1,59 +1,77 @@
 // app.js
-const express = require('express');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
-const testRouter = require('./routes/testRoute');
-const surveyRoute = require('./routes/surveyRoute');
-const counselRoute = require('./routes/counselRoute');
-const supportPlanRoute = require('./routes/supportPlanRoute');
-const supportResultRoute = require('./routes/supportResultRoute');
-const orgRouter = require('./routes/orgRoute');
-const eventRouter = require('./routes/eventRoute');
-const sponsorRouter = require('./routes/sponsorRoute');
-const approvalRouter = require('./routes/approvalRoute.js');
-const path = require('path');
-const signRouter = require('./routes/signUser');
-const userRouter = require('./routes/userRoute');
-const pendingRouter = require('./routes/pendingRoute');
-const attachmentRouter = require('./routes/attachmentRoute');
-const assign = require('./routes/assignRoute');
-const historyRoute = require('./routes/historyRoute');
-const managerRoute = require('./routes/managerRoute');
-const authorityTransferRoute = require('./routes/authorityTransferRoute');
-const applicationRoute = require('./routes/applicationRoute');
-const kakaoPayRouter = require('./routes/kakaoPayRouter.js');
+const express = require("express");
+const morgan = require("morgan");
+const dotenv = require("dotenv");
+const testRouter = require("./routes/testRoute");
+const surveyRoute = require("./routes/surveyRoute");
+const counselRoute = require("./routes/counselRoute");
+const supportPlanRoute = require("./routes/supportPlanRoute");
+const supportResultRoute = require("./routes/supportResultRoute");
+const orgRouter = require("./routes/orgRoute");
+const eventRouter = require("./routes/eventRoute");
+const sponsorRouter = require("./routes/sponsorRoute");
+const approvalRouter = require("./routes/approvalRoute.js");
+const path = require("path");
+const signRouter = require("./routes/signUser");
+const userRouter = require("./routes/userRoute");
+const pendingRouter = require("./routes/pendingRoute");
+const attachmentRouter = require("./routes/attachmentRoute");
+const assign = require("./routes/assignRoute");
+const historyRoute = require("./routes/historyRoute");
+const managerRoute = require("./routes/managerRoute");
+const authorityTransferRoute = require("./routes/authorityTransferRoute");
+const applicationRoute = require("./routes/applicationRoute");
+const kakaoPayRouter = require("./routes/kakaoPayRouter.js");
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
 // 라우터
 // app.use('/api', testRouter);
 
-app.use('/test', testRouter);
-app.use('/sponsor', sponsorRouter);
-app.use('/survey', surveyRoute);
-app.use('/counsel', counselRoute);
-app.use('/plans', supportPlanRoute);
-app.use('/result', supportResultRoute);
-app.use('/organization', orgRouter);
-app.use('/approvals', approvalRouter);
-app.use('/event', eventRouter);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // 첨부파일
-app.use('/user', signRouter);
-app.use('/userinfo', userRouter);
-app.use('/pending', pendingRouter);
-app.use('/attachment', attachmentRouter);
-app.use('/assign', assign);
-app.use('/histories', historyRoute);
-app.use('/managers', managerRoute);
-app.use('/authority-transfer', authorityTransferRoute);
-app.use('/applications', applicationRoute);
-app.use('/pay/kakao', kakaoPayRouter);
+// 운영모드에서 추가적인 경로설정
+let apiPath = "";
+if (process.argv.indexOf("prod") > -1) {
+  apiPath = "/api";
+}
+
+app.use(`${apiPath}/test`, testRouter);
+app.use(`${apiPath}/sponsor`, sponsorRouter);
+app.use(`${apiPath}/survey`, surveyRoute);
+app.use(`${apiPath}/counsel`, counselRoute);
+app.use(`${apiPath}/plans`, supportPlanRoute);
+app.use(`${apiPath}/result`, supportResultRoute);
+app.use(`${apiPath}/organization`, orgRouter);
+app.use(`${apiPath}/approvals`, approvalRouter);
+app.use(`${apiPath}/event`, eventRouter);
+app.use(`/uploads`, express.static(path.join(__dirname, "uploads")));
+app.use(`${apiPath}/user`, signRouter);
+app.use(`${apiPath}/userinfo`, userRouter);
+app.use(`${apiPath}/pending`, pendingRouter);
+app.use(`${apiPath}/attachment`, attachmentRouter);
+app.use(`${apiPath}/histories`, historyRoute);
+app.use(`${apiPath}/managers`, managerRoute);
+app.use(`${apiPath}/authority-transfer`, authorityTransferRoute);
+app.use(`${apiPath}/applications`, applicationRoute);
+app.use(`${apiPath}/pay/kakao`, kakaoPayRouter);
+
+// 정적인 파일 등록 ex) img, css, js 단순 파일
+const publicPath = path.join(__dirname, "public");
+app.use(express.static(publicPath));
+
+// vue.js build 파일 제공
+app.get(`${apiPath}/`, function (req, res, next) {
+  res.sendFile(path.join(__dirname, "./public", "index.html"));
+});
 
 // const port = process.env.PORT;
 const port = process.env.PORT;
 app.listen(port, () => {
-  console.log('[ server app.js 가동 완료 | http://localhost:3000/ ]');
+  console.log("[ server app.js 가동 완료 | http://localhost:3000/ ]");
+});
+
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, "./public", "index.html"));
 });
