@@ -1,5 +1,5 @@
 <template>
-  <div class="w-auto h-auto collapse navbar-collapse max-height-vh-100 h-100">
+  <div class="w-auto h-auto collapse navbar-collapse max-height-vh-200 h-200">
     <ul class="navbar-nav">
       <li class="mt-3 nav-item">
         <h6 class="text-xs ps-4 text-uppercase font-weight-bolder text-white">

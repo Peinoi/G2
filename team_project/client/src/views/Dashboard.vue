@@ -249,9 +249,11 @@ export default {
       }
     },
     goApplicationStatus() {
-      this.$router.push({
-        name: "ApplicationStatus",
-      });
+      if (this.userRole === "AA1") {
+        this.$router.push({
+          name: "ApplicationStatus",
+        });
+      }
     },
 
     // ───────────────── 신청 현황 조회 ─────────────────
