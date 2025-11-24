@@ -158,7 +158,12 @@
 
       <!-- 서브 매니저 -->
       <div class="card">
-        <h3>서브 매니저</h3>
+        <div class="sub-manager-header">
+          <h3>서브 매니저</h3>
+          <button type="button" class="btn-primary" @click="addSubManager">
+            추가
+          </button>
+        </div>
         <div
           v-for="(manager, index) in eventInfo.sub_managers"
           :key="index"
@@ -183,14 +188,14 @@
             삭제
           </button>
         </div>
-        <button type="button" class="btn-primary" @click="addSubManager">
-          추가
-        </button>
       </div>
 
-      <button type="submit" class="btn-submit">
-        {{ isUpdated ? "수정" : "등록" }}
-      </button>
+      <!-- 등록 버튼 -->
+      <div class="submit-wrapper">
+        <button type="submit" class="btn-submit">
+          {{ isUpdated ? "수정" : "등록" }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
@@ -466,14 +471,34 @@ button {
   color: white;
 }
 .btn-submit {
-  width: 100%;
+  width: auto;
   background-color: #4caf50;
   color: white;
   font-size: 18px;
-  padding: 10px;
+  padding: 10px 20px;
   margin-top: 10px;
 }
 .file-input {
   margin-bottom: 10px;
+}
+.submit-wrapper {
+  display: flex;
+  justify-content: center; /* 수평 중앙 정렬 */
+  margin-top: 20px; /* 버튼 위 여백 */
+}
+
+.sub-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* h3와 버튼 사이 공간 확보 */
+  margin-bottom: 10px;
+}
+.sub-manager-header h3 {
+  margin: 0;
+}
+.sub-manager-header .btn-primary {
+  margin: 0;
+  padding: 6px 14px;
+  font-size: 14px;
 }
 </style>

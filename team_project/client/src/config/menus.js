@@ -137,12 +137,12 @@ export const appReqMenu = [
     collapseRef: "SponsorshipPlanApprovals",
     role: ["AA3", "AA4"],
   },
-  {
-    label: "후원 결과 승인",
-    path: "/sponsorshipResultApprovals",
-    collapseRef: "SponsorshipResultApprovals",
-    role: ["AA3", "AA4"],
-  },
+  // {
+  //   label: "후원 결과 승인",
+  //   path: "/sponsorshipResultApprovals",
+  //   collapseRef: "SponsorshipResultApprovals",
+  //   role: ["AA3", "AA4"],
+  // },
   {
     label: "권한 이전",
     path: "/authorityTransfer",
