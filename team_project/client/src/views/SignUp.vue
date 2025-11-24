@@ -143,11 +143,14 @@
                         v-model="agree"
                       >
                         이용약관에 동의합니다 |
-                        <a
-                          href="../../../pages/privacy.html"
-                          class="text-dark font-weight-bolder"
-                          >이용약관 확인</a
-                        >
+                      <a
+  href="#"
+  class="text-dark font-weight-bolder"
+  @click.prevent="showTerms = true"
+>
+  이용약관 확인
+</a>
+
                       </material-checkbox>
                       <p
                         v-if="!agreeCheck"
@@ -221,6 +224,86 @@
       </section>
     </main>
   </div>
+
+<!-- ======================= -->
+<!-- 📌 이용약관 모달창 -->
+<!-- ======================= -->
+<div
+  v-if="showTerms"
+  class="terms-modal-backdrop"
+  @click.self="showTerms = false"
+>
+  <div class="terms-modal">
+    <h4 class="mb-3">이용약관</h4>
+
+    <div class="terms-content">
+      <h5>장애아동 지원센터 서비스 이용약관</h5>
+      <p>
+        본 약관은 장애아동 지원센터(이하 “센터”)가 제공하는 온라인 후원 및
+        복지서비스(이하 “서비스”)의 이용 조건, 절차 및 이용자 권리와 의무를
+        규정합니다.
+      </p>
+
+      <h6>제1조 (목적)</h6>
+      <p>
+        본 약관은 센터가 제공하는 서비스의 이용과 관련하여 센터와 이용자 간의
+        권리 및 의무를 규정함을 목적으로 합니다.
+      </p>
+
+      <h6>제2조 (정의)</h6>
+      <p>
+        1. “이용자”란 본 약관에 동의하고 센터가 운영하는 서비스를 이용하는 자를
+        말합니다.<br />
+        2. “후원자”란 장애아동을 위해 후원금을 기부하는 이용자를 말합니다.<br />
+        3. “기관 회원”은 복지기관 또는 단체로서 서비스에 가입한 이용자를 말합니다.
+      </p>
+
+      <h6>제3조 (서비스 내용)</h6>
+      <p>
+        센터는 다음의 서비스를 제공합니다.<br />
+        1. 장애아동 후원 프로그램 안내 및 참여 기능<br />
+        2. 후원금 결제 및 관리<br />
+        3. 기관별 활동 보고서 등록 서비스<br />
+        4. 공지사항 및 이벤트 안내 메시지 제공<br />
+      </p>
+
+      <h6>제4조 (개인정보 보호)</h6>
+      <p>
+        센터는 개인정보보호법 등 관련 법령을 준수하며 이용자의 개인정보는
+        명시된 목적 이외에는 사용하지 않습니다. 상세 내용은 “개인정보처리방침”을
+        따릅니다.
+      </p>
+
+      <h6>제5조 (이용자의 의무)</h6>
+      <p>
+        1. 이용자는 서비스 이용 시 허위 정보를 제공해서는 안 됩니다.<br />
+        2. 타인의 정보를 도용하거나 서비스를 부정 사용해서는 안 됩니다.<br />
+        3. 후원금은 센터의 규정에 따라 사용되며, 이용자는 이에 동의해야 합니다.
+      </p>
+
+      <h6>제6조 (약관의 변경)</h6>
+      <p>
+        센터는 필요한 경우 약관을 변경할 수 있으며, 변경 시 공지사항을 통해
+        안내합니다.
+      </p>
+
+      <hr />
+<!-- 
+      <p class="mt-3 text-sm text-muted">
+        ※ 본 약관은 샘플이며 실제 서비스 운영 시 법률 검토 후 수정해야 합니다.
+      </p> -->
+    </div>
+
+    <div class="text-end mt-3">
+      <material-button color="success" variant="gradient" @click="showTerms = false">
+        닫기
+      </material-button>
+    </div>
+  </div>
+</div>
+
+
+
 </template>
 
 <script>
@@ -260,6 +343,7 @@ export default {
       pwCheckedMessage: '비밀번호를 확인해주세요.',
       agreeCheck: true,
       agreeCheckMessage: '',
+      showTerms: false,
     };
   },
   watch: {
@@ -390,4 +474,37 @@ export default {
   width: 80px;
   height: 45px;
 }
+
+/* 모달 배경 */
+.terms-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* 모달 박스 */
+.terms-modal {
+  background: #fff;
+  width: 600px;
+  max-width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 내용 스크롤 */
+.terms-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 </style>
