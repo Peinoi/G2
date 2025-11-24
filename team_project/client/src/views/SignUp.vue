@@ -144,7 +144,7 @@
                       >
                         이용약관에 동의합니다
                         <a type="button" @click="showTermsModal">
-                          | [이용약관(클릭 시 이용약관이 표시됩니다.)]</a
+                          (여기 클릭 시 표시됩니다.)</a
                         >
                       </material-checkbox>
 
