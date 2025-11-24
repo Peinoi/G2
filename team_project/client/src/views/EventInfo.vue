@@ -5,7 +5,7 @@
         ← 목록으로
       </MaterialButton>
 
-      <div class="flex items-center gap-2">
+      <!-- <div class="flex items-center gap-2">
         <MaterialButton v-if="canEdit" @click="goEdit" color="dark" size="sm"
           >수정하기</MaterialButton
         >
@@ -13,7 +13,7 @@
         <MaterialButton v-if="canReEdit" @click="goEdit" color="dark" size="sm"
           >재수정하기</MaterialButton
         >
-      </div>
+      </div> -->
     </div>
 
     <div class="detail-card">
@@ -280,16 +280,13 @@ const applied = computed(() => {
   return isApplied.value && !isBlockedByResultStatus.value;
 });
 
-// 작성자/관리자 버튼 표시
-// 기존 로직을 최대한 유지하기 위해 role 쿼리 파라미터 대신 loginRole 사용
-// **참고:** 기존 템플릿의 `role.value`는 route.query.role에서 오므로, 실제 역할(`loginRole`)로 대체하는 것이 더 일반적이나,
-// 디자인 수정 요청이므로, `canEdit/canReEdit` 로직은 기존 코드를 그대로 유지하고, `loginRole`만 `seeStatus`에 사용했습니다.
-const canEdit = computed(
-  () => loginRole.value === "AA2" && event.value.register_status === "BA2" // BA2: 승인 완료 상태에서만 수정 가능하도록 가정
-);
-const canReEdit = computed(
-  () => loginRole.value === "AA2" && event.value.register_status === "BA3" // BA3: 반려 상태에서 재수정 가능하도록 가정
-);
+// 작성자 버튼 표시
+// const canEdit = computed(
+//   () => loginRole.value === "AA2" && event.value.register_status === "BA2" // BA2: 승인 완료 상태에서만 수정 가능하도록 가정
+// );
+// const canReEdit = computed(
+//   () => loginRole.value === "AA2" && event.value.register_status === "BA3" // BA3: 반려 상태에서 재수정 가능하도록 가정
+// );
 
 const seeStatus = computed(
   () => loginRole.value === "AA2" || loginRole.value === "AA3"
@@ -429,7 +426,7 @@ const onEventClick = async (info) => {
 
 // 화면 이동
 const goBack = () => router.back();
-const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
+// const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션
 const calendarOptions = ref({
