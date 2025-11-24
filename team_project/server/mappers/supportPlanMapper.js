@@ -226,6 +226,7 @@ async function savePlanWithItems(formJson, files) {
     // 3) 첨부파일 → attachment에 저장
     if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
+        const originalName = decodeOriginalName(file);
         const serverName = file.filename;
         const filePath = `/uploads/plans/${serverName}`;
 

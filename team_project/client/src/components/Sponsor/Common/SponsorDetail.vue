@@ -1,6 +1,5 @@
 <template>
   <div class="detail-container">
-    
     <div v-if="isLoading" class="loading-message">
       <p>프로그램 상세 정보를 불러오는 중입니다...</p>
     </div>
@@ -22,33 +21,36 @@
             {{ formatDate(programDetail.end_date) }}
           </span>
         </div>
-        </div>
-      
+      </div>
+
       <hr class="section-divider" />
 
       <div class="image-area">
-        <img 
-          v-for="(attachment, index) in attachments" 
+        <img
+          v-for="(attachment, index) in attachments"
           :key="index"
-          :src="attachment.file_path" 
-          alt="프로그램 상세 이미지" 
+          :src="attachment.file_path"
+          alt="프로그램 상세 이미지"
           class="detail-image"
-        >
-        <p v-if="attachments.length === 0" class="no-image-text">등록된 이미지가 없습니다.</p>
+        />
+        <p v-if="attachments.length === 0" class="no-image-text">
+          등록된 이미지가 없습니다.
+        </p>
       </div>
 
-      <div class="description-area" v-html="programDetail.description">
-        </div>
-      
+      <div class="description-area" v-html="programDetail.description"></div>
+
       <hr class="section-divider" />
 
       <div class="button-area">
-        <button 
-          class="sponsor-button" 
+        <button
+          class="sponsor-button"
           @click="goToPayment"
           :disabled="programDetail.status !== '진행중'"
         >
-          {{ programDetail.status === '진행중' ? '지금 후원하기' : '후원 종료' }}
+          {{
+            programDetail.status === "진행중" ? "지금 후원하기" : "후원 종료"
+          }}
         </button>
       </div>
     </div>
@@ -67,8 +69,8 @@ import dateFormat from "@/utils/dateFormat"; // 기존 유틸리티 사용 가�
 const props = defineProps({
   programCode: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 // -------------------------------
@@ -92,7 +94,6 @@ const getProgramDetail = async () => {
     const res = await axios.get(`/api/sponsor/${props.programCode}`);
     programDetail.value = res.data.serviceSponsor.sponsorRows[0];
     attachments.value = res.data.serviceSponsor.attachments || []; // 첨부 파일 배열
-
   } catch (e) {
     console.error("후원 상세 정보 조회 실패:", e);
     error.value = true;
@@ -105,12 +106,12 @@ const getProgramDetail = async () => {
 // 후원 결제 페이지로 이동
 // -------------------------------
 const goToPayment = () => {
-    // 'SponsorPayment'는 이전에 제안했던 결제 페이지의 라우트 이름입니다.
-    // 라우터 설정 시 'programCode' 파라미터를 그대로 전달합니다.
-    router.push({ 
-        name: 'PaymentPage', 
-        params: { programCode: props.programCode } 
-    });
+  // 'SponsorPayment'는 이전에 제안했던 결제 페이지의 라우트 이름입니다.
+  // 라우터 설정 시 'programCode' 파라미터를 그대로 전달합니다.
+  router.push({
+    name: "PaymentPage",
+    params: { programCode: props.programCode },
+  });
 };
 
 // -------------------------------
@@ -183,20 +184,20 @@ onMounted(() => {
 }
 
 .status-badge {
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 .status-badge.ongoing {
-    background-color: #5cb85c; /* Green */
-    color: white;
+  background-color: #5cb85c; /* Green */
+  color: white;
 }
 
 .status-badge.ended {
-    background-color: #d9534f; /* Red */
-    color: white;
+  background-color: #d9534f; /* Red */
+  color: white;
 }
 
 /* 이미지 영역 */
@@ -208,17 +209,17 @@ onMounted(() => {
 .detail-image {
   width: 100%;
   max-height: 450px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
   margin-bottom: 15px;
 }
 
 .no-image-text {
-    color: #999;
-    font-style: italic;
-    padding: 20px;
-    border: 1px dashed #ccc;
-    border-radius: 5px;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+  border: 1px dashed #ccc;
+  border-radius: 5px;
 }
 
 /* 설명 영역 (v-html 사용 시 기본 스타일) */
