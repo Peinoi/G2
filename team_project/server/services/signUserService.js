@@ -1,8 +1,11 @@
 const pool = require('../configs/db');
-const code = require('../configs/code');
-const smsUtils = require('../utils/sms');
+const code = require('../configs/userRoleCode');
+const smsUtil = require('../utils/sms');
 const signUserMapper = require('../mappers/signUserMapper');
 const { hashPw, checkPw } = require('../utils/crypto');
+const { INSERT_DATA } = require('../configs/insertData');
+const { makeParams } = require('../utils/sqlParamUtil');
+const { createUser } = require('./factories/userFactory');
 
 // 전체 목록 조회 test
 async function checkId(id) {
@@ -28,7 +31,7 @@ async function sendCode(phone) {
         message: '인증코드 전송 실패 : 연락처는 10~11자로 입력하셔야 됩니다.',
       };
     }
-    smsUtils.makeCode(phone.data, code);
+    smsUtil.makeCode(phone.data, code);
     console.log(`[ Test SMS Code : ${code} ]`);
     return { ok: true, message: '인증코드 전송 완료' };
   } catch (err) {
@@ -38,7 +41,7 @@ async function sendCode(phone) {
 
 async function verifyCode(data) {
   try {
-    const result = smsUtils.verifiedCode(data.phone, data.code);
+    const result = smsUtil.verifiedCode(data.phone, data.code);
     if (!result) {
       return {
         ok: false,
@@ -57,21 +60,30 @@ async function addUser(userData) {
   try {
     await conn.beginTransaction();
     const hashedPw = await hashPw(userData.userPw);
+
     const resOrgCode = await signUserMapper.findOrgCode(
       conn,
       userData.org_name
     );
     // 기관 선택 안 하면 null 반환
-    const orgCode = resOrgCode.length == 0 ? null : orgCode[0].org_code;
-    const result = await signUserMapper.addUser(conn, {
-      ...userData,
-      hashedPw,
-      org_code: orgCode,
+    const orgCode = resOrgCode.length == 0 ? null : resOrgCode[0].org_code;
+
+    // params로 만들기 위해 임시 데이터 가공
+    // 이유: 가공 안 하고 makeParams로 넘길려면 하드코딩 해야됨
+    const tempData = createUser(userData, {
+      orgCode: orgCode,
+      hashedPw: hashedPw,
     });
+
+    // params로 데이터 가공
+    const dataParams = makeParams(INSERT_DATA, tempData);
+    const result = await signUserMapper.addUser(conn, dataParams);
+
     if (result.insertId == 0) {
       conn.rollback();
       return { ok: false, message: '등록 실패' };
     }
+
     conn.commit();
     return { ok: true, message: '등록 성공' };
   } catch (err) {
@@ -93,12 +105,6 @@ async function findOrg() {
 }
 
 // 기관 회원
-// 헷갈릴까봐 작동 순서 주석 달아둠
-// 1. 프론트에서 회원가입 완료를 진행 -> /api/user/addOrg으로 이동
-// 2. findOrgCode 실행
-//    -> 회원가입 시 작성한 기관명(userData.org_name)으로 기관 코드(orgCode)를 찾음
-// 3. 기관 코드가 없으면 ok: false 반환
-// 4. 기관 코드가 있으면 매퍼에 있는 addOrg를 실행하여 DB 기입
 async function addOrg(userData) {
   const conn = await pool.getConnection();
   try {
@@ -106,11 +112,19 @@ async function addOrg(userData) {
     // 기관명 조회 -> 가입
     const hashedPw = await hashPw(userData.userPw);
     const orgCode = await signUserMapper.findOrgCode(conn, userData.org_name);
-    const userCode = await signUserMapper.addOrg(conn, {
-      ...userData,
-      hashedPw,
-      org_code: orgCode[0].org_code,
+
+    // params로 만들기 위해 임시 데이터 가공
+    // 이유: 가공 안 하고 makeParams로 넘길려면 하드코딩 해야됨
+    const tempData = createUser(userData, {
+      orgCode: orgCode[0].org_code,
+      hashedPw: hashedPw,
+      isActive: 0,
+      department: userData.department,
     });
+
+    // params로 데이터 가공
+    const dataParams = makeParams(INSERT_DATA, tempData);
+    const userCode = await signUserMapper.addOrg(conn, dataParams);
 
     // approval 테이블에 입력할 파라미터
     const reqData = {
@@ -120,10 +134,12 @@ async function addOrg(userData) {
       state: 'BA1',
     };
     const result = await signUserMapper.requestApproval(conn, reqData);
+
     if (result.affectedRows == 0) {
       conn.rollback();
       return { ok: false, message: '등록 실패' };
     }
+
     conn.commit();
     return { ok: true, message: '등록 성공' };
   } catch (err) {
