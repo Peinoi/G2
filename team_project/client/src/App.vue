@@ -35,52 +35,52 @@ Coded by www.creative-tim.com
       <router-view />
     </div>
     <app-footer v-show="showFooter" />
-    <configurator
+    <!-- <configurator
       :toggle="toggleConfigurator"
       :class="[showConfig ? 'show' : '', hideConfigButton ? 'd-none' : '']"
-    />
+    /> -->
   </main>
 </template>
 <script>
-import Sidenav from "./examples/Sidenav";
-import Configurator from "@/examples/Configurator.vue";
-import Navbar from "@/examples/Navbars/Navbar.vue";
-import AppFooter from "@/examples/Footer.vue";
-import { mapMutations, mapState } from "vuex";
+import Sidenav from './examples/Sidenav';
+// import Configurator from "@/examples/Configurator.vue";
+import Navbar from '@/examples/Navbars/Navbar.vue';
+import AppFooter from '@/examples/Footer.vue';
+import { mapMutations, mapState } from 'vuex';
 
 export default {
-  name: "App",
-  components: { Sidenav, Configurator, Navbar, AppFooter },
+  name: 'App',
+  components: { Sidenav, Navbar, AppFooter },
 
   setup() {
     // const sidebar = useSidebarStore(); // ✔ setup 내부에서 Pinia 사용
     // // return { sidebar };
   },
   methods: {
-    ...mapMutations(["toggleConfigurator", "navbarMinimize"]),
+    ...mapMutations(['toggleConfigurator', 'navbarMinimize']),
   },
   computed: {
     ...mapState([
-      "isRTL",
-      "color",
-      "isAbsolute",
-      "isNavFixed",
-      "navbarFixed",
-      "absolute",
-      "showSidenav",
-      "showNavbar",
-      "showFooter",
-      "showConfig",
-      "hideConfigButton",
+      'isRTL',
+      'color',
+      'isAbsolute',
+      'isNavFixed',
+      'navbarFixed',
+      'absolute',
+      'showSidenav',
+      'showNavbar',
+      'showFooter',
+      'showConfig',
+      'hideConfigButton',
     ]),
   },
   beforeMount() {
-    this.$store.state.isTransparent = "bg-transparent";
+    this.$store.state.isTransparent = 'bg-transparent';
 
-    const sidenav = document.getElementsByClassName("g-sidenav-show")[0];
+    const sidenav = document.getElementsByClassName('g-sidenav-show')[0];
 
     if (window.innerWidth > 16000) {
-      sidenav.classList.add("g-sidenav-pinned");
+      sidenav.classList.add('g-sidenav-pinned');
     }
   },
 };
