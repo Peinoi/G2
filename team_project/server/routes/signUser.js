@@ -10,9 +10,7 @@ router.get('/checkid', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> checkid 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> checkid 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -23,9 +21,7 @@ router.post('/verifySMS', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> verifySMS 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> verifySMS 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -35,9 +31,7 @@ router.post('/sendSMS', async (req, res) => {
     res.send(result);
   } catch (err) {
     console.error('[ authUser.js -> sendSMS 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> sendSMS 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -48,16 +42,19 @@ router.post('/addUser', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> addUser 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> addUser 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
 // 기관 목록 조회
 router.post('/findOrg', async (req, res) => {
-  const result = await userService.findOrg();
-  res.json(result);
+  try {
+    const result = await userService.findOrg();
+    res.json(result);
+  } catch (err) {
+    console.error('[ authUser.js -> findOrg 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: err });
+  }
 });
 
 // 기관 회원가입
@@ -67,9 +64,7 @@ router.post('/addOrg', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> addOrg 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> addOrg 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -80,9 +75,7 @@ router.post('/login', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> login 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> login 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -94,9 +87,7 @@ router.post('/findIdPw', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> findIdPw 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -108,9 +99,7 @@ router.put('/findIdPw', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ authUser.js -> findIdPw 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
