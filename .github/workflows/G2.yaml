@@ -47,7 +47,7 @@ jobs:
         ssh -vvv -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}  ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ~/
             git pull origin main
-            cd server
+            cd team_project/server
             npm install
             pm2 restart app || pm2 start app.js --name "app" -- prod
             pm2 save
