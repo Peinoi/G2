@@ -17,9 +17,9 @@ router.post("/ready", async (req, res) => {
       total_amount: amount, // 후원 금액
       vat_amount: 0,
       tax_free_amount: 0,
-      approval_url: "http://localhost:8080/kakaopayapprove",
-      cancel_url: "http://localhost:8080/kakaopaycancel",
-      fail_url: "http://localhost:8080/kakaopayfail",
+      approval_url: "http://49.50.139.49/kakaopayapprove",
+      cancel_url: "http://49.50.139.49/kakaopaycancel",
+      fail_url: "http://49.50.139.49/kakaopayfail",
     };
 
     const kakaoResponse = await axios.post(
@@ -79,7 +79,7 @@ router.post("/approve", async (req, res) => {
     const totalAmount = approveResponse.data.amount.total;
 
     const paymentInsert = await axios.post(
-      `http://localhost:3000/sponsor/${program_code}/${userID}/payments`,
+      `http://49.50.139.49:3000/sponsor/${program_code}/${userID}/payments`,
       {
         userID,
         transaction_amount: totalAmount,

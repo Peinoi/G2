@@ -51,6 +51,9 @@ async function addUser(userData) {
 
   try {
     await conn.beginTransaction();
+    console.log(userData);
+    await conn.rollback();
+    return;
 
     // 첫 번째: 기관 코드 조회
     const resOrgCode = await signUserMapper.findOrgCode(

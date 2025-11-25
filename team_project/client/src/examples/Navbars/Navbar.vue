@@ -7,28 +7,35 @@
     :class="isAbsolute ? 'mt-4' : 'mt-0'"
   >
     <div class="px-3 py-1 container-fluid">
-      <!-- 왼쪽에 있는 현재 페이지의 이름 -->
+      <!-- 🔹 1) 로고 영역 (항상 맨 왼쪽) -->
+      <div class="navbar-logo-area">
+        <img
+          src="../../assets/img/24logo.png"
+          alt="24시 장애행복복지센터"
+          class="navbar-logo"
+          @click="$router.push({ name: 'Dashboard' })"
+        />
+      </div>
+
+      <!-- 🔹 2) 왼쪽(=현재 페이지 이름) 영역 -->
       <div class="navbar-left-area">
         <breadcrumbs :currentPage="currentRouteName" :color="color" />
       </div>
 
-      <!-- 중앙 버튼 영역 -->
-      <div
-        class="header-button-group d-flex justify-content-center align-items-center gap-3 flex-grow-1"
-      >
-        <router-link
-          v-for="(item, index) in menuList"
-          :key="index"
-          :to="item.path"
-          class="badge-link"
-        >
-          <span
-            class="badge badge-sm"
-            :class="['bg-gradient-' + item.color, { 'rounded-pill': true }]"
+      <!-- 🔹 3) 중앙 버튼 영역 -->
+      <div class="navbar-center">
+        <div class="header-button-group">
+          <router-link
+            v-for="(item, index) in menuList"
+            :key="index"
+            :to="item.path"
+            class="badge-link"
           >
-            {{ item.name }}
-          </span>
-        </router-link>
+            <span class="badge badge-sm" :class="['bg-gradient-' + item.color]">
+              {{ item.name }}
+            </span>
+          </router-link>
+        </div>
       </div>
 
       <!-- 오른쪽 영역 -->
@@ -280,24 +287,24 @@
   </nav>
 </template>
 <script>
-import Breadcrumbs from '../Breadcrumbs.vue';
-import { mapMutations, mapState } from 'vuex';
-import { useAuthStore } from '@/store/authLogin';
-import { roleMenu } from '@/examples/Menu/roleMenu';
+import Breadcrumbs from "../Breadcrumbs.vue";
+import { mapMutations, mapState } from "vuex";
+import { useAuthStore } from "@/store/authLogin";
+import { roleMenu } from "@/examples/Menu/roleMenu";
 
 export default {
-  name: 'navbar',
+  name: "navbar",
   data() {
     return {
       showMenu: false,
     };
   },
-  props: ['minNav', 'color'],
+  props: ["minNav", "color"],
   created() {
     this.minNav;
   },
   methods: {
-    ...mapMutations(['navbarMinimize', 'toggleConfigurator']),
+    ...mapMutations(["navbarMinimize", "toggleConfigurator"]),
 
     toggleSidebar() {
       this.navbarMinimize();
@@ -307,17 +314,17 @@ export default {
       // pinia속에 있는 isLogin 변수를 갖고와서 로그인 상태인지 체크함
       if (this.piniaLogin.isLogin) {
         this.piniaLogin.logout();
-        alert('로그아웃 완료');
+        alert("로그아웃 완료");
       }
 
-      this.$router.push({ name: 'SignIn' });
+      this.$router.push({ name: "SignIn" });
     },
   },
   components: {
     Breadcrumbs,
   },
   computed: {
-    ...mapState(['isRTL', 'isAbsolute']),
+    ...mapState(["isRTL", "isAbsolute"]),
 
     currentRouteName() {
       return this.$route.name;
@@ -351,12 +358,10 @@ export default {
 }
 
 .container-fluid {
-  /* container-fluid를 Flex 컨테이너로 설정 */
   display: flex;
-  align-items: center; /* 수직 중앙 정렬 */
-  justify-content: space-between; /* 항목들을 양 끝으로 분산 */
-  padding-left: 24px !important;
-  padding-right: 24px !important;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
 }
 
 /* 2. 왼쪽 영역 (Breadcrumbs) */
@@ -370,25 +375,23 @@ export default {
   align-items: center;
 }
 
+.navbar-center {
+  flex: 1 1 auto; /* 가운데 영역이 남는 공간 사용 */
+  display: flex;
+  justify-content: center; /* 중앙 정렬 */
+  min-width: 0; /* 너무 넓어지지 않게 */
+}
 /* --- 3. 중앙 버튼 영역 (Middle Area) - 완벽한 중앙 정렬을 위해 수정 --- */
 
 .header-button-group {
-  /* Flexbox 설정 유지 */
-  display: flex;
-  justify-content: center; /* 내부 버튼들을 중앙 정렬 */
-  align-items: center;
+  display: inline-flex; /* 내용만큼만 배경 차지 */
   gap: 1rem;
-
-  /* ✅ 중앙 정렬 핵심: 남은 공간을 최대한 차지 */
-  flex-grow: 1;
-
-  /* 중앙 영역 스타일 (기존 유지) */
-  background-color: #f0f2f5;
-  border-radius: 0.75rem;
+  background: #f0f2f5;
   padding: 0.4rem 0.8rem;
-  box-shadow: none;
-  max-width: fit-content; /* 내부 내용물 크기만큼만 사용 */
-  margin: 0 auto; /* ✅ 이 margin: auto가 flex-grow: 1과 결합하여 중앙 정렬을 보장합니다. */
+  border-radius: 0.75rem;
+  white-space: nowrap; /* 줄바꿈 방지 */
+  max-width: 100%;
+  overflow-x: auto; /* 너무 좁으면 가로 스크롤로 버티기 */
 }
 
 .badge-link {
@@ -428,10 +431,9 @@ export default {
 /* 오른쪽 영역 컨테이너: flex-grow-0 유지 */
 .navbar-collapse {
   flex-grow: 0 !important;
+  flex-shrink: 0; /* 👉 줄어들지 말고 자기 크기 유지 */
   justify-content: flex-end;
-  /* 오른쪽 영역도 너비를 고정하여 중앙 영역과의 균형을 맞춥니다. */
   flex-basis: auto;
-  flex-shrink: 0;
 }
 
 .ms-auto.d-flex.align-items-center {
@@ -469,7 +471,7 @@ export default {
   color: #344767 !important;
 }
 
-.nav-link.font-weight-bold[style*='cursor: pointer']:hover {
+.nav-link.font-weight-bold[style*="cursor: pointer"]:hover {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
@@ -504,5 +506,31 @@ export default {
 
 .sidenav-toggler-inner i {
   background-color: currentColor !important;
+}
+
+.navbar-logo-area {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto; /* 크기 고정, 늘어나지 않게 */
+  margin-right: 16px;
+}
+
+.navbar-logo {
+  height: 40px; /* 원하는 크기로 조절 */
+  width: auto;
+  object-fit: contain;
+}
+
+.navbar-logo-text {
+  margin-left: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  white-space: nowrap; /* 줄바꿈 방지 */
+}
+
+@media (max-width: 1200px) {
+  .navbar-left-area {
+    display: none;
+  }
 }
 </style>

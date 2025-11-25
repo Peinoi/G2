@@ -35,29 +35,56 @@ Coded by www.creative-tim.com
       <router-view />
     </div>
     <app-footer v-show="showFooter" />
-    <configurator
+    <!-- <configurator
       :toggle="toggleConfigurator"
       :class="[showConfig ? 'show' : '', hideConfigButton ? 'd-none' : '']"
-    />
+    /> -->
+    <button class="scroll-top-btn" @click="scrollToTop">
+      <i class="material-icons">arrow_upward</i>
+    </button>
   </main>
 </template>
 <script>
 import Sidenav from "./examples/Sidenav";
-import Configurator from "@/examples/Configurator.vue";
+// import Configurator from "@/examples/Configurator.vue";
 import Navbar from "@/examples/Navbars/Navbar.vue";
 import AppFooter from "@/examples/Footer.vue";
 import { mapMutations, mapState } from "vuex";
 
 export default {
   name: "App",
-  components: { Sidenav, Configurator, Navbar, AppFooter },
+  components: { Sidenav, Navbar, AppFooter },
 
   setup() {
     // const sidebar = useSidebarStore(); // ✔ setup 내부에서 Pinia 사용
     // // return { sidebar };
   },
   methods: {
-    ...mapMutations(["toggleConfigurator", "navbarMinimize"]),
+    ...mapMutations(["navbarMinimize"]),
+
+    scrollToTop() {
+      // 1) 기본 window
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // 2) html, body
+      if (document.documentElement) {
+        document.documentElement.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      if (document.body) {
+        document.body.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 3) 대시보드에서 쓰는 메인 컨테이너들
+      const main = document.querySelector(".main-content");
+      if (main) {
+        main.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      const sidenavShow = document.querySelector(".g-sidenav-show");
+      if (sidenavShow) {
+        sidenavShow.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
   },
   computed: {
     ...mapState([
@@ -70,8 +97,6 @@ export default {
       "showSidenav",
       "showNavbar",
       "showFooter",
-      "showConfig",
-      "hideConfigButton",
     ]),
   },
   beforeMount() {
@@ -100,5 +125,25 @@ body {
 
 .content-wrapper {
   flex-grow: 1 !important;
+}
+.scroll-top-btn {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  border: none;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+.scroll-top-btn i.material-icons {
+  font-size: 20px;
 }
 </style>

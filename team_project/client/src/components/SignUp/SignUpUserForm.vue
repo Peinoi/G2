@@ -193,7 +193,6 @@ export default {
     async findOrgList() {
       const result = await findAllOrg();
       this.orgList = result;
-      console.log(this.orgList);
     },
   },
   mounted() {
