@@ -309,11 +309,12 @@ export default {
         name: this.findIdName,
         phone: this.findIdPhone,
       });
+      console.log(result);
       if (!result.ok) {
         alert('조건에 맞는 값이 없습니다');
         return;
       }
-      alert(`귀하의 아이디는 ${result.user_id} 입니다.`);
+      alert(`귀하의 아이디는 ${result.data.user_id} 입니다.`);
     },
 
     async findPw() {

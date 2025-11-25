@@ -13,7 +13,7 @@ async function addUser(conn, dataParams) {
 
 // 기관 목록 조회
 async function findOrgList() {
-  const [result] = await pool.query(signUserSQL.FIND_ORG_LIST);
+  const result = await pool.query(signUserSQL.FIND_ORG_LIST);
   return result;
 }
 
