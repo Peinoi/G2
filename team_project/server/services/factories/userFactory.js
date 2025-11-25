@@ -26,4 +26,16 @@ function createUser(userData, list = {}) {
   };
 }
 
-module.exports = { createUser };
+function createChild(data, enc) {
+  return {
+    user_code: data.user_code,
+    child_name: data.child_name,
+    ssn: enc.ssn,
+    gender: data.gender,
+    disability_type: data.disability_type,
+    registered_date: data.registered_date,
+    ssn_iv: enc.ssn_iv,
+  };
+}
+
+module.exports = { createUser, createChild };

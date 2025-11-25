@@ -195,7 +195,6 @@ export default {
       };
 
       const result = await updatePw(payload);
-      console.log(result);
       if (!result.ok) {
         alert('변경을 실패하였습니다.');
         return;
@@ -234,7 +233,7 @@ export default {
     },
 
     async updateChild(childData) {
-      const result = await updateInfo('child', this.auth.role, childData);
+      const result = await updateInfo('child', childData);
       if (!result.ok) {
         alert(result.message);
         return;
@@ -253,9 +252,10 @@ export default {
         };
 
         const result = await addChild(childData);
-        if (result.ok) {
-          await this.userFullInfo();
+        if (!result.ok) {
+          alert('자녀 등록을 실패했습니다.');
         }
+        await this.userFullInfo();
       } catch (err) {
         console.error('[ addChild 오류 ]', err);
       }

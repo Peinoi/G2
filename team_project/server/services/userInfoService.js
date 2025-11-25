@@ -1,12 +1,32 @@
 const userInfoMapper = require('../mappers/userInfoMapper');
+const { createChild } = require('./factories/userFactory');
+const { makeParams } = require('../utils/sqlParamUtil');
+const { INSERT_CHILD_DATA } = require('../configs/insertData');
+const { encryptSsn, decryptSsn } = require('../utils/ssnCrypto');
 
 // 회원정보 갖고오기
 async function findInfo(userData) {
   try {
     const result = await userInfoMapper.findUserInfo(userData);
-    return result;
+    if (result[0].ssn == null) {
+      return result;
+    }
+    const dec = decryptSsn(result[0]);
+    const replaceDec = dec.replace(/^(.{8})(.*)$/, (match, visible, hidden) => {
+      return visible + '*'.repeat(hidden.length);
+    });
+
+    const returnData = result.map((item) => {
+      const { ssn_iv, ...rest } = item;
+      return {
+        ...rest,
+        ssn: replaceDec,
+      };
+    });
+
+    return returnData;
   } catch (err) {
-    console.error('[ findInfo 실패 ] : ', err);
+    throw err;
   }
 }
 
@@ -18,8 +38,11 @@ async function infoUpdate(type, data) {
         return await userInfoMapper.updateUser(data);
       case 'org':
         return await userInfoMapper.updateOrg(data);
-      case 'child':
-        return await userInfoMapper.updateChild(data);
+      case 'child': {
+        const result = encryptSsn(data.ssn);
+        const res = { ...data, ssn: result.ssn, ssn_iv: result.ssn_iv };
+        return await userInfoMapper.updateChild(res);
+      }
       default:
         return { ok: false, message: 'service infoUpdate type 오류' };
     }
@@ -39,12 +62,16 @@ async function pwUpdate(data) {
 }
 
 // 자녀 추가
-async function childAdd(userData) {
+async function childAdd(childData) {
   try {
-    const result = await userInfoMapper.addChild(userData);
-    return result;
+    const enc = encryptSsn(childData.ssn);
+    const tempData = createChild(childData, enc);
+    const params = makeParams(INSERT_CHILD_DATA, tempData);
+
+    await userInfoMapper.addChild(params);
+    return { ok: true, message: '자녀 등록 성공' };
   } catch (err) {
-    console.error('[ childAdd 실패 ] : ', err);
+    throw err;
   }
 }
 

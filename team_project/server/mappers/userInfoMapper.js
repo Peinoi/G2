@@ -76,13 +76,14 @@ async function updateOrg(data) {
 
 // 자녀 수정
 async function updateChild(data) {
-  const { child_name, ssn, gender, disability_type, child_code } = data;
+  const { child_name, ssn, gender, disability_type, ssn_iv, child_code } = data;
   try {
     const result = await pool.query(userInfoSQL.CHILD_UPDATE, [
       child_name,
       ssn,
       gender,
       disability_type,
+      ssn_iv,
       child_code,
     ]);
     if (result.affectedRows == 1) {
@@ -96,20 +97,7 @@ async function updateChild(data) {
 
 // 자녀 추가
 async function addChild(data) {
-  try {
-    const childData = [
-      data.user_code,
-      data.child_name,
-      data.ssn,
-      data.gender,
-      data.disability_type,
-      data.registered_date,
-    ];
-    await pool.query(userInfoSQL.CHILD_ADD, childData);
-    return { ok: true, message: '자녀 추가 성공' };
-  } catch (err) {
-    console.error('[ addChild 실패 ] : ', err);
-  }
+  return await pool.query(userInfoSQL.CHILD_ADD, data);
 }
 
 // 자녀 삭제

@@ -152,7 +152,13 @@ export default {
     enterEditMode(child, index) {
       this.mode = 'form';
       this.editIndex = index;
-      this.localChild = { ...child };
+      this.localChild = {
+        child_code: child.child_code,
+        child_name: child.child_name,
+        disability_type: child.disability_type,
+        gender: child.gender,
+        ssn: '',
+      };
     },
 
     cancelForm() {
@@ -161,6 +167,15 @@ export default {
     },
 
     saveChild() {
+      if (
+        this.localChild.child_name == '' ||
+        this.localChild.ssn == '' ||
+        this.localChild.ssn.length < 14 ||
+        this.localChild.disability_type == ''
+      ) {
+        alert('모든 항목을 입력해주세요');
+        return;
+      }
       if (this.editIndex !== null) {
         this.$emit('update-child', {
           ...this.localChild,
@@ -170,6 +185,7 @@ export default {
       }
       this.cancelForm();
     },
+
     genderLabel(code) {
       if (code === 'AC1') return '남자';
       if (code === 'AC2') return '여자';

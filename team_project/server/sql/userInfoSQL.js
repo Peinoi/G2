@@ -14,7 +14,8 @@ SELECT
    c.child_name,
    c.ssn,
    c.gender,
-   c.disability_type
+   c.disability_type,
+   c.ssn_iv
 FROM users u
 LEFT JOIN organization o
        ON u.org_code = o.org_code
@@ -64,10 +65,12 @@ WHERE u.user_id = ?`;
 
 const CHILD_UPDATE = `
 UPDATE child
-SET child_name = ?
+SET 
+   child_name = ?
 	, ssn = ?
    , gender = ?
    , disability_type = ?
+   , ssn_iv = ?
 WHERE child_code = ?`;
 
 const CHILD_ADD = `
@@ -78,7 +81,8 @@ INSERT INTO child(
    , gender
    , disability_type
    , registered_date
-) VALUES(?, ?, ?, ?, ?, ?)`;
+   , ssn_iv
+) VALUES(?, ?, ?, ?, ?, ?, ?)`;
 
 const CHILD_DELETE = `
 DELETE FROM child

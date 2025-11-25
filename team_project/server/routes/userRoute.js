@@ -48,16 +48,12 @@ router.put('/updatePw', async (req, res) => {
 // 자녀 추가
 router.post('/childAdd', async (req, res) => {
   const userData = { ...req.body };
-  console.log(userData);
   try {
     const result = await userInfoService.childAdd(userData);
     res.json(result);
   } catch (err) {
-    console.error('[ userRoute.js -> childAdd 라우터 오류 ]', err);
-    res.status(500).json({
-      ok: false,
-      message: '[ userRoute.js -> childAdd 라우터 오류 ]',
-    });
+    console.error('[ childAdd 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
