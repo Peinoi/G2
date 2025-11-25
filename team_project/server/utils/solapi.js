@@ -10,7 +10,7 @@ const TEST_SMS = false;
 if (TEST_SMS) {
   sendSms = fakeSendSms;
 } else {
-  const { SolapiMessageService } = require('solapi');
+  const { SolapiMessageService } = require("solapi");
   const apiKey = process.env.SOLAPI_API_KEY;
   const apiSecret = process.env.SOLAPI_API_SECRET;
   const client = new SolapiMessageService(apiKey, apiSecret);
@@ -25,7 +25,7 @@ if (TEST_SMS) {
 
       return { ok: true, result };
     } catch (error) {
-      console.error('[ Solapi v5 Error ]', error);
+      console.error("[ Solapi v5 Error ]", error);
       return { ok: false, error };
     }
   };
