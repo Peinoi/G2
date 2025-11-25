@@ -50,9 +50,12 @@
                             <material-input
                               id="user-id"
                               type="text"
-                              label="여긴 아이디"
+                              label="아이디"
                               size="lg"
                               v-model="userId"
+                              @input="
+                                userId = userId.replace(/[^a-zA-Z0-9]/g, '')
+                              "
                             />
                           </div>
 
@@ -97,9 +100,10 @@
                         <material-input
                           id="user-pw"
                           type="password"
-                          label="여긴 비밀번호"
+                          label="비밀번호"
                           size="lg"
                           v-model="userPw"
+                          @input="userPw = userPw.replace(/\s/g, '')"
                         />
                       </div>
 
@@ -111,6 +115,7 @@
                           label="여긴 비밀번호 확인"
                           size="lg"
                           v-model="pwCheck"
+                          @input="pwCheck = pwCheck.replace(/\s/g, '')"
                         />
                       </div>
                       <p
@@ -412,7 +417,6 @@ export default {
     },
 
     goToStep(type) {
-      // 중복확인 검사
       if (this.idCheck != 'true') {
         this.idCheck = 'false';
         this.idCheckMessage = '아이디를 확인해주세요.';
@@ -421,6 +425,18 @@ export default {
       if (this.pwChecked != 'true') {
         this.pwChecked = 'false';
         this.pwCheckedMessage = '비밀번호를 확인해주세요.';
+        return;
+      }
+      if (this.userId.length > 16 || this.userId.length < 6) {
+        this.idCheck = 'false';
+        this.idCheck = 'false';
+        this.idCheckMessage = '아이디는 6자 이상 15자 이하로 입력해주세요.';
+        return;
+      }
+      if (this.userPw.length > 16 || this.userPw.length < 9) {
+        this.pwChecked = 'false';
+        this.pwChecked = 'false';
+        this.pwCheckedMessage = '비밀번호는 9자 이상 15자 이하로 입력해주세요.';
         return;
       }
       if (!this.agree) {

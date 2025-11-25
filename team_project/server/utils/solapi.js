@@ -5,7 +5,7 @@ async function fakeSendSms(to, text) {
 
 // 테스트
 let sendSms;
-const TEST_SMS = false;
+const TEST_SMS = true;
 
 if (TEST_SMS) {
   sendSms = fakeSendSms;
