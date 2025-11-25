@@ -6,7 +6,7 @@ export async function checkId(id) {
     const res = await axios.get(`/api/user/checkid`, { params: { id } });
     return res.data;
   } catch (err) {
-    console.log('에러 발생', err);
+    //console.log('에러 발생', err);
     throw err;
   }
 }
@@ -28,7 +28,7 @@ export async function addUser(userData) {
     const res = await axios.post('/api/user/addUser', userData);
     return res.data;
   } catch (err) {
-    console.log('[ user.js 회원가입 실패 ]', err);
+    //console.log('[ user.js 회원가입 실패 ]', err);
     throw err;
   }
 }
@@ -39,7 +39,7 @@ export async function findAllOrg() {
     const res = await axios.post('/api/user/findOrg');
     return res.data;
   } catch (err) {
-    console.log('[ user.js 기관 조회 실패 ]', err);
+    //console.log('[ user.js 기관 조회 실패 ]', err);
     throw err;
   }
 }
@@ -50,7 +50,7 @@ export async function addOrg(orgData) {
     const res = await axios.post('/api/user/addOrg', orgData);
     return res.data;
   } catch (err) {
-    console.log('[ user.js 회원가입 실패 ]', err);
+    //console.log('[ user.js 회원가입 실패 ]', err);
     throw err;
   }
 }
