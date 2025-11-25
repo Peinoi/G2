@@ -87,6 +87,13 @@ export default {
           { key: 'phone', label: '전화번호' },
           { key: 'address', label: '주소' },
         ],
+        AA4: [
+          { key: 'orgName', label: '기관명' },
+          { key: 'deptName', label: '부서명' },
+          { key: 'roleName', label: '권한' },
+          { key: 'phone', label: '전화번호' },
+          { key: 'address', label: '주소' },
+        ],
       },
     };
   },
