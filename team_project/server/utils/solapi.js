@@ -1,6 +1,6 @@
 async function fakeSendSms(to, text) {
   console.log(`[fakeSendSms: ${to}, ${text}]`);
-  return { mock: true, to, text };
+  return { ok: true, to, text };
 }
 
 // 테스트

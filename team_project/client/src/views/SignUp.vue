@@ -142,9 +142,8 @@
                         class="font-weight-light"
                         v-model="agree"
                       >
-                        이용약관에 동의합니다
                         <a type="button" @click="showTermsModal">
-                          (여기 클릭 시 표시됩니다.)</a
+                          이용약관에 동의합니다 (클릭 시 표시됩니다.)</a
                         >
                       </material-checkbox>
 
@@ -306,21 +305,21 @@
 </template>
 
 <script>
-import Navbar from "@/examples/PageLayout/Navbar.vue";
-import MaterialInput from "@/components/MaterialInput.vue";
-import MaterialCheckbox from "@/components/MaterialCheckbox.vue";
-import MaterialButton from "@/components/MaterialButton.vue";
-const body = document.getElementsByTagName("body")[0];
-import { mapMutations } from "vuex";
-import SignUpUserForm from "@/components/SignUp/SignUpUserForm.vue";
-import SignUpOrgForm from "@/components/SignUp/SignUpOrgForm.vue";
-import { checkId as checkUserId, addUser, addOrg } from "../api/user";
-import dateFormat from "../utils/dateFormat";
+import Navbar from '@/examples/PageLayout/Navbar.vue';
+import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialCheckbox from '@/components/MaterialCheckbox.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
+const body = document.getElementsByTagName('body')[0];
+import { mapMutations } from 'vuex';
+import SignUpUserForm from '@/components/SignUp/SignUpUserForm.vue';
+import SignUpOrgForm from '@/components/SignUp/SignUpOrgForm.vue';
+import { checkId as checkUserId, addUser, addOrg } from '../api/user';
+import dateFormat from '../utils/dateFormat';
 
-const today = dateFormat(new Date(), "yyyy-MM-dd");
+const today = dateFormat(new Date(), 'yyyy-MM-dd');
 
 export default {
-  name: "sign-up",
+  name: 'sign-up',
   components: {
     Navbar,
     MaterialInput,
@@ -349,44 +348,44 @@ export default {
       pwCheck: '',
       agree: false,
       idCheck: null,
-      idCheckMessage: "사용 가능한 아이디인지 확인해주세요.",
+      idCheckMessage: '사용 가능한 아이디인지 확인해주세요.',
       pwChecked: null,
-      pwCheckedMessage: "비밀번호를 확인해주세요.",
+      pwCheckedMessage: '비밀번호를 확인해주세요.',
       agreeCheck: true,
-      agreeCheckMessage: "",
+      agreeCheckMessage: '',
       showTerms: false,
     };
   },
   watch: {
     userId() {
       this.idCheck = null;
-      this.idCheckMessage = "사용 가능한 아이디인지 확인해주세요.";
+      this.idCheckMessage = '사용 가능한 아이디인지 확인해주세요.';
     },
     pwCheck() {
-      if (this.pwCheck == "") {
+      if (this.pwCheck == '') {
         this.pwChecked = null;
-        this.pwCheckedMessage = "비밀번호를 확인해주세요.";
+        this.pwCheckedMessage = '비밀번호를 확인해주세요.';
       } else if (this.userPw != this.pwCheck) {
-        this.pwChecked = "false";
-        this.pwCheckedMessage = "비밀번호가 틀립니다.";
+        this.pwChecked = 'false';
+        this.pwCheckedMessage = '비밀번호가 틀립니다.';
       } else {
-        this.pwChecked = "true";
-        this.pwCheckedMessage = "비밀번호가 일치합니다.";
+        this.pwChecked = 'true';
+        this.pwCheckedMessage = '비밀번호가 일치합니다.';
       }
     },
   },
   beforeMount() {
     this.toggleEveryDisplay();
     this.toggleHideConfig();
-    body.classList.remove("bg-gray-100");
+    body.classList.remove('bg-gray-100');
   },
   beforeUnmount() {
     this.toggleEveryDisplay();
     this.toggleHideConfig();
-    body.classList.add("bg-gray-100");
+    body.classList.add('bg-gray-100');
   },
   methods: {
-    ...mapMutations(["toggleEveryDisplay", "toggleHideConfig"]),
+    ...mapMutations(['toggleEveryDisplay', 'toggleHideConfig']),
 
     showTermsModal() {
       this.showTerms = true;
@@ -394,39 +393,39 @@ export default {
     // 중복확인
     async checkId() {
       if (!this.userId) {
-        this.idCheck = "false";
-        this.idCheckMessage = "아이디를 입력해주세요.";
+        this.idCheck = 'false';
+        this.idCheckMessage = '아이디를 입력해주세요.';
         return;
       }
       try {
         const result = await checkUserId(this.userId);
         if (result.ok) {
-          this.idCheck = "true";
-          this.idCheckMessage = "사용 가능한 아이디입니다.";
+          this.idCheck = 'true';
+          this.idCheckMessage = '사용 가능한 아이디입니다.';
         } else {
-          this.idCheck = "false";
-          this.idCheckMessage = "이미 사용 중인 아이디입니다.";
+          this.idCheck = 'false';
+          this.idCheckMessage = '이미 사용 중인 아이디입니다.';
         }
       } catch (err) {
-        alert("중복확인 오류가 발생하였습니다.");
+        alert('중복확인 오류가 발생하였습니다.');
       }
     },
 
     goToStep(type) {
       // 중복확인 검사
-      if (this.idCheck != "true") {
-        this.idCheck = "false";
-        this.idCheckMessage = "아이디를 확인해주세요.";
+      if (this.idCheck != 'true') {
+        this.idCheck = 'false';
+        this.idCheckMessage = '아이디를 확인해주세요.';
         return;
       }
-      if (this.pwChecked != "true") {
-        this.pwChecked = "false";
-        this.pwCheckedMessage = "비밀번호를 확인해주세요.";
+      if (this.pwChecked != 'true') {
+        this.pwChecked = 'false';
+        this.pwCheckedMessage = '비밀번호를 확인해주세요.';
         return;
       }
       if (!this.agree) {
         this.agreeCheck = false;
-        this.agreeCheckMessage = "이용약관에 동의해주셔야 이용이 가능합니다.";
+        this.agreeCheckMessage = '이용약관에 동의해주셔야 이용이 가능합니다.';
         return;
       }
       this.step = type; // user / org
@@ -434,7 +433,7 @@ export default {
 
     async signUpSubmit(type, detail) {
       // 개인 회원
-      if (type == "user") {
+      if (type == 'user') {
         try {
           const payload = {
             org_name: this.org_name,
@@ -447,17 +446,17 @@ export default {
           const result = await addUser(payload);
 
           if (!result.ok) {
-            alert("회원가입에 실패했습니다.\n고객센터에 문의해주세요.");
+            alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
             return;
           }
-          this.$router.push({ name: "SignIn" });
-          alert("회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.");
+          this.$router.push({ name: 'SignIn' });
+          alert('회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.');
         } catch (err) {
-          alert("회원가입에 실패했습니다.\n고객센터에 문의해주세요.");
+          alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
         }
       }
       // 기관 회원
-      if (type == "org") {
+      if (type == 'org') {
         try {
           const payload = {
             userId: this.userId,
@@ -470,13 +469,13 @@ export default {
           const result = await addOrg(payload);
 
           if (!result.ok) {
-            alert("회원가입에 실패했습니다.\n고객센터에 문의해주세요.");
+            alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
             return;
           }
-          this.$router.push({ name: "SignIn" });
-          alert("회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.");
+          this.$router.push({ name: 'SignIn' });
+          alert('회원가입에 성공했습니다.\n로그인 페이지로 이동합니다.');
         } catch (err) {
-          alert("회원가입에 실패했습니다.\n고객센터에 문의해주세요.");
+          alert('회원가입에 실패했습니다.\n고객센터에 문의해주세요.');
         }
       }
     },
