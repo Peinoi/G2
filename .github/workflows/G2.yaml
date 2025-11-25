@@ -30,7 +30,7 @@ jobs:
     - name: Build Vue app
       working-directory: team_project/client
       run: |
-        npm ci
+        npm install
         npm run build
         
     # github actions 에 저장된 private key를 ubuntu에 복사
@@ -48,7 +48,7 @@ jobs:
             cd ~/team_project
             git pull origin main
             cd server
-            npm ci
+            npm install
             pm2 restart app || pm2 start app.js --name "app" -- prod
             pm2 save
           EOF
