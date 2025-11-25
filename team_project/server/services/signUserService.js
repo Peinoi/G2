@@ -7,6 +7,7 @@ const { hashPw, checkPw } = require('../utils/crypto');
 const { INSERT_DATA } = require('../configs/insertData');
 const { makeParams } = require('../utils/sqlParamUtil');
 const { createUser } = require('./factories/userFactory');
+const { encryptSsn, decryptSsn } = require('../utils/ssnCrypto');
 
 // 전체 목록 조회 test
 async function checkId(id) {
@@ -51,35 +52,31 @@ async function addUser(userData) {
 
   try {
     await conn.beginTransaction();
-    console.log(userData);
-    await conn.rollback();
-    return;
 
     // 첫 번째: 기관 코드 조회
     const resOrgCode = await signUserMapper.findOrgCode(
       conn,
       userData.org_name
     );
-
     const orgCode = resOrgCode.length == 0 ? null : resOrgCode[0].org_code;
 
-    // 두 번째: 비밀번호 해싱
+    // 두 번째: 해싱
     const hashedPw = await hashPw(userData.userPw);
+    const enc = encryptSsn(userData.ssn);
 
     // 세 번째: 도매인
     const tempData = createUser(userData, {
       orgCode: orgCode,
       hashedPw: hashedPw,
+      ssn: enc.ssn,
+      ssn_iv: enc.ssn_iv,
     });
 
     // 네 번째: params 가공
     const dataParams = makeParams(INSERT_DATA, tempData);
 
     // 다섯 번째: db
-    const result = await signUserMapper.addUser(conn, dataParams);
-
-    // 여섯 번째: 예외 처리
-    if (result.insertId == 0) throw new Error('개인 유저 등록 실패');
+    await signUserMapper.addUser(conn, dataParams);
 
     await conn.commit();
     return { ok: true, message: '개인 유저 등록 성공' };
@@ -101,6 +98,7 @@ async function addOrg(userData) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+
     // 첫 번째: 기관 조회
     const orgCode = await signUserMapper.findOrgCode(conn, userData.org_name);
     if (orgCode[0] == null) {
@@ -110,11 +108,14 @@ async function addOrg(userData) {
 
     // 두 번째: 해싱
     const hashedPw = await hashPw(userData.userPw);
+    const enc = encryptSsn(userData.ssn);
 
     // 세 번째: 도매인
     const tempData = createUser(userData, {
       orgCode: orgCode[0].org_code,
       hashedPw: hashedPw,
+      ssn: enc.ssn,
+      ssn_iv: enc.ssn_iv,
       isActive: 0,
       department: userData.department,
     });
@@ -122,10 +123,8 @@ async function addOrg(userData) {
     // 네 번째: params 가공
     const dataParams = makeParams(INSERT_DATA, tempData);
 
-    // 다섯 번째: db insert -> 예외처리
+    // 다섯 번째: db insert
     const userCode = await signUserMapper.addOrg(conn, dataParams);
-    if (userCode.affectedRows == 0 || userCode.insertId < 0)
-      throw new Error('기관 유저 등록 실패');
 
     // 여섯 번째: approval params 가공
     const reqData = {
@@ -137,8 +136,7 @@ async function addOrg(userData) {
 
     // 일곱 번째: db insert
     const result = await signUserMapper.requestApproval(conn, reqData);
-    if (result.affectedRows == 0 || result.insertId < 0)
-      throw new Error('기관 회원 승인 요청 등록 실패');
+    console.log('result: ', result);
 
     await conn.commit();
     return { ok: true, message: '등록 성공' };

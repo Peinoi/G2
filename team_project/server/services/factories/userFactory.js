@@ -2,6 +2,8 @@ function createUser(userData, list = {}) {
   const {
     orgCode = null,
     hashedPw = null,
+    ssn = null,
+    ssn_iv = null,
     isActive = 1,
     department = null,
   } = list;
@@ -12,7 +14,8 @@ function createUser(userData, list = {}) {
     hashedPw,
     role: userData.role,
     name: userData.name,
-    ssn: userData.ssn,
+    ssn,
+    ssn_iv,
     phone: userData.phone,
     address: userData.address,
     email: userData.email,

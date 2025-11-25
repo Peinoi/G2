@@ -12,6 +12,7 @@ const INSERT_DATA = [
   'is_active',
   'login_fail_count',
   'joinDate',
+  'ssn_iv',
 ];
 
 module.exports = { INSERT_DATA };
