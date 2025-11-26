@@ -190,6 +190,7 @@ const selectManagerAll = `
   SELECT 
     user_code
    ,name
+   ,org_code
   FROM users
   WHERE role = 'AA2'
   AND is_active = 1
