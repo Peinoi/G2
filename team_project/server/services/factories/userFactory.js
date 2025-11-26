@@ -2,6 +2,8 @@ function createUser(userData, list = {}) {
   const {
     orgCode = null,
     hashedPw = null,
+    ssn = null,
+    ssn_iv = null,
     isActive = 1,
     department = null,
   } = list;
@@ -12,7 +14,8 @@ function createUser(userData, list = {}) {
     hashedPw,
     role: userData.role,
     name: userData.name,
-    ssn: userData.ssn,
+    ssn,
+    ssn_iv,
     phone: userData.phone,
     address: userData.address,
     email: userData.email,
@@ -23,4 +26,16 @@ function createUser(userData, list = {}) {
   };
 }
 
-module.exports = { createUser };
+function createChild(data, enc) {
+  return {
+    user_code: data.user_code,
+    child_name: data.child_name,
+    ssn: enc.ssn,
+    gender: data.gender,
+    disability_type: data.disability_type,
+    registered_date: data.registered_date,
+    ssn_iv: enc.ssn_iv,
+  };
+}
+
+module.exports = { createUser, createChild };

@@ -50,7 +50,6 @@ router.post('/addUser', async (req, res) => {
 router.post('/findOrg', async (req, res) => {
   try {
     const result = await userService.findOrg();
-    console.log(result);
     res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findOrg 라우터 오류 ]', err);

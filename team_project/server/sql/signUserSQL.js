@@ -30,7 +30,8 @@ const INSERT_USER = `
     , is_active
     , login_fail_count
     , join_date
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    , ssn_iv
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
 const FIND_ORG_LIST = `
 SELECT org_name FROM organization`;

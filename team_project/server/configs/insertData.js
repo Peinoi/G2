@@ -12,6 +12,17 @@ const INSERT_DATA = [
   'is_active',
   'login_fail_count',
   'joinDate',
+  'ssn_iv',
 ];
 
-module.exports = { INSERT_DATA };
+const INSERT_CHILD_DATA = [
+  'user_code',
+  'child_name',
+  'ssn',
+  'gender',
+  'disability_type',
+  'registered_date',
+  'ssn_iv',
+];
+
+module.exports = { INSERT_DATA, INSERT_CHILD_DATA };
