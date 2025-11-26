@@ -57,13 +57,21 @@
       </div>
 
       <div class="payment-button-area">
-        <button
+        <!-- <button
           class="pay-button"
           @click="processPayment"
           :disabled="!isFormValid"
         >
           {{ formatCurrency(sponsorAmount) }}원 결제하기
-        </button>
+        </button> -->
+        <MaterialButton
+          color="dark"
+          size="lg"
+          @click="processPayment"
+          :disabled="!isFormValid"
+        >
+          {{ formatCurrency(sponsorAmount) }}원 결제하기
+        </MaterialButton>
       </div>
     </div>
   </div>
@@ -71,6 +79,7 @@
 <script setup>
 import axios from "axios";
 import { ref, computed, onMounted, watch } from "vue";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 // -------------------------------
 // Helper: Local Storage에서 userID 가져오기
