@@ -83,7 +83,7 @@ onMounted(async () => {
     // ----------------------------
     // 서버에 approve 요청 (로직 유지)
     // ----------------------------
-    const res = await axios.post("/api/pay/kakao/approve", {
+    const res = await axios.post("/pay/kakao/approve", {
       pg_token,
       tid,
       program_code: code,

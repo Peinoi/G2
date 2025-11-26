@@ -367,6 +367,13 @@ onMounted(async () => {
       isExisting: true,
     }));
 
+    amountSettingType.value = detail.donation_type || "지정";
+
+    amountUnits.value =
+      amountSettingType.value === "지정" && detail.donation_unit
+        ? parseDonationUnits(detail.donation_unit)
+        : [];
+
     isEditMode.value = true;
   }
 
@@ -447,7 +454,7 @@ const parseDonationUnits = (unitStr) => {
 watch(
   () => props.initialProgram,
   (newVal) => {
-    if (newVal) {
+    if (newVal && Object.keys(newVal).length > 0) {
       isEditMode.value = true;
       formData.value.program_name = newVal.program_name || "";
       formData.value.sponsor_type = newVal.sponsor_type || "단기";
