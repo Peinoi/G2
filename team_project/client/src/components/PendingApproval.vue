@@ -7,8 +7,8 @@
         <div class="apv-filters">
           <select v-model="stateInput" class="apv-select">
             <option value="">전체</option>
-            <option value="미검토">미검토</option>
-            <option value="검토완료">검토완료</option>
+            <option value="미배정">미배정</option>
+            <option value="배정완료">배정완료</option>
           </select>
 
           <input
@@ -34,11 +34,12 @@
         <table class="nice-table">
           <thead>
             <tr>
-              <th class="th-cell text-center w-14">No</th>
+              <th class="th-cell text-center w-14" style="width: 150px">No</th>
               <th class="th-cell">이름</th>
               <th class="th-cell">신청일</th>
               <th class="th-cell">담당자</th>
               <th class="th-cell text-center">단계</th>
+              <th class="th-cell" style="width: 100px"></th>
             </tr>
           </thead>
           <tbody>
@@ -46,36 +47,35 @@
               <td class="td-cell text-center">
                 {{ (currentPage - 1) * pageSize + index + 1 }}
               </td>
-              <td class="td-cell text-left">
+              <td class="td-cell text-center">
                 {{ item.childName ? item.childName : item.writerName }}
               </td>
-              <td class="td-cell text-left">{{ item.submitAt }}</td>
+              <td class="td-cell text-center">{{ item.submitAt }}</td>
               <td class="td-cell text-center">{{ item.managerName }}</td>
               <td class="apv-actions-cell">
                 {{ item.status }}
-
-                <div class="status-change-btns">
-                  <span
-                    v-if="item.status === '검토완료'"
-                    class="apv-disabled-text"
-                  >
-                    변경불가
-                  </span>
-                  <div v-else>
-                    <template v-for="key in allStatusKeys" :key="key">
-                      <button
-                        v-if="item.status !== key"
-                        :class="[
-                          'apv-btn',
-                          'apv-btn-sm',
-                          { 'apv-btn-success': key == '검토완료' },
-                        ]"
-                        @click="changeStatus(item, key)"
-                      >
-                        {{ key == '미검토' ? '미검토' : key }}
-                      </button>
-                    </template>
-                  </div>
+              </td>
+              <td class="status-change-btns">
+                <span
+                  v-if="item.status === '배정완료'"
+                  class="apv-disabled-text"
+                >
+                  배정완료
+                </span>
+                <div v-else>
+                  <template v-for="key in allStatusKeys" :key="key">
+                    <button
+                      v-if="item.status !== key"
+                      :class="[
+                        'apv-btn',
+                        'apv-btn-sm',
+                        { 'apv-btn-success': key == '담당자배정' },
+                      ]"
+                      @click="changeStatus(item, key)"
+                    >
+                      {{ key == '미배정' ? '미배정' : key }}
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -175,9 +175,9 @@ export default {
       listRaw: [],
 
       statusMap: {
-        검토완료: { label: '승인완료', class: 'apv-state-CA3' },
+        담당자배정: { label: '승인완료', class: 'apv-state-CA3' },
       },
-      allStatusKeys: ['검토완료'],
+      allStatusKeys: ['담당자배정'],
 
       // 모달 관련
       // -> 담당자 리스트
@@ -272,10 +272,10 @@ export default {
     // 상태값 코드 <-> 텍스트 변경 함수
     changeCode(type, code) {
       if (type == 'change') {
-        const result = code == '미검토' ? 'CA1' : 'CA3';
+        const result = code == '미배정' ? 'CA1' : 'CA3';
         return result;
       }
-      const result = code == 'CA1' ? '미검토' : '검토완료';
+      const result = code == 'CA1' ? '미배정' : '배정완료';
       return result;
     },
 
@@ -423,8 +423,7 @@ export default {
 }
 
 .status-change-btns {
-  display: flex;
-  gap: 4px;
+  text-align: center;
 }
 
 /* 버튼 오버라이드 */

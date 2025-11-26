@@ -50,6 +50,12 @@ SET
    , email = ?
 WHERE user_id = ?`;
 
+const FIND_USER_PW = `
+SELECT
+	password_hash
+FROM users
+WHERE user_code = ?`;
+
 const USER_UPDATE_PW = `
 UPDATE users
 SET password_hash = ?
@@ -93,6 +99,7 @@ module.exports = {
   FIND_USER_INFO,
   FIND_ORG_INFO,
   USER_UPDATE,
+  FIND_USER_PW,
   USER_UPDATE_PW,
   ORG_UPDATE,
   CHILD_UPDATE,

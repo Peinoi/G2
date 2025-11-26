@@ -427,13 +427,13 @@ export default {
         this.pwCheckedMessage = '비밀번호를 확인해주세요.';
         return;
       }
-      if (this.userId.length > 16 || this.userId.length < 6) {
+      if (this.userId.length > 15 || this.userId.length < 6) {
         this.idCheck = 'false';
         this.idCheck = 'false';
         this.idCheckMessage = '아이디는 6자 이상 15자 이하로 입력해주세요.';
         return;
       }
-      if (this.userPw.length > 16 || this.userPw.length < 9) {
+      if (this.userPw.length > 15 || this.userPw.length < 9) {
         this.pwChecked = 'false';
         this.pwChecked = 'false';
         this.pwCheckedMessage = '비밀번호는 9자 이상 15자 이하로 입력해주세요.';

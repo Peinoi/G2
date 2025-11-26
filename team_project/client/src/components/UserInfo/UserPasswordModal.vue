@@ -62,19 +62,29 @@ export default {
   },
   methods: {
     confirmClick() {
+      if (this.passwords.newPw.length > 15 || this.passwords.newPw.length < 9) {
+        alert('비밀번호는 9자 이상 15자 이하로 입력해주세요.');
+        return;
+      }
+
       if (
         !this.passwords.current ||
         !this.passwords.newPw ||
         !this.passwords.newPwCheck
       ) {
-        alert('모든 항목을 입력해주세요');
-        return;
+        return alert('모든 항목을 입력해주세요');
       }
       if (this.passwords.newPw != this.passwords.newPwCheck) {
-        alert('비밀번호를 확인해주세요');
-        return;
+        return alert('비밀번호를 확인해주세요');
       }
-      this.$emit('confirm', this.passwords);
+      if (this.passwords.current == this.passwords.newPw) {
+        return alert('같은 비밀번호는 사용하실 수 없습니다.');
+      }
+      const passwords = {
+        user_pw: this.passwords.current,
+        newPw: this.passwords.newPw,
+      };
+      this.$emit('confirm', passwords);
     },
   },
 };

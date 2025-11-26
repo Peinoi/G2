@@ -191,12 +191,12 @@ export default {
       const data = JSON.parse(localStorage.getItem('user'));
       const payload = {
         user_code: data.user_code,
-        newPw: passwords.newPw,
+        ...passwords,
       };
 
       const result = await updatePw(payload);
       if (!result.ok) {
-        alert('변경을 실패하였습니다.');
+        alert(`변경을 실패하였습니다.\n사유: ${result.message}`);
         return;
       }
 

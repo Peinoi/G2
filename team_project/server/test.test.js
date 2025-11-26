@@ -1,4 +1,5 @@
-const { childAdd, findInfo } = require('./services/userInfoService');
+const { childAdd, findInfo, pwUpdate } = require('./services/userInfoService');
+const { decryptSsn } = require('./utils/ssnCrypto');
 
 async function testUser() {
   console.log('----------------------------------------------------');
@@ -25,8 +26,16 @@ async function testUser() {
   //   disability_type: '장애유형테스트',
   // };
 
-  const testUser = { userId: 'test01', role: 'AA1' };
-  await findInfo(testUser);
+  // const testUser = { userId: 'test01', role: 'AA1' };
+
+  const testUser = {
+    user_code: 33,
+    user_pw: '1234',
+    newPw: '123',
+  };
+
+  const result = await pwUpdate(testUser);
+  console.log(result);
 
   return;
 }

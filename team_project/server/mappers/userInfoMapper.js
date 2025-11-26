@@ -39,21 +39,14 @@ async function updateUser(data) {
   }
 }
 
+// pw 가져오기
+async function findUserPw(data) {
+  return await pool.query(userInfoSQL.FIND_USER_PW, data);
+}
+
 // pw 변경
 async function updatePw(data) {
-  try {
-    const { user_code, newPw } = data;
-    const result = await pool.query(userInfoSQL.USER_UPDATE_PW, [
-      newPw,
-      user_code,
-    ]);
-    if (result.affectedRows == 1) {
-      return { ok: true, message: 'PW 수정 성공' };
-    }
-    return { ok: false, message: 'PW 수정 실패' };
-  } catch (err) {
-    console.error('[ updatePw 실패 ] : ', err);
-  }
+  return await pool.query(userInfoSQL.USER_UPDATE_PW, data);
 }
 
 // 기관 수정
@@ -117,6 +110,7 @@ module.exports = {
   findUserInfo,
   addChild,
   updateUser,
+  findUserPw,
   updatePw,
   updateOrg,
   updateChild,
