@@ -60,7 +60,7 @@
                   v-if="item.status === '배정완료'"
                   class="apv-disabled-text"
                 >
-                  변경불가
+                  배정완료
                 </span>
                 <div v-else>
                   <template v-for="key in allStatusKeys" :key="key">
