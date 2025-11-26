@@ -83,11 +83,11 @@ router.post("/approve", async (req, res) => {
 
     // DB 저장
     await axios.post(
-      `http://49.50.139.49/sponsor/${program_code}/${userID}/payments`,
+      `http://49.50.139.49:3000/api/sponsor/${code}/${userId}/payments`,
       {
-        userID,
-        transaction_amount: totalAmount,
-        program_code,
+        userID: userId,
+        transaction_amount: res.data.data.amount.total,
+        program_code: code,
       }
     );
 
