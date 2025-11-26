@@ -291,7 +291,7 @@ async function priorityApprovalList({
   state,
   orderBy,
   loginId,
-  role, // 🔹 추가
+  role,
 }) {
   const conn = await pool.getConnection();
   try {
@@ -303,27 +303,26 @@ async function priorityApprovalList({
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
-    // 🔹 시스템 관리자(AA4)는 기관 필터 없이 전체 조회
+    // 시스템 관리자(AA4)는 기관 제한 없음
     const isSystemAdmin = role === "AA4";
     const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
 
     const params = [
       st,
-      st, // 상태 필터
+      st, // 상태 필터 (? = '' OR ra.state = ?)
 
       kw,
       kw,
       kw,
       kw,
-      kw, // 검색어 필터 (child, parent, mgr, org)
+      kw, // 검색어 5개 (child, parent, mgr, org)
 
-      orgFilterLoginId, // 🔹 org 필터용 ('': 필터 해제)
-      orgFilterLoginId, // 🔹 org 필터용 (실제 loginId)
+      orgFilterLoginId, // (? = '' OR org.org_code = (SELECT ... WHERE user_id = ?))
+      orgFilterLoginId,
 
       ob, // latest
       ob, // oldest
-      ob, // name
-      ob, // priority
+      ob, // name   ← 🔥 딱 3번만!
 
       offset,
       sizeNum,
@@ -332,7 +331,7 @@ async function priorityApprovalList({
     const retRows = await conn.query(approvalSQL.priorityApprovalList, params);
     const rows = rowsFrom(retRows);
 
-    // totalCount도 동일한 기관 필터 적용
+    // totalCount
     const countParams = [
       st,
       st,
@@ -351,29 +350,6 @@ async function priorityApprovalList({
     );
     const countRows = rowsFrom(retCount);
     const totalCount = countRows[0]?.totalCount || 0;
-
-    console.log(
-      "[approvalMapper] priorityApprovalList rows:",
-      rows.length,
-      "| state:",
-      st,
-      "| keyword:",
-      kw,
-      "| orderBy:",
-      ob,
-      "| role:",
-      role,
-      "| loginId:",
-      loginId,
-      "| orgFilterLoginId:",
-      orgFilterLoginId,
-      "| page:",
-      pageNum,
-      "| size:",
-      sizeNum,
-      "| totalCount:",
-      totalCount
-    );
 
     return {
       rows,
