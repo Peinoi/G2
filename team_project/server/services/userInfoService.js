@@ -95,4 +95,25 @@ async function childDelete(data) {
   }
 }
 
-module.exports = { findInfo, childAdd, infoUpdate, pwUpdate, childDelete };
+// 회원탈퇴
+async function deleteUserService(userData) {
+  try {
+    const hashPw = await userInfoMapper.findUserPwForId(userData.user_id);
+    const isPw = await checkPw(userData.password, hashPw[0].password_hash);
+    if (!isPw) return { ok: false, message: '비밀번호가 틀립니다.' };
+
+    await userInfoMapper.deleteUserMapper(userData.user_id);
+    return { ok: true, status: 200, message: '회원탈퇴 성공' };
+  } catch {
+    throw err;
+  }
+}
+
+module.exports = {
+  findInfo,
+  childAdd,
+  infoUpdate,
+  pwUpdate,
+  childDelete,
+  deleteUserService,
+};

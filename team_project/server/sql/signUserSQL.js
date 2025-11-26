@@ -12,6 +12,7 @@ const AUTH_LOGIN = `
     , role
     , is_active
     , password_hash
+    , delete_status
   FROM users
   WHERE user_id = ?`;
 

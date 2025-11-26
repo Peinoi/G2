@@ -8,7 +8,8 @@
     <div class="tabs-container">
       <div>
         <material-button
-          :class="['tab-btn', activeTab === 'user' ? 'active' : 'inactive']"
+          :color="[activeTab === 'user' ? 'success' : 'secondary']"
+          size="sm"
           @click="
             (activeTab = 'user'), (editMode = false), (orgEditMode = false)
           "
@@ -19,7 +20,8 @@
 
       <div>
         <material-button
-          :class="['tab-btn', activeTab === 'org' ? 'active' : 'inactive']"
+          :color="[activeTab === 'org' ? 'success' : 'secondary']"
+          size="sm"
           @click="
             (activeTab = 'org'), (editMode = false), (orgEditMode = false)
           "
@@ -30,7 +32,8 @@
 
       <div v-if="auth.role === 'AA1'">
         <material-button
-          :class="['tab-btn', activeTab === 'child' ? 'active' : 'inactive']"
+          :color="[activeTab === 'child' ? 'success' : 'secondary']"
+          size="sm"
           @click="activeTab = 'child'"
         >
           자녀 정보
@@ -50,8 +53,15 @@
               @cancel="cancelUserEdit"
               @save="saveUserInfo"
               @openPwModal="showPwModal = true"
+              @openDeleteModal="showDelete = true"
             />
           </div>
+
+          <DeleteUserModal
+            v-if="showDelete"
+            @close="showDelete = false"
+            @confirm="handleDelete"
+          />
 
           <!-- 소속기관 정보 -->
           <div v-if="activeTab === 'org'">
@@ -98,8 +108,12 @@ import {
   deleteChild,
   updateInfo,
   updatePw,
+  deleteUser,
 } from '@/api/user';
 import dateFormat from '@/utils/dateFormat';
+import { checkAuth } from '@/utils/guard';
+import MaterialButton from '@/components/MaterialButton.vue';
+import DeleteUserModal from '../components/UserInfo/DeleteUserModal.vue';
 
 export default {
   name: 'UserInfo',
@@ -109,6 +123,8 @@ export default {
     UserOrgInfo,
     UserChildInfo,
     UserPasswordModal,
+    MaterialButton,
+    DeleteUserModal,
   },
   data() {
     return {
@@ -116,6 +132,8 @@ export default {
       editMode: false,
       orgEditMode: false,
       showPwModal: false,
+      showDelete: false,
+
       userData: {
         user_id: '',
         name: '',
@@ -319,37 +337,37 @@ export default {
         console.error('[ loadUserFullInfo 오류 ]', err);
       }
     },
+
+    async handleDelete({ user_id, password }) {
+      try {
+        console.log({ user_id, password });
+        const res = await deleteUser({ user_id, password });
+
+        if (res.ok) {
+          alert('탈퇴가 완료되었습니다.');
+          localStorage.clear();
+          this.$router.push('/sign-in');
+        } else {
+          alert(res.message || '아이디 또는 비밀번호가 올바르지 않습니다.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('서버 오류가 발생했습니다.');
+      }
+    },
+  },
+  mounted() {
+    const { allowed, redirect } = checkAuth(['AA1', 'AA2', 'AA3', 'AA4']);
+    if (!allowed) return this.$router.push(redirect);
   },
 };
 </script>
 
 <style>
-material-button,
-.material-button {
-  cursor: pointer !important;
-}
-
 .tabs-container {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-}
-
-.tab-btn {
-  padding: 6px 16px !important;
-  border-radius: 8px !important;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tab-btn.active {
-  background: #5e72e4 !important;
-  color: white !important;
-}
-
-.tab-btn.inactive {
-  background: #e9ecef !important;
-  color: #344767 !important;
 }
 
 .info-wrapper {
@@ -364,13 +382,5 @@ material-button,
 
 .info-content {
   padding: 24px !important;
-}
-
-.material-button,
-button,
-button:hover,
-.btn,
-.btn:hover {
-  cursor: pointer !important;
 }
 </style>

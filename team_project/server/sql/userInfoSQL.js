@@ -56,6 +56,12 @@ SELECT
 FROM users
 WHERE user_code = ?`;
 
+const FIND_USER_PW_FOR_ID = `
+SELECT
+	password_hash
+FROM users
+WHERE user_id = ?`;
+
 const USER_UPDATE_PW = `
 UPDATE users
 SET password_hash = ?
@@ -95,14 +101,22 @@ DELETE FROM child
 WHERE child_code = ?;
 `;
 
+const DELETE_USER = `
+UPDATE users
+SET
+   delete_status = 1
+WHERE user_id = ?`;
+
 module.exports = {
   FIND_USER_INFO,
   FIND_ORG_INFO,
   USER_UPDATE,
   FIND_USER_PW,
+  FIND_USER_PW_FOR_ID,
   USER_UPDATE_PW,
   ORG_UPDATE,
   CHILD_UPDATE,
   CHILD_ADD,
   CHILD_DELETE,
+  DELETE_USER,
 };

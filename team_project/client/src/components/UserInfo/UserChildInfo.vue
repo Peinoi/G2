@@ -3,7 +3,7 @@
     <!-- 상단 영역 -->
     <div class="header-row">
       <h6 class="title">자녀 정보</h6>
-      <material-button color="success" @click="enterAddMode">
+      <material-button color="success" size="sm" @click="enterAddMode">
         자녀 추가
       </material-button>
     </div>
@@ -42,12 +42,17 @@
           </div>
 
           <div class="btn-row">
-            <material-button color="info" @click="enterEditMode(child, index)">
+            <material-button
+              color="success"
+              size="sm"
+              @click="enterEditMode(child, index)"
+            >
               수정
             </material-button>
 
             <material-button
-              color="danger"
+              color="secondary"
+              size="sm"
               @click="$emit('delete-child', childList[index].child_code)"
             >
               삭제
@@ -97,12 +102,12 @@
       </div>
 
       <div class="form-btn-row">
-        <material-button color="secondary" @click="cancelForm">
-          취소
+        <material-button color="success" size="sm" @click="saveChild">
+          {{ editIndex !== null ? '수정 완료' : '추가하기' }}
         </material-button>
 
-        <material-button color="success" @click="saveChild">
-          {{ editIndex !== null ? '수정 완료' : '추가하기' }}
+        <material-button color="secondary" size="sm" @click="cancelForm">
+          취소
         </material-button>
       </div>
     </div>
@@ -111,10 +116,11 @@
 
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
 
 export default {
   name: 'UserChildInfo',
-  components: { MaterialInput },
+  components: { MaterialInput, MaterialButton },
 
   props: {
     childList: {
