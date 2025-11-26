@@ -59,7 +59,9 @@
                 placeholder="이용자 이름 또는 ID 검색"
                 @keyup.enter="fetchSourceUsers"
               />
-              <button class="at-btn" @click="fetchSourceUsers">검색</button>
+              <MaterialButton color="dark" size="sm" @click="fetchSourceUsers"
+                >검색</MaterialButton
+              >
             </div>
           </div>
         </div>
@@ -178,13 +180,14 @@
 
       <!-- 하단: 액션 버튼 -->
       <div class="at-actions">
-        <button
-          class="at-btn at-btn-primary"
+        <MaterialButton
+          color="dark"
+          size="sm"
           :disabled="!canTransfer || transferring"
           @click="openConfirmModal"
         >
           {{ transferring ? "이전 처리 중..." : "선택한 이용자 권한 이전" }}
-        </button>
+        </MaterialButton>
       </div>
     </div>
 
@@ -203,10 +206,12 @@
           </p>
 
           <div class="at-modal-actions">
-            <button class="at-btn" @click="cancelTransfer">취소</button>
-            <button class="at-btn at-btn-primary" @click="confirmTransfer">
+            <MaterialButton color="dark" size="sm" @click="cancelTransfer"
+              >취소</MaterialButton
+            >
+            <MaterialButton color="dark" size="sm" @click="confirmTransfer">
               예, 이전하기
-            </button>
+            </MaterialButton>
           </div>
         </div>
       </div>
@@ -218,6 +223,7 @@
 import { computed, onMounted, ref } from "vue";
 import axios from "axios";
 import { useAuthStore } from "@/store/authLogin";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const auth = useAuthStore();
 

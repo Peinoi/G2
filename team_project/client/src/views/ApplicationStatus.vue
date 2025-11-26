@@ -105,7 +105,7 @@ const convertPriority = (code) => {
     case "BB2":
       return "중점";
     case "BB3":
-      return "준비";
+      return "계획";
     default:
       return "-";
   }
@@ -383,7 +383,7 @@ onMounted(() => {
   border: 1px solid #e6c77b !important;
 }
 
-/* 준비 */
+/* 계획 */
 .lvl-BB3 {
   background-color: #e4f0ff !important;
   color: #476c99 !important;

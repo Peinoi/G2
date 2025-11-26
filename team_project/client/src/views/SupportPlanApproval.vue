@@ -93,25 +93,27 @@
 
       <!-- 🔹 페이징도 로딩 끝난 뒤에만 -->
       <div v-if="!loading && totalPages > 1" class="priority-pagination">
-        <button
-          class="priority-page-btn"
+        <MaterialButton
+          color="dark"
+          size="sm"
           :disabled="page === 1"
           @click="changePage(page - 1)"
         >
           이전
-        </button>
+        </MaterialButton>
 
         <span class="priority-page-info">
           {{ page }} / {{ totalPages }} (총 {{ totalCount }}건)
         </span>
 
-        <button
-          class="priority-page-btn"
+        <MaterialButton
+          color="dark"
+          size="sm"
           :disabled="page === totalPages"
           @click="changePage(page + 1)"
         >
           다음
-        </button>
+        </MaterialButton>
       </div>
     </div>
   </div>
@@ -122,6 +124,7 @@ import { ref, computed, onMounted } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/authLogin.js";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -378,19 +381,23 @@ onMounted(() => {
   font-weight: 500;
 }
 
+/* 우선순위별 색상 */
 .priority-chip-danger {
-  background: #fee2e2;
-  color: #b91c1c;
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
 .priority-chip-warning {
-  background: #fef3c7;
-  color: #92400e;
+  background-color: #fce8a1 !important;
+  color: #b0681b !important;
+  border: 1px solid #e6c77b !important;
 }
 
 .priority-chip-info {
-  background: #e0f2fe;
-  color: #075985;
+  background-color: #e4f0ff !important;
+  color: #476c99 !important;
+  border: 1px solid #a5c3da !important;
 }
 
 .priority-chip-default {
@@ -408,22 +415,23 @@ onMounted(() => {
   border: 1px solid transparent;
 }
 
+/* 요청/승인/반려 색상 */
 .priority-badge-request {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #3730a3;
+  background-color: #e4f0ff !important;
+  color: #476c99 !important;
+  border: 1px solid #a5c3da !important;
 }
 
 .priority-badge-approve {
-  background: #ecfdf5;
-  border-color: #bbf7d0;
-  color: #166534;
+  background-color: #deeec8 !important;
+  color: #3f7a3a !important;
+  border: 1px solid #bedca0 !important;
 }
 
 .priority-badge-reject {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
 .priority-badge-default {

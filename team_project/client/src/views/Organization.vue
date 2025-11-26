@@ -34,7 +34,9 @@
         </select>
       </div>
 
-      <button class="org-btn org-btn-primary" @click="openAdd">추가</button>
+      <MaterialButton color="dark" size="sm" @click="openAdd"
+        >추가</MaterialButton
+      >
     </div>
 
     <!-- 목록 -->
@@ -58,15 +60,12 @@
         </div>
 
         <div class="org-actions">
-          <button class="org-btn org-btn-xs" @click.stop="openEdit(org)">
+          <MaterialButton color="dark" size="sm" @click.stop="openEdit(org)">
             수정
-          </button>
-          <button
-            class="org-btn org-btn-xs org-btn-danger"
-            @click="remove(org)"
-          >
+          </MaterialButton>
+          <MaterialButton color="dark" size="sm" @click="remove(org)">
             삭제
-          </button>
+          </MaterialButton>
         </div>
       </li>
     </ul>
@@ -97,12 +96,13 @@
                 placeholder="주소"
                 style="flex: 1"
               />
-              <button
-                class="org-btn org-btn-primary"
+              <MaterialButton
+                color="dark"
+                size="sm"
                 @click="openPostcode('edit')"
               >
                 찾기
-              </button>
+              </MaterialButton>
             </div>
 
             <label>연락처</label>
@@ -128,10 +128,12 @@
           </div>
 
           <div class="org-modal-actions">
-            <button class="org-btn" @click="closeModal">취소</button>
-            <button class="org-btn org-btn-primary" @click="onModalSave">
+            <MaterialButton color="dark" size="sm" @click="closeModal"
+              >취소</MaterialButton
+            >
+            <MaterialButton color="dark" size="sm" @click="onModalSave">
               저장
-            </button>
+            </MaterialButton>
           </div>
         </div>
       </div>
@@ -159,12 +161,13 @@
                 placeholder="주소"
                 style="flex: 1"
               />
-              <button
-                class="org-btn org-btn-primary"
+              <MaterialButton
+                color="dark"
+                size="sm"
                 @click="openPostcode('add')"
               >
                 찾기
-              </button>
+              </MaterialButton>
             </div>
 
             <label>연락처</label>
@@ -190,10 +193,12 @@
           </div>
 
           <div class="org-modal-actions">
-            <button class="org-btn" @click="closeAdd">취소</button>
-            <button class="org-btn org-btn-primary" @click="onAddSave">
+            <MaterialButton color="dark" size="sm" @click="closeAdd"
+              >취소</MaterialButton
+            >
+            <MaterialButton color="dark" size="sm" @click="onAddSave">
               추가
-            </button>
+            </MaterialButton>
           </div>
         </div>
       </div>
@@ -206,6 +211,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import axios from "axios";
 import { useAuthStore } from "../store/authLogin"; // 권한 체크용
 import { useRouter } from "vue-router";
+import MaterialButton from "../components/MaterialButton.vue";
 
 // ★ 권한 체크
 const auth = useAuthStore();
@@ -245,8 +251,8 @@ const list = ref([]);
 /* 상태 메타 정보 */
 const STATUS_META = {
   AB1: { label: "운영중", class: "org-badge-green" },
-  AB2: { label: "임시중단", class: "org-badge-yellow" }, // 새로 하나 만들자
-  AB3: { label: "종료", class: "org-badge-gray" },
+  AB2: { label: "임시중단", class: "org-badge-gray" }, // 새로 하나 만들자
+  AB3: { label: "종료", class: "org-badge-red" },
 };
 
 function getStatusMeta(code) {
@@ -679,21 +685,21 @@ onMounted(load);
 }
 
 .org-badge-green {
-  background: #e6fffa;
-  border-color: #a7f3d0;
-  color: #047857;
+  background-color: #deeec8 !important;
+  color: #3f7a3a !important;
+  border: 1px solid #bedca0 !important;
 }
 
 .org-badge-gray {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-  color: #4b5563;
+  background-color: #e4e6e1 !important;
+  color: #4b5563 !important;
+  border: 1px solid #d0d3cd !important;
 }
 
-.org-badge-yellow {
-  background: #fef9c3;
-  border-color: #facc15;
-  color: #92400e;
+.org-badge-red {
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
 /* 우측 버튼 영역 */
