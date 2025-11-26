@@ -68,19 +68,19 @@
     </div>
   </div>
 </template>
-
 <script setup>
-// ... (script setup 내용은 변경 없음)
 import axios from "axios";
-import { ref, computed, onMounted, watch } from "vue"; // watch import
+import { ref, computed, onMounted, watch } from "vue";
 
-// import { useRouter } from "vue-router";
+// -------------------------------
+// Helper: Local Storage에서 userID 가져오기
+// -------------------------------
 const getUserIdFromLocalStorage = () => {
   try {
     const userString = localStorage.getItem("user");
     if (userString) {
       const userData = JSON.parse(userString);
-      console.log(userData.user);
+      console.log("[DEBUG] 로컬 스토리지 'user' 데이터:", userData);
       // 'user_id' 키로 값을 가져옴
       return userData.user_id || "";
     }
@@ -88,8 +88,10 @@ const getUserIdFromLocalStorage = () => {
     console.error("Local Storage 'user' 파싱 오류:", e);
     return "";
   }
+  console.log("[DEBUG] 로컬 스토리지 'user' 항목 없음.");
   return ""; // 'user' 항목이 없을 경우
 };
+
 // -------------------------------
 // Props 정의 (programCode를 받음)
 // -------------------------------
@@ -108,18 +110,15 @@ const programDetail = ref(null);
 const donationUnit = ref("");
 const sponsorAmount = ref(1);
 const sponsorName = ref(getUserIdFromLocalStorage());
-//   결제 수단을 'transfer' (실시간 계좌 이체)로 고정
-// const paymentMethod = ref("transfer");
 const isLoading = ref(true);
 
 // -------------------------------
-// Computed: 후원 금액 옵션 생성 (순수 계산 함수)
+// Computed: 후원 금액 옵션 생성
 // -------------------------------
 const donationUnitOptions = computed(() => {
   if (!donationUnit.value) {
     return [];
   }
-  // 상태 변경 로직 제거, 순수하게 계산만 수행
   return donationUnit.value
     .split(",")
     .map((unit) => parseInt(unit.trim()))
@@ -128,7 +127,7 @@ const donationUnitOptions = computed(() => {
 });
 
 // -------------------------------
-//   Watcher: sponsorAmount 초기화 및 조정 (Side Effect 분리)
+// Watcher: sponsorAmount 초기화 및 조정
 // -------------------------------
 watch(
   donationUnitOptions,
@@ -140,19 +139,19 @@ watch(
         sponsorAmount.value = newOptions[0];
       }
     }
-    // 옵션이 전혀 없을 경우, 기본값(1000)으로 설정
+    // 옵션이 전혀 없을 경우, 기본값(1)으로 설정
     else {
       sponsorAmount.value = 1;
     }
   },
   { immediate: true }
-); // 즉시 실행하여 초기 로딩 시에도 적용되도록 설정
+);
 
 // -------------------------------
 // Computed: 폼 유효성 검사
 // -------------------------------
 const isFormValid = computed(() => {
-  // 결제 수단은 고정되었으므로, 금액과 이름만 확인
+  // 금액과 이름(userID)만 확인
   return sponsorAmount.value >= 1 && sponsorName.value.trim() !== "";
 });
 
@@ -164,7 +163,7 @@ const formatCurrency = (amount) => {
 };
 
 // -------------------------------
-// 함수: 상세 정보 조회 (Program Name, donation_unit 획득)
+// 함수: 상세 정보 조회
 // -------------------------------
 const getProgramInfo = async (programCode) => {
   isLoading.value = true;
@@ -186,26 +185,41 @@ const getProgramInfo = async (programCode) => {
 };
 
 // -------------------------------
-// 함수: 결제 처리
+// 함수: 결제 처리 (카카오페이 ready 요청)
 // -------------------------------
 const processPayment = async () => {
+  // [DEBUG] 카카오페이 Ready 요청 데이터 확인
+  console.log("[DEBUG] 카카오페이 Ready 요청 데이터:", {
+    program_code: programDetail.value.program_code,
+    userID: sponsorName.value,
+    amount: sponsorAmount.value,
+    item_name: programName.value,
+  });
+
   try {
     const res = await axios.post("/api/pay/kakao/ready", {
       program_code: programDetail.value.program_code,
       userID: sponsorName.value,
       amount: sponsorAmount.value,
       item_name: programName.value,
+      origin: window.location.origin,
     });
     console.log("카카오페이 ready 응답:", res.data);
 
+    // [수정/확인] tid가 응답에 포함되어 있는지 확인 후 저장
+    if (!res.data.tid) {
+      throw new Error("카카오페이 서버로부터 TID를 받지 못했습니다.");
+    }
+
     // tid 저장 → approve 때 필요
     localStorage.setItem(
-      "kakao_tid", // 키 이름을 'data'를 추가하여 명확히 구분
+      "kakao_tid",
       JSON.stringify({
         tid: res.data.tid,
         code: programDetail.value.program_code,
       })
     );
+    console.log("[DEBUG] 로컬 스토리지에 'kakao_tid' 저장 완료.");
 
     // 카카오페이 결제창으로 이동
     const redirectUrl = res.data.next_redirect_pc_url;
@@ -215,7 +229,10 @@ const processPayment = async () => {
       alert("카카오페이 결제창 URL을 불러올 수 없습니다.");
     }
   } catch (error) {
-    console.error("카카오페이 결제 준비 오류:", error);
+    console.error(
+      "카카오페이 결제 준비 오류:",
+      error.response?.data || error.message || error
+    );
     alert("결제 준비 중 오류가 발생했습니다.");
   }
 };
@@ -227,7 +244,6 @@ onMounted(() => {
   getProgramInfo(props.programCode);
 });
 </script>
-
 <style scoped>
 /* 기존 스타일 유지 */
 .payment-container {

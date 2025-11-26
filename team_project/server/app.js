@@ -65,7 +65,9 @@ app.use(express.static(publicPath));
 app.get(`${apiPath}/`, function (req, res, next) {
   res.sendFile(path.join(__dirname, "./public", "index.html"));
 });
-
+app.get("/kakaopayapprove", (req, res) => {
+  res.sendFile(path.join(__dirname, "./public", "index.html"));
+});
 // const port = process.env.PORT;
 const port = process.env.PORT;
 app.listen(port, () => {
