@@ -22,7 +22,7 @@ router.post("/ready", async (req, res) => {
       vat_amount: 0,
       tax_free_amount: 0,
 
-      // 📌 Vue 주소로 redirect
+      //  Vue 주소로 redirect
       approval_url: `http://49.50.139.49/kakaopayapprove`,
       cancel_url: `http://49.50.139.49/kakaopaycancel`,
       fail_url: `http://49.50.139.49/kakaopayfail`,
