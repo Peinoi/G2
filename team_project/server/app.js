@@ -74,6 +74,10 @@ app.listen(port, () => {
   console.log("[ server app.js 가동 완료 | http://localhost:3000/ ]");
 });
 
+// app.use((req, res) => {
+//   res.status(404).sendFile(path.join(__dirname, "./public", "index.html"));
+// });
+
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "./public", "index.html"));
+  res.sendFile(path.join(__dirname, "./public", "index.html"));
 });
