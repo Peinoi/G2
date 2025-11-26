@@ -19,7 +19,9 @@
           <option value="BA3">반려</option>
         </select>
       </div>
-      <button class="apv-btn apv-btn-outline" @click="fetchList">조회</button>
+      <MaterialButton color="dark" size="sm" @click="fetchList"
+        >조회</MaterialButton
+      >
     </div>
 
     <!-- 테이블 -->
@@ -64,18 +66,17 @@
             <td class="apv-actions-cell">
               <!-- 🔹 요청 상태(BA1)이고, 기관 관리자(AA3)일 때만 버튼 노출 -->
               <template v-if="r.state === 'BA1' && auth.role === 'AA3'">
-                <button
-                  class="apv-btn apv-btn-xs apv-btn-primary"
-                  @click="onApprove(r)"
-                >
+                <MaterialButton color="dark" size="sm" @click="onApprove(r)">
                   승인
-                </button>
-                <button
+                </MaterialButton>
+                <MaterialButton
+                  color="dark"
+                  size="sm"
                   class="apv-btn apv-btn-xs apv-btn-danger"
                   @click="onReject(r)"
                 >
                   반려
-                </button>
+                </MaterialButton>
               </template>
               <template v-else>
                 <span class="apv-muted">-</span>
@@ -107,31 +108,35 @@
         ></textarea>
 
         <div class="apv-modal-actions">
-          <button class="apv-btn" @click="cancelReject">취소</button>
-          <button class="apv-btn apv-btn-primary" @click="confirmReject">
+          <MaterialButton color="dark" size="sm" @click="cancelReject"
+            >취소</MaterialButton
+          >
+          <MaterialButton color="dark" size="sm" @click="confirmReject">
             반려 확정
-          </button>
+          </MaterialButton>
         </div>
       </div>
     </div>
 
     <!-- 페이징 -->
     <div class="apv-pagination">
-      <button
-        class="apv-btn apv-btn-xs"
+      <MaterialButton
+        color="dark"
+        size="sm"
         :disabled="page <= 1 || loading"
         @click="goPage(page - 1)"
       >
         이전
-      </button>
+      </MaterialButton>
       <span class="apv-page-text">{{ page }}</span>
-      <button
-        class="apv-btn apv-btn-xs"
+      <MaterialButton
+        color="dark"
+        size="sm"
         :disabled="rows.length < size || loading"
         @click="goPage(page + 1)"
       >
         다음
-      </button>
+      </MaterialButton>
     </div>
 
     <div v-if="error" class="apv-error" role="alert">
@@ -145,6 +150,7 @@ import { ref, onMounted, computed } from "vue";
 import axios from "axios";
 import { useAuthStore } from "@/store/authLogin.js";
 import { useRouter } from "vue-router";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const API_BASE = "/api/approvals/staff";
 
@@ -505,21 +511,21 @@ onMounted(async () => {
 }
 
 .apv-state-BA1 {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #3730a3;
+  background-color: #e4f0ff !important;
+  color: #476c99 !important;
+  border: 1px solid #a5c3da !important;
 }
 
 .apv-state-BA2 {
-  background: #ecfdf5;
-  border-color: #bbf7d0;
-  color: #166534;
+  background-color: #deeec8 !important;
+  color: #3f7a3a !important;
+  border: 1px solid #bedca0 !important;
 }
 
 .apv-state-BA3 {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  background-color: #fab39f !important;
+  color: #8a2e2e !important;
+  border: 1px solid #e28f7f !important;
 }
 
 /* 승인/반려 버튼 들어가는 칸 */

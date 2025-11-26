@@ -33,9 +33,9 @@
             @keyup.enter="fetchList"
           />
 
-          <button class="hist-btn hist-btn-primary" @click="fetchList">
+          <MaterialButton color="dark" size="sm" @click="fetchList">
             검색
-          </button>
+          </MaterialButton>
         </div>
 
         <!-- 2행: 정렬/유형/기관 또는 담당자 -->
@@ -167,23 +167,25 @@
 
       <!-- 페이징 -->
       <div class="hist-pagination" v-if="totalPages > 1">
-        <button
-          class="hist-btn"
+        <MaterialButton
+          color="dark"
+          size="sm"
           :disabled="page === 1 || loading"
           @click="changePage(page - 1)"
         >
           이전
-        </button>
+        </MaterialButton>
 
         <span class="hist-page-info">{{ page }} / {{ totalPages }}</span>
 
-        <button
-          class="hist-btn"
+        <MaterialButton
+          color="dark"
+          size="sm"
           :disabled="page === totalPages || loading"
           @click="changePage(page + 1)"
         >
           다음
-        </button>
+        </MaterialButton>
       </div>
     </div>
   </div>
@@ -193,6 +195,7 @@
 import { computed, onMounted, ref } from "vue";
 import axios from "axios";
 import { useAuthStore } from "@/store/authLogin";
+import MaterialButton from "@/components/MaterialButton.vue";
 
 const auth = useAuthStore();
 
