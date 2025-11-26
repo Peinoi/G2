@@ -269,6 +269,14 @@ const priorityApprovalList = `
     CASE WHEN ? = 'latest'   THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest'   THEN ra.request_date END ASC,
     CASE WHEN ? = 'name'     THEN c.child_name    END ASC,
+    CASE WHEN ? = 'priority' THEN
+    CASE ra.priority_level
+      WHEN 'BB1' THEN 1
+      WHEN 'BB2' THEN 2
+      WHEN 'BB3' THEN 3
+      ELSE 4
+    END
+  END ASC,
 
     ra.request_date DESC,       -- 기본: 최신순
     ra.approval_code DESC
@@ -318,99 +326,89 @@ const priorityApprovalTotalCount = `
 
 // 지원계획 승인 요청 목록 (페이징용)
 const supportPlanApprovalList = `
-    SELECT
-      ra.approval_code,                    -- 승인코드
-      c.child_name        AS child_name,   -- 아이 이름
-      parent.name         AS parent_name,  -- 보호자 이름
-      mgr.name            AS manager_name, -- 담당자 이름
-      org.org_name        AS org_name,     -- 기관명
+  SELECT
+      ra.approval_code,
+      c.child_name,
+      parent.name AS parent_name,
+      mgr.name AS manager_name,
+      org.org_name,
+      sp.written_at,
+      COALESCE(c.disability_type, parent.disability_type) AS disability_type,
+      cp.level AS priority_level,
+      ra.state,
+      ra.approval_date,
+      ra.rejection_reason,
+      sp.plan_code,
+      sp.submit_code,
 
-      sp.written_at       AS written_at,   -- 계획 작성일
+      -- 재요청 유무
+      EXISTS (
+        SELECT 1
+        FROM request_approval ra2
+        WHERE ra2.approval_type     = ra.approval_type
+          AND ra2.linked_table_name = ra.linked_table_name
+          AND ra2.linked_record_pk  = ra.linked_record_pk
+          AND ra2.approval_code     > ra.approval_code
+      ) AS has_newer_request,
 
-      COALESCE(c.disability_type, parent.disability_type)  AS disability_type, -- 장애유형
-      cp.level            AS priority_level,  -- 우선순위(BB코드)
-      ra.state            AS state,           -- 상태(BA코드)
-      ra.approval_date    AS approval_date,    -- 처리일(승인/반려 일자)
-      ra.rejection_reason AS rejection_reason,  -- 반려 사유
+      -- 최신 재요청 승인코드
+      (
+        SELECT ra2.approval_code
+        FROM request_approval ra2
+        WHERE ra2.approval_type     = ra.approval_type
+          AND ra2.linked_table_name = ra.linked_table_name
+          AND ra2.linked_record_pk  = ra.linked_record_pk
+          AND ra2.approval_code     > ra.approval_code
+        ORDER BY ra2.approval_code DESC
+        LIMIT 1
+      ) AS newest_approval_code
 
-      sp.plan_code        AS plan_code,
-      sp.submit_code      AS submit_code
-      -- ✅ 재요청 유무
-    , EXISTS (
-    SELECT 1
-    FROM request_approval ra2
-    WHERE ra2.approval_type     = ra.approval_type
-      AND ra2.linked_table_name = ra.linked_table_name
-      AND ra2.linked_record_pk  = ra.linked_record_pk
-      AND ra2.approval_code     > ra.approval_code
-    ) AS has_newer_request
-    -- ✅ 재요청(가장 최신)의 승인코드
-    , (
-      SELECT ra2.approval_code
-      FROM request_approval ra2
-      WHERE ra2.approval_type     = ra.approval_type
-        AND ra2.linked_table_name = ra.linked_table_name
-        AND ra2.linked_record_pk  = ra.linked_record_pk
-        AND ra2.approval_code     > ra.approval_code
-      ORDER BY ra2.approval_code DESC
-      LIMIT 1
-    ) AS newest_approval_code
-  FROM request_approval ra
+FROM request_approval ra
+LEFT JOIN support_plan sp
+  ON ra.linked_table_name = 'support_plan'
+ AND ra.linked_record_pk  = sp.plan_code
+LEFT JOIN survey_submission ss
+  ON ss.submit_code = sp.submit_code
+LEFT JOIN users parent
+  ON parent.user_code = ss.written_by
+LEFT JOIN child c
+  ON c.child_code = ss.child_code
+LEFT JOIN users mgr
+  ON mgr.user_code = sp.assi_by
+LEFT JOIN organization org
+  ON org.org_code = mgr.org_code
+LEFT JOIN case_priority cp
+  ON cp.submit_code = sp.submit_code
+ AND cp.is_current = 'Y'
 
-  LEFT JOIN support_plan sp
-    ON ra.linked_table_name = 'support_plan'
-   AND ra.linked_record_pk  = sp.plan_code
+WHERE ra.approval_type = 'AE4'
 
-  LEFT JOIN survey_submission ss
-    ON ss.submit_code = sp.submit_code
+-- ⭐ 1) 상태 필터
+AND (? = '' OR ra.state = ?)
 
-  LEFT JOIN users parent
-    ON parent.user_code = ss.written_by
-
-  LEFT JOIN child c
-    ON c.child_code = ss.child_code
-
-  LEFT JOIN users mgr
-    ON mgr.user_code = sp.assi_by
-
-  LEFT JOIN organization org
-    ON org.org_code = mgr.org_code
-
-  LEFT JOIN case_priority cp
-    ON cp.submit_code = sp.submit_code
-   AND cp.is_current = 'Y'
-
-  WHERE ra.approval_type = 'AE4'           -- 지원계획 승인요청
-
-  -- 상태 필터
-  AND (? = '' OR ra.state = ?)
-
-  -- 검색어 필터
-  AND (
+-- ⭐ 2) 검색 필터 (이름 / 보호자 / 담당자 / 기관명)
+AND (
       ? = '' OR
       c.child_name   LIKE CONCAT('%', ?, '%') OR
       parent.name    LIKE CONCAT('%', ?, '%') OR
       mgr.name       LIKE CONCAT('%', ?, '%') OR
       org.org_name   LIKE CONCAT('%', ?, '%')
-  )
+)
 
-  -- 🔹 로그인한 기관 관리자와 같은 기관만 보기
-  AND (
+-- ⭐ 3) 기관 필터 — 오늘 해결된 핵심
+AND (
       ? = '' OR
-      org.org_code = (
-          SELECT u2.org_code
-          FROM users u2
-          WHERE u2.user_id = ?
-          LIMIT 1
+      parent.org_code = (
+          SELECT u2.org_code FROM users u2 WHERE u2.user_id = ? LIMIT 1
       )
-  )
+)
 
-  ORDER BY 
+-- ⭐ 4) 정렬 (latest / oldest / name / priority)
+ORDER BY 
     CASE WHEN ? = 'latest'   THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest'   THEN ra.request_date END ASC,
     CASE WHEN ? = 'name'     THEN c.child_name    END ASC,
 
-    /* 🔥 우선순위 정렬: BB1 → BB3 */
     CASE WHEN ? = 'priority' THEN 
         CASE cp.level 
             WHEN 'BB1' THEN 1
@@ -422,7 +420,8 @@ const supportPlanApprovalList = `
 
     ra.request_date DESC,
     ra.approval_code DESC
-  LIMIT ?, ?
+
+LIMIT ?, ?;
 `;
 
 // 🔢 지원계획 승인 요청 총 개수
@@ -442,27 +441,18 @@ const supportPlanApprovalTotalCount = `
     ON mgr.user_code = sp.assi_by
   LEFT JOIN organization org
     ON org.org_code = mgr.org_code
-  LEFT JOIN case_priority cp
-    ON cp.submit_code = sp.submit_code
-   AND cp.is_current = 'Y'
+
   WHERE ra.approval_type = 'AE4'
-  AND (? = '' OR ra.state = ?)
+
+  -- 기관 필터
   AND (
-      ? = '' OR
-      c.child_name   LIKE CONCAT('%', ?, '%') OR
-      parent.name    LIKE CONCAT('%', ?, '%') OR
-      mgr.name       LIKE CONCAT('%', ?, '%') OR
-      org.org_name   LIKE CONCAT('%', ?, '%')
-  )
-  -- 🔹 로그인한 기관 관리자와 같은 기관만 카운트
-  AND (
-      ? = '' OR
-      org.org_code = (
-          SELECT u2.org_code
-          FROM users u2
-          WHERE u2.user_id = ?
-          LIMIT 1
-      )
+    ? = '' OR
+    parent.org_code = (
+        SELECT u2.org_code 
+        FROM users u2 
+        WHERE u2.user_id = ?
+        LIMIT 1
+    )
   )
 `;
 
