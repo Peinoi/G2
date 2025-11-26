@@ -140,25 +140,12 @@
                   <span class="answer-label">답변</span>
                   <span class="answer-value">
                     <template v-if="Array.isArray(renderAnswer(item))">
-                      {{ renderAnswer(item).join(", ") || "-" }}
+                      {{ renderAnswer(item).join("\n") || "-" }}
                     </template>
                     <template v-else>
                       {{ renderAnswer(item) || "-" }}
                     </template>
                   </span>
-                </div>
-
-                <div
-                  v-if="
-                    isChoiceType(item.question_type) &&
-                    item.option_values?.length
-                  "
-                  class="option-hint"
-                >
-                  선택지:
-                  {{
-                    item.option_values.map((o) => o.label ?? o.value).join(", ")
-                  }}
                 </div>
               </li>
             </ul>
@@ -499,22 +486,21 @@ section {
   gap: 0.5rem;
   font-size: 0.9rem;
   margin-top: 0.15rem;
+  align-items: flex-start; /* 줄바꿈 시 라벨과 정렬 자연스럽게 */
 }
+
 .answer-label {
   flex: 0 0 2.5rem;
   color: #6b7280;
 }
+
 .answer-value {
   flex: 1;
   color: #111827;
+  white-space: pre-line; /* 줄바꿈(\n) 반영 */
+  word-break: break-word; /* 긴 문자열 깨짐 방지 */
 }
 
-/* 선택지 힌트 */
-.option-hint {
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
 .form-actions {
   margin-top: 10px;
   padding-top: 0.5rem;

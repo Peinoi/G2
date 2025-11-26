@@ -458,7 +458,7 @@ async function getSubmissionDetail(submitCode) {
   }
 }
 
-//제출본 수정
+// 제출본 수정
 async function updateSubmissionAnswers(submitCode, body) {
   const conn = await pool.getConnection();
   try {
@@ -494,11 +494,6 @@ async function updateSubmissionAnswers(submitCode, body) {
       beforeAnswers[row.item_code] = v;
     }
 
-    // 🔥 여기: 문자열로 감싸서 넘기기
-    const beforeRow = {
-      answers: JSON.stringify(beforeAnswers),
-    };
-
     // 2) 기존 답안 삭제
     await conn.query(sql.deleteAnswersBySubmit, [id]);
 
@@ -529,11 +524,58 @@ async function updateSubmissionAnswers(submitCode, body) {
 
     await conn.query(sql.updateSubmissionUpdatedAt, [now, id]);
 
-    const afterRow = {
-      answers: JSON.stringify(afterAnswers), // 🔥 여기도 문자열
-    };
+    // 🔍 4) 변경된 item만 추려서 diff 생성
+    const diffBefore = {};
+    const diffAfter = {};
 
-    if (modifier !== null) {
+    const allKeys = new Set([
+      ...Object.keys(beforeAnswers),
+      ...Object.keys(afterAnswers),
+    ]);
+
+    for (const key of allKeys) {
+      const beforeVal = beforeAnswers[key];
+      const afterVal = afterAnswers[key];
+
+      // 둘 다 undefined/null이면 변화 없음
+      if (beforeVal == null && afterVal == null) continue;
+
+      // 비교를 위해 JSON 문자열로 normalize
+      const beforeNorm =
+        beforeVal !== undefined ? JSON.stringify(beforeVal) : null;
+      const afterNorm =
+        afterVal !== undefined ? JSON.stringify(afterVal) : null;
+
+      if (beforeNorm !== afterNorm) {
+        if (beforeVal !== undefined) {
+          diffBefore[key] = beforeVal;
+        } else {
+          // 이전에 없고 새로 생긴 경우를 명시하고 싶으면 null 넣어도 됨
+          diffBefore[key] = null;
+        }
+
+        if (afterVal !== undefined) {
+          diffAfter[key] = afterVal;
+        } else {
+          // 삭제된 경우 표현하고 싶으면 null
+          diffAfter[key] = null;
+        }
+      }
+    }
+
+    // 5) 히스토리 기록 (변경된 게 있을 때만)
+    if (
+      modifier !== null &&
+      (Object.keys(diffBefore).length > 0 || Object.keys(diffAfter).length > 0)
+    ) {
+      const beforeRow = {
+        answers: JSON.stringify(diffBefore),
+      };
+
+      const afterRow = {
+        answers: JSON.stringify(diffAfter),
+      };
+
       await logHistoryDiff(conn, {
         tableName: "survey_submission",
         tablePk: id,
