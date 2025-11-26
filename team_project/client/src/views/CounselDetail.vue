@@ -147,9 +147,7 @@
 
             <div class="field-block">
               <div class="field-label">상담 내용</div>
-              <div class="field-value whitespace-pre-line">
-                {{ mainForm.content || "-" }}
-              </div>
+              <div class="field-value" v-html="formattedMainContent"></div>
             </div>
 
             <!-- 첨부 파일 영역 -->
@@ -202,10 +200,11 @@
                 </div>
 
                 <div class="field-block">
-                  <div class="field-label">상담 제목</div>
-                  <div class="field-value">
-                    {{ record.title || "-" }}
-                  </div>
+                  <div class="field-label">상담 내용</div>
+                  <div
+                    class="field-value"
+                    v-html="formatRecordContent(record.content)"
+                  ></div>
                 </div>
 
                 <div class="field-block">
@@ -362,6 +361,30 @@ const rejectionInfo = ref({
   reason: "",
   date: "",
 });
+
+// 메인 상담 내용 줄바꿈 처리
+const formattedMainContent = computed(() => {
+  const raw = mainForm.value.content || "";
+
+  if (!raw) return "-";
+
+  return raw
+    .replace(/\r\n/g, "<br>") // 윈도우 줄바꿈
+    .replace(/\n/g, "<br>") // 일반 줄바꿈
+    .replace(/\\n/g, "<br>"); // 문자 그대로 "\n" 이 들어온 경우까지 처리
+});
+
+// 추가 상담 기록 줄바꿈 처리
+function formatRecordContent(content) {
+  const raw = content || "";
+
+  if (!raw) return "-";
+
+  return raw
+    .replace(/\r\n/g, "<br>")
+    .replace(/\n/g, "<br>")
+    .replace(/\\n/g, "<br>");
+}
 
 const formattedRejectionDate = computed(() => {
   const v = rejectionInfo.value.date;

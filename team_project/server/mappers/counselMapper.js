@@ -233,8 +233,10 @@ async function saveCounsel(body, files = []) {
     }
 
     // 4) 우선순위 처리
+    const effectivePriority = priority || "BB3";
+
     await conn.query(sql.resetPriority, [submitCode]);
-    await conn.query(sql.insertPriority, [submitCode, priority || "BB3", "Y"]);
+    await conn.query(sql.insertPriority, [submitCode, effectivePriority, "Y"]);
 
     // 5) 첨부파일 처리
     if (Array.isArray(removeAttachmentCodes) && removeAttachmentCodes.length) {
@@ -257,6 +259,7 @@ async function saveCounsel(body, files = []) {
           basePath,
           "counsel_note",
           counsel_code,
+          effectivePriority,
         ]);
       }
     }

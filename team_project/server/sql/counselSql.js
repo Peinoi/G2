@@ -237,7 +237,8 @@ module.exports = {
     state,
     rejection_reason,
     linked_table_name,
-    linked_record_pk
+    linked_record_pk,
+    priority_level
   ) VALUES (
     ?,           -- requester_code
     ?,           -- processor_code
@@ -247,7 +248,8 @@ module.exports = {
     ?,           -- state
     NULL,        -- rejection_reason
     ?,           -- linked_table_name
-    ?            -- linked_record_pk
+    ?,            -- linked_record_pk
+    ? 
   )
 `,
 

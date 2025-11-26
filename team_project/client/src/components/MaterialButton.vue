@@ -2,6 +2,7 @@
   <button
     class="btn mb-0"
     :class="getClasses(variant, color, size, fullWidth, active)"
+    @click="$emit('click', $event)"
   >
     <slot />
   </button>
@@ -10,6 +11,7 @@
 <script>
 export default {
   name: "MaterialButton",
+  emits: ["click"],
   props: {
     color: {
       type: String,
