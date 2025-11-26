@@ -1,4 +1,9 @@
 // app.js
+const isProd = process.argv.includes("prod");
+
+// 운영 서버 주소 (Vue가 빌드되어 배포된 주소)
+const SERVER_URL = isProd ? "http://49.50.139.49/api" : "http://localhost:3000";
+global.SERVER_URL = SERVER_URL;
 const express = require("express");
 const morgan = require("morgan");
 const dotenv = require("dotenv");

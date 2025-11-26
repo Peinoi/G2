@@ -8,10 +8,20 @@ router.post("/ready", async (req, res) => {
     const { program_code, userID, amount, item_name, origin } = req.body;
 
     const userOrigin = req.body.origin; // Vue에서 받은 URL
+    let approvalBaseURL = userOrigin || req.headers.origin || "";
 
-    const approvalBaseURL =
-      userOrigin || req.headers.origin || "http://49.50.139.49";
+    // Vue dev mode (localhost:8080) → backend(3000)로 보정 필요
+    if (
+      approvalBaseURL.includes("localhost") &&
+      approvalBaseURL.includes("8080")
+    ) {
+      approvalBaseURL = "http://localhost:8080";
+    }
 
+    // 배포 환경(domain 그대로 사용)
+    if (approvalBaseURL.endsWith("/")) {
+      approvalBaseURL = approvalBaseURL.slice(0, -1);
+    }
     const body = {
       cid: "TC0ONETIME",
       partner_order_id: program_code,
@@ -23,9 +33,9 @@ router.post("/ready", async (req, res) => {
       tax_free_amount: 0,
 
       //  Vue 주소로 redirect
-      approval_url: `http://49.50.139.49/kakaopayapprove`,
-      cancel_url: `http://49.50.139.49/kakaopaycancel`,
-      fail_url: `http://49.50.139.49/kakaopayfail`,
+      approval_url: `${approvalBaseURL}/kakaopayapprove`,
+      cancel_url: `${approvalBaseURL}/kakaopaycancel`,
+      fail_url: `${approvalBaseURL}/kakaopayfail`,
     };
 
     const kakaoResponse = await axios.post(
@@ -59,6 +69,7 @@ router.post("/approve", async (req, res) => {
       });
     }
 
+    // 카카오 승인 요청
     const body = {
       cid: "TC0ONETIME",
       tid,
@@ -78,16 +89,16 @@ router.post("/approve", async (req, res) => {
       }
     );
 
-    // 결제금액 추출
+    //카카오 승인 금액
     const totalAmount = approveResponse.data.amount.total;
 
-    // DB 저장
+    // DB 저장 경로를 global.SERVER_URL로 요청
     await axios.post(
-      `http://49.50.139.49:3000/api/sponsor/${code}/${userId}/payments`,
+      `${global.SERVER_URL}/sponsor/${program_code}/${userID}/payments`,
       {
-        userID: userId,
-        transaction_amount: res.data.data.amount.total,
-        program_code: code,
+        userID: userID,
+        transaction_amount: totalAmount,
+        program_code: program_code,
       }
     );
 
