@@ -1,7 +1,9 @@
 const userInfoMapper = require('../mappers/userInfoMapper');
+const signUserMapper = require('../mappers/signUserMapper');
 const { createChild } = require('./factories/userFactory');
 const { makeParams } = require('../utils/sqlParamUtil');
 const { INSERT_CHILD_DATA } = require('../configs/insertData');
+const { hashPw, checkPw } = require('../utils/crypto');
 const { encryptSsn, decryptSsn } = require('../utils/ssnCrypto');
 
 // 회원정보 갖고오기
@@ -54,10 +56,18 @@ async function infoUpdate(type, data) {
 // pw 변경
 async function pwUpdate(data) {
   try {
-    const result = await userInfoMapper.updatePw(data);
-    return result;
+    const findUserHashPw = await userInfoMapper.findUserPw(data.user_code);
+    const isPw = await checkPw(data.user_pw, findUserHashPw[0].password_hash);
+    if (!isPw)
+      return { ok: false, status: 200, message: '비밀번호가 맞지 않습니다.' };
+
+    const newHashPw = await hashPw(data.newPw);
+    const params = [newHashPw, data.user_code];
+    await userInfoMapper.updatePw(params);
+
+    return { ok: true, status: 200, message: '비밀번호 변경 성공.' };
   } catch (err) {
-    console.error('[ pwUpdate 실패 ] : ', err);
+    throw err;
   }
 }
 

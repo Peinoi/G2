@@ -334,11 +334,14 @@ export default {
     },
 
     async resetPassword() {
+      if (this.findPwNewPw.length > 15 || this.findPwNewPw.length < 9) {
+        return alert('비밀번호는 9자 이상 15자 이하로 입력해주세요.');
+      }
       if (!this.findPwNewPw || !this.findPwNewPwCheck) {
-        return alert('모두 입력해주세요');
+        return alert('모든 항목을 입력해주세요');
       }
       if (this.findPwNewPw !== this.findPwNewPwCheck) {
-        return alert('비밀번호 틀림');
+        return alert('비밀번호가 일치하지 않습니다.');
       }
       const result = await findIdPw('findResetPw', {
         user_id: this.findPwUserId,

@@ -18,7 +18,6 @@
           배정하시겠습니까?
 
           <br />
-          배정이 확정되면 <strong>변경이 불가하니</strong> 재차 확인해주세요.
         </p>
 
         <div class="modal-actions">

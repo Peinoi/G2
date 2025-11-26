@@ -40,7 +40,7 @@ router.put('/updatePw', async (req, res) => {
     console.error('[ userRoute.js -> updatePw 라우터 오류 ]', err);
     res.status(500).json({
       ok: false,
-      message: '[ userRoute.js -> updatePw 라우터 오류 ]',
+      message: '[ updatePw 라우터 오류 ]',
     });
   }
 });
