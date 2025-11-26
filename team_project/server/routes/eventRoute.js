@@ -231,6 +231,37 @@ router.get("/applyList", async (req, res) => {
 });
 
 // ==========================
+// 이벤트 신청자 수 조회
+// GET /event/applyCount?event_code=XXX
+// ==========================
+router.get("/applyCount", async (req, res) => {
+  console.log("🔥 applyCount 라우터 들어옴"); // 가장 중요
+  try {
+    const event_code = req.query.event_code;
+    console.log("event_code:", event_code);
+    if (!event_code) {
+      return res.status(400).json({
+        status: "error",
+        message: "event_code가 필요합니다.",
+      });
+    }
+
+    const myApplies = await eventService.getMyEventApplyCount(event_code);
+    console.log("🔥 DB 결과:", myApplies);
+    res.status(200).json({
+      status: "success",
+      data: myApplies,
+    });
+  } catch (err) {
+    console.error("[eventRoute.js || 이벤트 신청자 수 조회 실패]", err.message);
+    res.status(500).json({
+      status: "error",
+      message: "이벤트 신청자 수 조회 중 에러 발생",
+    });
+  }
+});
+
+// ==========================
 // 세부 이벤트 단건 조회
 // GET /event/sub/:sub_event_code
 // ==========================

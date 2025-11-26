@@ -256,8 +256,8 @@ async function addEventFull(data) {
       data.max_participants,
       moment(data.recruit_start_date).format("YYYY-MM-DD"),
       moment(data.recruit_end_date).format("YYYY-MM-DD"),
-      moment(data.event_start_date).format("YYYY-MM-DD"),
-      moment(data.event_end_date).format("YYYY-MM-DD"),
+      moment(data.event_start_date).format("YYYY-MM-DD HH:mm:ss"),
+      moment(data.event_end_date).format("YYYY-MM-DD HH:mm:ss"),
       data.recruit_status,
       moment(data.event_register_date).format("YYYY-MM-DD HH:mm:ss"),
       data.register_status,
@@ -374,8 +374,8 @@ async function addEventWithSub(data) {
       data.max_participants,
       moment(data.recruit_start_date).format("YYYY-MM-DD"),
       moment(data.recruit_end_date).format("YYYY-MM-DD"),
-      moment(data.event_start_date).format("YYYY-MM-DD"),
-      moment(data.event_end_date).format("YYYY-MM-DD"),
+      moment(data.event_start_date).format("YYYY-MM-DD HH:mm:ss"),
+      moment(data.event_end_date).format("YYYY-MM-DD HH:mm:ss"),
       data.recruit_status,
       moment(data.event_register_date).format("YYYY-MM-DD HH:mm:ss"),
       data.register_status,
@@ -475,6 +475,42 @@ async function selectEventApplyList(user_code) {
   } catch (err) {
     console.error(
       "[eventMapper.js || 이벤트 신청 내역 조회 실패]",
+      err.message
+    );
+    throw err;
+  } finally {
+    if (conn) conn.release();
+  }
+}
+
+// 이벤트 신청자 수 조회
+async function selectEventApplyCount(event_code) {
+  let conn;
+  try {
+    conn = await pool.getConnection();
+    console.log("=== DEBUG event_code:", event_code);
+    const rows = await conn.query(eventSQL.selectEventApplyCount, [event_code]);
+
+    // 필요하다면 apply_type, apply_status 코드명을 commonCodeService에서 매핑
+    for (const row of rows) {
+      row.apply_type_name = await commonCodeService.getCodeName(
+        "DD",
+        row.apply_type
+      );
+      row.apply_status_name = await commonCodeService.getCodeName(
+        "DE",
+        row.apply_status
+      );
+
+      // 신청일정, 신청인원, 마감인원은 이미 SQL에서 계산되어 있음
+      // 필요 시 JS에서 포맷 변경 가능
+    }
+    console.log("=== DEBUG rows:", rows);
+    console.log("[eventMapper.js || 이벤트 신청자 수 조회 성공]", rows);
+    return rows;
+  } catch (err) {
+    console.error(
+      "[eventMapper.js || 이벤트 신청자 수 조회 실패]",
       err.message
     );
     throw err;
@@ -723,8 +759,8 @@ async function addEventWithSub(data) {
       data.max_participants,
       moment(data.recruit_start_date).format("YYYY-MM-DD"),
       moment(data.recruit_end_date).format("YYYY-MM-DD"),
-      moment(data.event_start_date).format("YYYY-MM-DD"),
-      moment(data.event_end_date).format("YYYY-MM-DD"),
+      moment(data.event_start_date).format("YYYY-MM-DD HH:mm:ss"),
+      moment(data.event_end_date).format("YYYY-MM-DD HH:mm:ss"),
       data.recruit_status,
       moment(data.event_register_date).format("YYYY-MM-DD HH:mm:ss"),
       data.register_status,
@@ -1299,6 +1335,7 @@ module.exports = {
   addEventFull,
   checkDuplicateApply,
   selectEventApplyList,
+  selectEventApplyCount,
   cancelApply,
   selectEventApplyResult,
   approveEventPlan,

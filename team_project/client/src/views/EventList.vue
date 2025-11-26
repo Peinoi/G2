@@ -93,15 +93,15 @@
         <div class="card-content">
           <h3>{{ event.event_name }}</h3>
           <p>
-            시행기간: {{ formatDate(event.event_start_date) }} ~
-            {{ formatDate(event.event_end_date) }}
-          </p>
-          <p>
             모집기간: {{ formatDate(event.recruit_start_date) }} ~
             {{ formatDate(event.recruit_end_date) }}
           </p>
           <p>
-            신청인원/모집인원: {{ event.total_sub_recruit_count }} /
+            시행기간: {{ formatDate(event.event_start_date) }} ~
+            {{ formatDate(event.event_end_date) }}
+          </p>
+          <p>
+            신청인원/모집인원: {{ event.total_event_count }} /
             {{ event.max_participants }}
           </p>
         </div>
@@ -132,6 +132,18 @@ const getLoginRole = () => {
 const loginRole = ref(getLoginRole());
 const isManager = computed(() => loginRole.value === "AA2");
 
+const getLoginOrgCode = () => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    const data = JSON.parse(userStr);
+    return data.org_code || null;
+  } catch {
+    return null;
+  }
+};
+const loginOrgCode = ref(getLoginOrgCode());
+
 const goToEventAdd = () => {
   router.push({ name: "EventAdd" });
 };
@@ -159,6 +171,37 @@ const fetchEvents = async () => {
     const query = new URLSearchParams(filters.value).toString();
     const res = await axios.get(`/api/event/list?${query}`);
     events.value = res.data.data;
+
+    // 로그인 역할이 AA4가 아니면 org_code 필터 적용
+    if (loginRole.value !== "AA4") {
+      events.value = events.value.filter(
+        (event) => event.org_code === loginOrgCode.value
+      );
+    }
+
+    // 각 이벤트별 신청인원 가져오기
+    const promises = events.value.map(async (event) => {
+      try {
+        const applyRes = await axios.get(
+          `/api/event/applyCount?event_code=${event.event_code}`
+        );
+        if (applyRes.data.status === "success") {
+          // total_event_count 합치기
+          const totalCount =
+            applyRes.data.data.reduce(
+              (sum, item) => sum + (item.current_count || 0),
+              0
+            ) || 0;
+          return { ...event, total_event_count: totalCount };
+        } else {
+          return { ...event, total_event_count: 0 };
+        }
+      } catch {
+        return { ...event, total_event_count: 0 };
+      }
+    });
+
+    events.value = await Promise.all(promises);
   } catch (err) {
     console.error("이벤트 메인 조회 실패", err);
   }
