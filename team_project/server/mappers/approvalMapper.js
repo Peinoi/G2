@@ -323,6 +323,7 @@ async function priorityApprovalList({
       ob, // latest
       ob, // oldest
       ob, // name   ← 🔥 딱 3번만!
+      ob, // priority
 
       offset,
       sizeNum,
@@ -382,29 +383,23 @@ async function supportPlanApprovalList({
     const sizeNum = Number(size) > 0 ? Number(size) : 20;
     const offset = (pageNum - 1) * sizeNum;
 
-    // 🔹 시스템 관리자(AA4)는 기관 필터 없이 전체 조회
     const isSystemAdmin = role === "AA4";
     const orgFilterLoginId = isSystemAdmin ? "" : loginId || "";
 
     const params = [
       st,
       st,
-
       kw,
       kw,
       kw,
       kw,
       kw,
-
-      // 🔹 기관 필터 ('' 이면 필터 해제)
       orgFilterLoginId,
       orgFilterLoginId,
-
       ob,
       ob,
       ob,
       ob,
-
       offset,
       sizeNum,
     ];
@@ -431,31 +426,7 @@ async function supportPlanApprovalList({
       approvalSQL.supportPlanApprovalTotalCount,
       countParams
     );
-    const countRows = rowsFrom(retCount);
-    const totalCount = countRows[0]?.totalCount || 0;
-
-    console.log(
-      "[approvalMapper] supportPlanApprovalList rows:",
-      rows.length,
-      "| state:",
-      st,
-      "| keyword:",
-      kw,
-      "| orderBy:",
-      ob,
-      "| role:",
-      role,
-      "| loginId:",
-      loginId,
-      "| orgFilterLoginId:",
-      orgFilterLoginId,
-      "| page:",
-      pageNum,
-      "| size:",
-      sizeNum,
-      "| totalCount:",
-      totalCount
-    );
+    const totalCount = rowsFrom(retCount)[0]?.totalCount || 0;
 
     return {
       rows,

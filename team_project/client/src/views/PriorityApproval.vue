@@ -365,7 +365,7 @@ function onRowClick(item) {
     const newestState = latestRow?.state || "";
 
     rejectModalData.value = {
-      reason: item.rejection_reason || "(등록된 반려 사유가 없습니다.)",
+      reason: item.rejection_reason.trim() || "(등록된 반려 사유가 없습니다.)",
       newestApprovalCode: item.newest_approval_code || "",
       newestState, // BA1 / BA2 / BA3 ...
     };
