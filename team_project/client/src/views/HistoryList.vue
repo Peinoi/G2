@@ -622,6 +622,7 @@ onMounted(async () => {
   color: #374151;
   vertical-align: middle;
   text-align: center;
+  white-space: nowrap;
 }
 
 /* hover 효과 통일 */

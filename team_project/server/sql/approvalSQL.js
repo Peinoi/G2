@@ -194,7 +194,7 @@ const priorityApprovalList = `
     , org.org_name            AS org_name      -- 기관명
     , cn.written_at           AS counsel_date  -- 상담기록(상담일자)
     , COALESCE(c.disability_type, parent.disability_type)  AS disability_type -- 장애유형
-    , cp.level                AS priority_level  -- 우선순위 등급(BB코드)
+    , ra.priority_level       AS priority_level  -- 우선순위(BB코드)
     , ra.state                AS state         -- 상태(BA1/BA2/BA3)
     , ra.approval_date        AS approval_date -- 처리일(승인/반려 일자)
     , ra.rejection_reason     AS rejection_reason  -- 반려 사유
@@ -239,10 +239,6 @@ const priorityApprovalList = `
   LEFT JOIN organization org
     ON org.org_code = mgr.org_code
 
-  LEFT JOIN case_priority cp
-    ON cp.submit_code = ss.submit_code
-   AND cp.is_current = 'Y'
-
   WHERE ra.approval_type = 'AE3'  -- 우선순위 승인 요청
 
   -- 상태 필터 (전체면 무시)
@@ -273,16 +269,6 @@ const priorityApprovalList = `
     CASE WHEN ? = 'latest'   THEN ra.request_date END DESC,
     CASE WHEN ? = 'oldest'   THEN ra.request_date END ASC,
     CASE WHEN ? = 'name'     THEN c.child_name    END ASC,
-
-    /* 🔥 우선순위 정렬: BB1 → BB2 → BB3 */
-    CASE WHEN ? = 'priority' THEN 
-        CASE cp.level 
-            WHEN 'BB1' THEN 1
-            WHEN 'BB2' THEN 2
-            WHEN 'BB3' THEN 3
-            ELSE 4
-        END
-    END ASC,
 
     ra.request_date DESC,       -- 기본: 최신순
     ra.approval_code DESC
