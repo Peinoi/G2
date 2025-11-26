@@ -5,7 +5,7 @@ const axios = require("axios");
 // 카카오페이 결제 준비(ready)
 router.post("/ready", async (req, res) => {
   try {
-    const { program_code, userID, amount, item_name } = req.body;
+    const { program_code, userID, amount, item_name, origin } = req.body;
 
     const userOrigin = req.body.origin; // Vue에서 받은 URL
 
@@ -23,9 +23,9 @@ router.post("/ready", async (req, res) => {
       tax_free_amount: 0,
 
       // 📌 Vue 주소로 redirect
-      approval_url: `${approvalBaseURL}/kakaopayapprove`,
-      cancel_url: `${approvalBaseURL}/kakaopaycancel`,
-      fail_url: `${approvalBaseURL}/kakaopayfail`,
+      approval_url: `49.50.139.49/kakaopayapprove`,
+      cancel_url: `49.50.139.49/kakaopaycancel`,
+      fail_url: `49.50.139.49/kakaopayfail`,
     };
 
     const kakaoResponse = await axios.post(
@@ -83,9 +83,7 @@ router.post("/approve", async (req, res) => {
 
     // DB 저장
     await axios.post(
-      `http://localhost:${
-        process.env.PORT || 3000
-      }/sponsor/${program_code}/${userID}/payments`,
+      `http://49.50.139.49/sponsor/${program_code}/${userID}/payments`,
       {
         userID,
         transaction_amount: totalAmount,
