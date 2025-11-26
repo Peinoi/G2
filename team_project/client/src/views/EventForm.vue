@@ -57,7 +57,28 @@
           </div>
 
           <!-- 이벤트 기간 -->
-          <div>
+          <!-- 신청제 -->
+          <div v-if="eventInfo.event_type === 'DD1'">
+            <label>이벤트 시작일</label>
+            <input
+              type="datetime-local"
+              v-model="eventInfo.event_start_date"
+              :min="getNextDayTime(eventInfo.recruit_end_date)"
+              required
+            />
+          </div>
+          <div v-if="eventInfo.event_type === 'DD1'">
+            <label>이벤트 종료일</label>
+            <input
+              type="datetime-local"
+              v-model="eventInfo.event_end_date"
+              :min="eventInfo.event_start_date"
+              required
+            />
+          </div>
+
+          <!-- 예약제 -->
+          <div v-if="eventInfo.event_type === 'DD2'">
             <label>이벤트 시작일</label>
             <input
               type="date"
@@ -66,7 +87,7 @@
               required
             />
           </div>
-          <div>
+          <div v-if="eventInfo.event_type === 'DD2'">
             <label>이벤트 종료일</label>
             <input
               type="date"
@@ -221,6 +242,22 @@ const getNextDay = (dateString) => {
   const d = new Date(dateString);
   d.setDate(d.getDate() + 1);
   return dateFormat(d, "yyyy-MM-dd");
+};
+
+// 다음날 + 날짜 계산 함수
+const getNextDayTime = (dateString) => {
+  if (!dateString) return "";
+
+  const d = new Date(dateString);
+  d.setDate(d.getDate() + 1);
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 };
 
 const eventInfo = ref({

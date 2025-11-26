@@ -121,6 +121,20 @@ async function getMyEventApplyList(user_code) {
   }
 }
 
+// 이벤트 신청자 수 조회
+async function getMyEventApplyCount(event_code) {
+  try {
+    const applies = await eventMapper.selectEventApplyCount(event_code);
+    return applies;
+  } catch (err) {
+    console.error(
+      "[eventService.js || 이벤트 신청자 수 조회 실패]",
+      err.message
+    );
+    throw err;
+  }
+}
+
 // ✅ 이벤트 신청 취소
 async function cancelApply(apply_code) {
   try {
@@ -373,4 +387,5 @@ module.exports = {
   approveMyApply,
   rejectMyApply,
   getMyAttendance,
+  getMyEventApplyCount,
 };

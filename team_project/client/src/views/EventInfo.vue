@@ -44,19 +44,32 @@
           <div class="info-label">장소</div>
           <div class="info-value">{{ event.event_location }}</div>
 
+          <div class="info-label">지원 대상</div>
+          <div class="info-value">{{ event.target_audience }}</div>
+
           <div class="info-label">최대 참여자</div>
           <div class="info-value">{{ event.max_participants }}</div>
 
           <div class="info-label">모집 기간</div>
           <div class="info-value">
-            {{ formatDate(event.recruit_start_date) }} ~
-            {{ formatDate(event.recruit_end_date) }}
+            {{ formatKoreanDateOnly(event.recruit_start_date) }} ~
+            {{ formatKoreanDateOnly(event.recruit_end_date) }}
           </div>
 
           <div class="info-label">진행 기간</div>
           <div class="info-value">
-            {{ formatDate(event.event_start_date) }} ~
-            {{ formatDate(event.event_end_date) }}
+            <!-- DD1 : 날짜 + 시간 -->
+            <template v-if="event.event_type === 'DD1'">
+              {{ formatKoreanDateOnly(event.event_start_date) }}
+              {{ formatKoreanTime(event.event_start_date) }} ~
+              {{ formatKoreanTime(event.event_end_date) }}
+            </template>
+
+            <!-- DD2 : 날짜만 -->
+            <template v-else>
+              {{ formatKoreanDateOnly(event.event_start_date) }} ~
+              {{ formatKoreanDateOnly(event.event_end_date) }}
+            </template>
           </div>
         </div>
       </div>
@@ -317,7 +330,7 @@ const subManagers = computed(
 );
 
 // 날짜 포맷
-const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+//const formatDate = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "");
 
 // 이벤트 조회
 const fetchEvent = async () => {
@@ -387,6 +400,26 @@ const applySimple = async () => {
   if (ok) isApplied.value = true;
 };
 
+// 한국 날짜만
+function formatKoreanDateOnly(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${year}년 ${month}월 ${day}일`;
+}
+
+// 한국 시간만
+function formatKoreanTime(date) {
+  const d = new Date(date);
+  let hours = d.getHours();
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "오후" : "오전";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${ampm} ${hours}:${minutes}`;
+}
+
 // 캘린더 클릭 예약 (DD2 전용)
 const onEventClick = async (info) => {
   if (loginRole.value !== "AA1")
@@ -401,7 +434,12 @@ const onEventClick = async (info) => {
   if (info.event.extendedProps.isApplied)
     return alert("이미 신청한 일정입니다.");
 
-  const confirmApply = confirm(`일정 "${info.event.title}" 예약하시겠습니까?`);
+  const confirmApply = confirm(
+    `예약 일정: ${formatKoreanDateOnly(info.event.start)} ${formatKoreanTime(
+      info.event.start
+    )} - ${formatKoreanTime(info.event.end)}\n` +
+      `"${info.event.title}" 예약하시겠습니까?`
+  );
   if (!confirmApply) return;
 
   const success = await applyEvent({

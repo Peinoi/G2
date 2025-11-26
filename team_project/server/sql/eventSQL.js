@@ -32,6 +32,7 @@ const selectEventList = `
     e.event_code,
     e.user_code,
     e.event_name,
+    e.target_audience,
     e.event_register_date,
     e.event_start_date,
     e.event_end_date,
@@ -41,6 +42,7 @@ const selectEventList = `
     COALESCE(SUM(se.sub_recruit_count), 0) AS total_sub_recruit_count,
     a.server_filename,
     a.file_path,
+    e.org_code,
     org.org_name AS org_name,
     u.name AS main_manager_name,
     e.register_status
@@ -272,6 +274,7 @@ SELECT
     ea.event_code,
     ea.sub_event_code,
     e.event_name,
+    e.target_audience,
     se.sub_event_name,
     se.sub_event_start_date,
     se.sub_event_end_date,
@@ -310,6 +313,66 @@ FROM event_apply ea
 LEFT JOIN event e ON ea.event_code = e.event_code
 LEFT JOIN sub_event se ON ea.sub_event_code = se.sub_event_code
 WHERE ea.user_code = ?
+ORDER BY ea.apply_date DESC
+`;
+
+// 이벤트 신청자 수 조회
+const selectEventApplyCount = `
+SELECT
+    ea.apply_code,
+    DATE_FORMAT(ea.apply_date, '%Y-%m-%d') AS apply_date,
+    ea.apply_type,
+    ea.apply_status,
+    ea.user_code,
+    ea.event_code,
+    ea.sub_event_code,
+    e.event_name,
+    se.sub_event_name,
+    se.sub_event_start_date,
+    se.sub_event_end_date,
+    se.sub_recruit_count,
+    -- 신청일정
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN 
+            CONCAT(
+                DATE_FORMAT(e.event_start_date, '%Y-%m-%d'),
+                ' ~ ',
+                DATE_FORMAT(e.event_end_date, '%Y-%m-%d')
+            )
+        WHEN ea.apply_type = 'DD2' THEN 
+            CONCAT(
+                DATE_FORMAT(se.sub_event_start_date, '%Y-%m-%d %H:%i'),
+                ' ~ ',
+                DATE_FORMAT(se.sub_event_end_date, '%Y-%m-%d %H:%i')
+            )
+        ELSE '-'
+    END AS apply_period,
+    -- 신청인원
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN
+            -- DD1: 해당 이벤트 전체 신청인원 (sub_event_code 없음)
+            (SELECT COUNT(*) FROM event_apply ea2 WHERE ea2.event_code = ea.event_code AND ea2.sub_event_code IS NULL)
+        WHEN ea.apply_type = 'DD2' THEN
+            -- DD2: 세부 이벤트별 신청인원
+            (SELECT COUNT(*) FROM event_apply ea2 WHERE ea2.sub_event_code = ea.sub_event_code)
+        ELSE 0
+    END AS current_count,
+    -- 총 이벤트 신청인원
+    CASE
+        WHEN ea.apply_type = 'DD1' THEN 
+          (SELECT COUNT(*) 
+          FROM event_apply ea2 
+          WHERE ea2.event_code = ea.event_code)
+        WHEN ea.apply_type = 'DD2' THEN
+          (SELECT COUNT(*) 
+          FROM event_apply ea2 
+          WHERE ea2.event_code = ea.event_code)
+        ELSE 0
+    END AS total_event_count
+FROM event_apply ea
+LEFT JOIN event e ON ea.event_code = e.event_code
+LEFT JOIN sub_event se ON ea.sub_event_code = se.sub_event_code
+WHERE e.event_code = ?
 ORDER BY ea.apply_date DESC
 `;
 
@@ -783,4 +846,5 @@ module.exports = {
   updateApprovalRejectForMyApply,
   selectMyAttendance,
   selectResultStatus,
+  selectEventApplyCount,
 };

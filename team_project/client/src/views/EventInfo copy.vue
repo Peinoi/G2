@@ -5,7 +5,7 @@
         ← 목록으로
       </MaterialButton>
 
-      <div class="flex items-center gap-2">
+      <!-- <div class="flex items-center gap-2">
         <MaterialButton v-if="canEdit" @click="goEdit" color="dark" size="sm"
           >수정하기</MaterialButton
         >
@@ -13,7 +13,7 @@
         <MaterialButton v-if="canReEdit" @click="goEdit" color="dark" size="sm"
           >재수정하기</MaterialButton
         >
-      </div>
+      </div> -->
     </div>
 
     <div class="detail-card">
@@ -43,6 +43,9 @@
 
           <div class="info-label">장소</div>
           <div class="info-value">{{ event.event_location }}</div>
+
+          <div class="info-label">지원 대상</div>
+          <div class="info-value">{{ event.target_audience }}</div>
 
           <div class="info-label">최대 참여자</div>
           <div class="info-value">{{ event.max_participants }}</div>
@@ -127,18 +130,25 @@
 
       <div v-if="mainManager.manager_name" class="meta-card mb-4">
         <h5>메인 매니저 정보</h5>
-        <div class="meta-row">
-          <span>이름</span><span>{{ mainManager.manager_name }}</span>
-        </div>
-        <div class="meta-row">
-          <span>부서</span><span>{{ mainManager.department }}</span>
-        </div>
-        <div class="meta-row">
-          <span>이메일</span><span>{{ mainManager.email }}</span>
-        </div>
-        <div class="meta-row">
-          <span>전화번호</span><span>{{ mainManager.phone }}</span>
-        </div>
+
+        <table class="manager-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>부서</th>
+              <th>이메일</th>
+              <th>전화번호</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ mainManager.manager_name }}</td>
+              <td>{{ mainManager.department }}</td>
+              <td>{{ mainManager.email }}</td>
+              <td>{{ mainManager.phone }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div v-if="subManagers.length" class="meta-card">
@@ -273,16 +283,13 @@ const applied = computed(() => {
   return isApplied.value && !isBlockedByResultStatus.value;
 });
 
-// 작성자/관리자 버튼 표시
-// 기존 로직을 최대한 유지하기 위해 role 쿼리 파라미터 대신 loginRole 사용
-// **참고:** 기존 템플릿의 `role.value`는 route.query.role에서 오므로, 실제 역할(`loginRole`)로 대체하는 것이 더 일반적이나,
-// 디자인 수정 요청이므로, `canEdit/canReEdit` 로직은 기존 코드를 그대로 유지하고, `loginRole`만 `seeStatus`에 사용했습니다.
-const canEdit = computed(
-  () => loginRole.value === "AA2" && event.value.register_status === "BA2" // BA2: 승인 완료 상태에서만 수정 가능하도록 가정
-);
-const canReEdit = computed(
-  () => loginRole.value === "AA2" && event.value.register_status === "BA3" // BA3: 반려 상태에서 재수정 가능하도록 가정
-);
+// 작성자 버튼 표시
+// const canEdit = computed(
+//   () => loginRole.value === "AA2" && event.value.register_status === "BA2" // BA2: 승인 완료 상태에서만 수정 가능하도록 가정
+// );
+// const canReEdit = computed(
+//   () => loginRole.value === "AA2" && event.value.register_status === "BA3" // BA3: 반려 상태에서 재수정 가능하도록 가정
+// );
 
 const seeStatus = computed(
   () => loginRole.value === "AA2" || loginRole.value === "AA3"
@@ -383,6 +390,26 @@ const applySimple = async () => {
   if (ok) isApplied.value = true;
 };
 
+// 한국 날짜만
+function formatKoreanDateOnly(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${year}년 ${month}월 ${day}일`;
+}
+
+// 한국 시간만
+function formatKoreanTime(date) {
+  const d = new Date(date);
+  let hours = d.getHours();
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "오후" : "오전";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  return `${ampm} ${hours}:${minutes}`;
+}
+
 // 캘린더 클릭 예약 (DD2 전용)
 const onEventClick = async (info) => {
   if (loginRole.value !== "AA1")
@@ -397,7 +424,12 @@ const onEventClick = async (info) => {
   if (info.event.extendedProps.isApplied)
     return alert("이미 신청한 일정입니다.");
 
-  const confirmApply = confirm(`일정 "${info.event.title}" 예약하시겠습니까?`);
+  const confirmApply = confirm(
+    `예약 일정: ${formatKoreanDateOnly(info.event.start)} ${formatKoreanTime(
+      info.event.start
+    )} - ${formatKoreanTime(info.event.end)}\n` +
+      `"${info.event.title}" 예약하시겠습니까?`
+  );
   if (!confirmApply) return;
 
   const success = await applyEvent({
@@ -422,7 +454,7 @@ const onEventClick = async (info) => {
 
 // 화면 이동
 const goBack = () => router.back();
-const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
+// const goEdit = () => router.push({ name: "EventEdit", params: { eventCode } });
 
 // FullCalendar 옵션
 const calendarOptions = ref({
@@ -494,6 +526,7 @@ section {
   margin-bottom: 0.5rem;
   color: #111827;
 }
+/* meta-row는 이제 메인 매니저에 사용되지 않음 */
 .meta-row {
   display: flex;
   justify-content: space-between;
@@ -625,7 +658,7 @@ section {
 .event-main-image img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 /* 첨부파일 리스트 */
