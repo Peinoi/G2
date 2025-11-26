@@ -233,39 +233,66 @@
         </div>
       </div>
 
-    <div v-show="!approval_mode" class="button-group-footer">
-    <button
-        class="primary-button"
-        @click="programAdd()"
-        :disabled="isLocked"
-        v-show="canEditOrRegister"
-    >
-        {{ isEditMode ? "수정" : "등록" }}
-    </button>
+      <div v-show="!approval_mode" class="button-group-footer">
+        <!-- <button
+          class="primary-button"
+          @click="programAdd()"
+          :disabled="isLocked"
+          v-show="canEditOrRegister"
+        >
+          {{ isEditMode ? "수정" : "등록" }}
+        </button> -->
+        <MaterialButton
+          color="dark"
+          size="sm"
+          @click="programAdd()"
+          :disabled="isLocked"
+          v-show="canEditOrRegister"
+        >
+          {{ isEditMode ? "수정" : "등록" }}
+        </MaterialButton>
+        <MaterialButton color="dark" size="sm" @click="goList()">
+          닫기
+        </MaterialButton>
 
-    <button class="secondary-button" @click="goList()">닫기</button>
-</div>
+        <!-- <button class="secondary-button" @click="goList()">닫기</button> -->
+      </div>
       <div v-show="approval_mode" class="button-group-footer">
         <!-- 승인 버튼 | AA4이면 숨김 -->
-        <button
+        <!-- <button
           class="primary-button"
           @click="approveProgram()"
           v-if="userRole !== 'AA4'"
         >
           승인
-        </button>
-
+        </button> -->
+        <MaterialButton
+          color="dark"
+          size="sm"
+          @click="approveProgram()"
+          v-if="userRole !== 'AA4'"
+        >
+          승인
+        </MaterialButton>
         <!-- 반려 버튼 | AA4이면 숨김 -->
-        <button
+        <MaterialButton
+          color="dark"
+          size="sm"
+          @click="openRejectModal()"
+          v-if="userRole !== 'AA4'"
+        >
+          반려
+        </MaterialButton>
+        <!-- <button
           class="btn btn-danger"
           @click="openRejectModal()"
           v-if="userRole !== 'AA4'"
         >
           반려
-        </button>
+        </button> -->
         <router-link to="/sponsorshipPlanApprovals">
-          <button class="secondary-button">닫기</button></router-link
-        >
+          <MaterialButton color="dark" size="sm"> 닫기 </MaterialButton>
+        </router-link>
       </div>
     </div>
     <div v-show="rejectModal" class="modal">
@@ -275,9 +302,14 @@
           v-model="rejectReason"
           placeholder="반려 사유를 입력하세요"
         ></textarea>
-
-        <button @click="sendReject">반려</button>
-        <button @click="rejectModal = false">취소</button>
+        <MaterialButton color="dark" size="sm" @click="sendReject">
+          반려
+        </MaterialButton>
+        <MaterialButton color="dark" size="sm" @click="rejectModal">
+          취소
+        </MaterialButton>
+        <!-- <button @click="sendReject">반려</button>
+        <button @click="rejectModal = false">취소</button> -->
       </div>
     </div>
     <div v-if="previewImage" class="preview-modal" @click="closePreview">
@@ -290,12 +322,12 @@
 import axios from "axios";
 import { ref, computed, watch, defineProps, defineEmits } from "vue";
 import { useRouter } from "vue-router";
+import MaterialButton from "@/components/MaterialButton.vue";
+
 const router = useRouter();
 const userDataString = localStorage.getItem("user");
 const userData = JSON.parse(userDataString);
 const userRole = userData.role;
-
-
 
 const canEditOrRegister = computed(() => {
   // 1. 승인 모드 (approval_mode)가 아닐 때만 해당
@@ -312,9 +344,8 @@ const canEditOrRegister = computed(() => {
 
 // isLocked 계산된 속성 정의
 const isLocked = computed(() => {
- return isEditMode.value && formData.value.approval_status === "승인대기중";
+  return isEditMode.value && formData.value.approval_status === "승인대기중";
 });
-
 
 //승인 반려
 let approval_mode = ref(false);

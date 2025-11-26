@@ -123,20 +123,12 @@
     <!-- 하단 버튼 -->
     <div class="at-actions">
       <!-- 등록 모드에서만 보임 -->
-      <material-button
-        class="at-btn-primary"
-        v-if="!props.readOnly"
-        @click="activityAdd"
-      >
+      <material-button color="dark" v-if="!props.readOnly" @click="activityAdd">
         제출
       </material-button>
 
       <!-- 닫기 버튼은 항상 보임 -->
-      <material-button
-        color="success"
-        size="md"
-        variant="outline"
-        @click="goList"
+      <material-button color="dark" size="md" variant="outline" @click="goList"
         >닫기</material-button
       >
     </div>
