@@ -23,9 +23,9 @@ router.post("/ready", async (req, res) => {
       tax_free_amount: 0,
 
       // 📌 Vue 주소로 redirect
-      approval_url: `49.50.139.49/kakaopayapprove`,
-      cancel_url: `49.50.139.49/kakaopaycancel`,
-      fail_url: `49.50.139.49/kakaopayfail`,
+      approval_url: `http://49.50.139.49/kakaopayapprove`,
+      cancel_url: `http://49.50.139.49/kakaopaycancel`,
+      fail_url: `http://49.50.139.49/kakaopayfail`,
     };
 
     const kakaoResponse = await axios.post(
