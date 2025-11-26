@@ -276,7 +276,8 @@ const filteredManagerList = computed(() => {
   return managerList.value.filter(
     (m) =>
       m.user_code !== user_code && // 본인 제외
-      m.user_code !== eventInfo.value.user_code // 메인 매니저 제외
+      m.user_code !== eventInfo.value.user_code && // 메인 매니저 제외
+      m.org_code === org_code // 같은 기관 매니저만
   );
 });
 

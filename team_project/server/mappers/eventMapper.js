@@ -346,7 +346,6 @@ async function getAllManagers() {
   let conn;
   try {
     conn = await pool.getConnection();
-    console.error(eventSQL.selectManagerAll);
     const rows = await conn.query(eventSQL.selectManagerAll);
     console.log("[eventMapper.js || 전체 매니저 조회 성공]", rows);
     return rows;
