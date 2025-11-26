@@ -165,8 +165,15 @@ async function getPlanBasic(submitCode) {
 }
 
 // 계획 저장
+// supportPlanMapper.js
+
 async function savePlanWithItems(formJson, files) {
-  const { submitCode, mainForm, planItems } = formJson;
+  const {
+    submitCode,
+    mainForm,
+    planItems,
+    removedAttachCodes = [], // 🔹 최종 제출 시에도 삭제 요청 반영
+  } = formJson;
 
   const conn = await pool.getConnection();
   try {
@@ -186,22 +193,48 @@ async function savePlanWithItems(formJson, files) {
       mainForm.expectedEnd && mainForm.expectedEnd.length === 7
         ? mainForm.expectedEnd + "-01"
         : null;
+
     const writtenAt = mainForm.planDate || new Date();
     const status = "CC3"; // 작성 완료(제출)
 
-    // 🔥 핵심 변경: submit_code로 기존 것을 찾지 않고
-    // 항상 새 support_plan 행을 INSERT
-    const assiBy = assiByFromSubmit || null;
+    // 🔥 1) 먼저, submitCode 기준으로 "임시(CC1)" 계획 있는지 확인
+    const [existingTemp] = await conn.query(
+      sql.getSupportPlanBySubmitCode,
+      [submitCode] // 이미 status = 'CC1' 조건 포함
+    );
 
-    const result = await conn.query(sql.insertSupportPlan, [
-      submitCode,
-      planFrom,
-      planTo,
-      status,
-      writtenAt,
-      assiBy,
-    ]);
-    const planCode = result.insertId;
+    let planCode;
+    let assiBy = assiByFromSubmit || null;
+
+    if (existingTemp && existingTemp.plan_code) {
+      // ✅ 이미 임시 저장된 계획이 있음 → 그 행을 "작성 완료"로 승격
+
+      planCode = existingTemp.plan_code;
+      assiBy = existingTemp.assi_by || assiByFromSubmit || null;
+
+      // 기간 + 상태 + 작성일 업데이트 (CC1 → CC3)
+      await conn.query(sql.updateSupportPlanByCode, [
+        planFrom,
+        planTo,
+        status,
+        writtenAt,
+        planCode,
+      ]);
+
+      // 기존 item 싹 지우고
+      await conn.query(sql.deleteSupportPlanItemsByPlanCode, [planCode]);
+    } else {
+      // 🆕 임시 계획이 없으면 새로 support_plan 생성
+      const result = await conn.query(sql.insertSupportPlan, [
+        submitCode,
+        planFrom,
+        planTo,
+        status,
+        writtenAt,
+        assiBy,
+      ]);
+      planCode = result.insertId;
+    }
 
     // 2) 메인 계획 + 추가 계획들을 support_plan_item에 insert
     const allItems = [
@@ -223,7 +256,16 @@ async function savePlanWithItems(formJson, files) {
       ]);
     }
 
-    // 3) 첨부파일 → attachment에 저장
+    // 3) 삭제 요청된 첨부파일 제거 (임시에서의 기존 첨부 정리)
+    if (Array.isArray(removedAttachCodes) && removedAttachCodes.length > 0) {
+      for (const code of removedAttachCodes) {
+        const id = Number(code);
+        if (!id) continue;
+        await conn.query(sql.deleteAttachmentByCode, [id]);
+      }
+    }
+
+    // 4) 새로 업로드된 첨부파일 INSERT
     if (Array.isArray(files) && files.length > 0) {
       for (const file of files) {
         const originalName = decodeOriginalName(file);
@@ -240,7 +282,7 @@ async function savePlanWithItems(formJson, files) {
       }
     }
 
-    // 이미 승인요청이 있는지 체크해서 중복 방지
+    // 5) 이미 승인요청이 있는지 체크해서 중복 방지
     const [existReq] = await conn.query(sql.getApprovalForPlan, [planCode]);
 
     if (!existReq) {
@@ -493,9 +535,7 @@ async function updatePlanWithItems(formJson, files) {
   }
 }
 
-// ---------------------------------------------------------------------
-// 계획서 임시 저장 (작성 화면) - 히스토리 X
-// ---------------------------------------------------------------------
+// 계획서 임시저장
 async function savePlanTemp(formJson, files = []) {
   const {
     submitCode,
@@ -508,7 +548,12 @@ async function savePlanTemp(formJson, files = []) {
   try {
     await conn.beginTransaction();
 
-    // 1) 기존 support_plan 있는지 확인
+    // ⭐ 추가: submitCode 기준 담당자(assi_by) 조회
+    const assiRow = await conn.query(sql.getAssigneeBySubmit, [submitCode]);
+    const assiInfo = assiRow[0];
+    const assiByFromSubmit = assiInfo ? assiInfo.assi_by : null;
+
+    // 1) 기존 support_plan 있는지 확인 (여기 쿼리는 지금 CC1만 가져오게 바꿔둔 거지?)
     const [existing] = await conn.query(sql.getSupportPlanBySubmitCode, [
       submitCode,
     ]);
@@ -527,12 +572,14 @@ async function savePlanTemp(formJson, files = []) {
     const status = "CC1"; // 임시저장 상태
 
     let planCode;
-    let assiBy = null;
+    // 🔹 기본 담당자는 survey_submission.assi_by 기준
+    let assiBy = assiByFromSubmit || null;
 
     if (existing && existing.plan_code) {
-      // 🔁 이미 계획 있음 → 임시저장 상태로 덮어쓰기
+      // 🔁 이미 임시 계획 있음 → 덮어쓰기
       planCode = existing.plan_code;
-      assiBy = existing.assi_by || null;
+      // 기존에 저장돼 있던 assi_by가 있으면 우선, 없으면 submit 기준으로 채움
+      assiBy = existing.assi_by || assiByFromSubmit || null;
 
       await conn.query(sql.updateSupportPlanByCode, [
         planFrom,
@@ -552,7 +599,7 @@ async function savePlanTemp(formJson, files = []) {
         planTo,
         status,
         writtenAt,
-        assiBy,
+        assiBy, // ✅ 이제 여기에는 담당자 user_code가 들어감
       ]);
       planCode = result.insertId;
     }
@@ -806,7 +853,7 @@ async function resubmitPlan(planCode, requesterCode) {
     // 3) request_approval에 새 승인요청 INSERT
     await conn.query(sql.insertRequestApprovalForPlan, [
       requesterCode, // requester_code (담당자)
-      null, // processor_code (관리자, 임시)
+      null, // processor_code (관리자)
       "AE4", // approval_type
       "BA1", // state: 요청
       "support_plan",

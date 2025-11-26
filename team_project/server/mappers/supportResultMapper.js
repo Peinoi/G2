@@ -115,14 +115,32 @@ async function getResultBasic(submitCode) {
       );
     }
 
-    const goalRows = await conn.query(sql.getPlanGoalsBySubmitCode, [
+    // ✅ 1) 먼저: 이 submit_code로 이미 만들어진 결과가 있는지 확인
+    let planCode = null;
+
+    const [resPlanRow] = await conn.query(sql.getPlanCodeBySubmitFromResult, [
       submitCode,
     ]);
 
-    const planGoals = (goalRows || [])
-      .map((r) => (r.item_title || "").trim())
-      .filter((v) => v) // 빈 문자열 제거
-      .filter((v, idx, arr) => arr.indexOf(v) === idx); // 중복 제거
+    if (resPlanRow && resPlanRow.plan_code) {
+      // 👉 결과가 있는 경우: 결과에 연결된 plan_code 사용
+      planCode = resPlanRow.plan_code;
+    } else {
+      // 👉 결과가 아직 없는 경우: 기존처럼 "가장 최근 계획" 기준
+      const [planRow] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
+      planCode = planRow?.plan_code || null;
+    }
+
+    let planGoals = [];
+
+    if (planCode) {
+      const goalRows = await conn.query(sql.getPlanGoalsByPlanCode, [planCode]);
+
+      planGoals = (goalRows || [])
+        .map((r) => (r.item_title || "").trim())
+        .filter((v) => v)
+        .filter((v, idx, arr) => arr.indexOf(v) === idx);
+    }
 
     return safeJSON({
       submitCode: row.submit_code,
@@ -272,13 +290,7 @@ async function saveResultWithItems(formJson, files = []) {
   }
 }
 
-/**
- * 🔹 결과 임시 저장
- *  - 상태: CD1
- *  - result_items 갈아끼우기
- *  - 첨부파일 임시저장/삭제 반영
- *  - 임시저장이라 히스토리 기록 ❌
- */
+// 임시저장
 async function saveResultTemp(formJson, files = []) {
   const {
     submitCode,
@@ -300,7 +312,7 @@ async function saveResultTemp(formJson, files = []) {
     const planCode = plan.plan_code;
     const assiBy = plan.assi_by || null;
 
-    // 2) plan_code 기준 기존 support_result 확인
+    // 2) plan_code 기준 기존 support_result 확인 (status 포함돼 있어야 함!)
     const [existing] = await conn.query(sql.getSupportResultByPlan, [planCode]);
 
     const actualFrom =
@@ -312,26 +324,37 @@ async function saveResultTemp(formJson, files = []) {
         ? mainForm.actualEnd + "-01"
         : null;
 
-    const writtenAt = null;
+    const writtenAt = null; // 임시저장은 작성일 null 유지
     const status = "CD1"; // 임시저장
 
     let resultCode;
 
     if (existing && existing.result_code) {
-      // 이미 결과 있음 → 임시저장 상태로 갱신
+      // ✅ 이미 결과 헤더가 있는 경우
       resultCode = existing.result_code;
+
+      const currentStatus = existing.status;
+
+      // 🔒 제출/승인된 결과는 임시저장으로 되돌리면 안 됨
+      const allowedStatuses = ["CD1", "CD3"]; // 임시 or 자동생성 초기 상태만 허용
+      if (currentStatus && !allowedStatuses.includes(currentStatus)) {
+        throw new Error(
+          `현재 상태(${currentStatus})의 지원결과는 임시저장할 수 없습니다.`
+        );
+      }
 
       await conn.query(sql.updateSupportResultByCode, [
         actualFrom,
         actualTo,
-        status,
+        status, // CD1으로 세팅
         writtenAt,
         resultCode,
       ]);
 
+      // 기존 item 싹 지우고 다시 넣기
       await conn.query(sql.deleteSupportResultItemsByResultCode, [resultCode]);
     } else {
-      // 처음 임시저장 → support_result 생성
+      // 🆕 아주 예외적인 케이스: 결과 헤더가 하나도 없는 경우에만 새로 생성
       const insertRes = await conn.query(sql.insertSupportResult, [
         planCode,
         actualFrom,
@@ -402,10 +425,7 @@ async function saveResultTemp(formJson, files = []) {
   }
 }
 
-/**
- * 🔹 작성 화면 "불러오기" 데이터
- *  - submitCode → plan_code → support_result 헤더/아이템/첨부 조회
- */
+// 불러오기
 async function getResultFormDataBySubmit(submitCode) {
   const conn = await pool.getConnection();
   try {
@@ -421,14 +441,16 @@ async function getResultFormDataBySubmit(submitCode) {
     }
     const planCode = plan.plan_code;
 
-    // 2) plan_code → support_result 헤더 (마지막 1건)
+    // 2) plan_code → support_result 헤더들 조회
     const headers = await conn.query(sql.getSupportResultHeaderByPlan, [
       planCode,
     ]);
-    const header = headers[0];
+
+    // ✅ CD1(임시저장)인 것만 대상으로 삼기
+    const header = headers.find((h) => h.status === "CD1") || null;
 
     if (!header) {
-      // 결과 자체가 아직 없으면 빈 값
+      // 임시저장된 결과가 없으면 "불러올 내용 없음"
       return safeJSON({
         main: null,
         items: [],
@@ -501,6 +523,14 @@ async function getResultDetail(resultCode) {
       throw new Error("지원결과를 찾을 수 없습니다.");
     }
 
+    // 🔹 이 계획에 달린 목표들
+    const goalRows = await conn.query(sql.getPlanGoalsByPlanCode, [
+      header.plan_code,
+    ]);
+    const planGoals = (goalRows || [])
+      .map((r) => (r.item_title || "").trim())
+      .filter((v) => v);
+
     // 2) item들 (메인 + 추가 결과)
     const items = await conn.query(sql.getSupportResultItemsByResultCode, [
       resultCode,
@@ -533,11 +563,13 @@ async function getResultDetail(resultCode) {
     const attachList = attachments.map((a) => ({
       attachCode: a.attach_code,
       originalFilename: a.original_filename,
-      url: a.file_path, // '/uploads/results/파일명...'
+      url: a.file_path,
     }));
 
     return safeJSON({
       status: header.status,
+      planCode: header.plan_code, // 🔹 추가
+      planGoals, // 🔹 추가
       main,
       items: extraItems,
       attachments: attachList,

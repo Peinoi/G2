@@ -155,7 +155,7 @@
             </div>
 
             <div class="field-block">
-              <div class="field-label">결과 내용 (일반용)</div>
+              <div class="field-label">결과 내용 (일반)</div>
               <div class="field-value whitespace-pre-line">
                 {{ mainForm.publicContent || "-" }}
               </div>
@@ -163,7 +163,7 @@
 
             <!-- 관리자용 내용: role !== 1 일 때만 -->
             <div v-if="role !== 1" class="field-block">
-              <div class="field-label">결과 내용 (관리자용)</div>
+              <div class="field-label">결과 내용 (관리자)</div>
               <div class="field-value whitespace-pre-line">
                 {{ mainForm.privateContent || "-" }}
               </div>
@@ -220,14 +220,14 @@
                 </div>
 
                 <div class="field-block">
-                  <div class="field-label">결과 내용 (일반용)</div>
+                  <div class="field-label">결과 내용 (일반)</div>
                   <div class="field-value whitespace-pre-line">
                     {{ item.publicContent || "-" }}
                   </div>
                 </div>
 
                 <div v-if="role !== 1" class="field-block">
-                  <div class="field-label">결과 내용 (관리자용)</div>
+                  <div class="field-label">결과 내용 (관리자)</div>
                   <div class="field-value whitespace-pre-line">
                     {{ item.privateContent || "-" }}
                   </div>
@@ -526,7 +526,7 @@ function statusLabel(code) {
   const c = (code || "").toString().toUpperCase();
   switch (c) {
     case "CD1":
-      return "임시저장";
+      return "작성전";
     case "CD3":
       return "작성전";
     case "CD4":
@@ -547,7 +547,7 @@ function statusClass(code) {
   switch (c) {
     case "CD1":
     case "CD3":
-      return "p-gray";
+      return "p-blue";
     case "CD4":
       return "p-yellow";
     case "CD5":
@@ -776,6 +776,9 @@ section {
   padding: 0.5rem 0.7rem;
   font-size: 0.9rem;
   color: #111827;
+
+  white-space: pre-line; /* \n → 실제 줄바꿈 */
+  word-break: break-word;
 }
 
 /* 첨부 파일 텍스트 */

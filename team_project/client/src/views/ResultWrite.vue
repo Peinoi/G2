@@ -308,6 +308,7 @@ const router = useRouter();
 const planGoals = ref([]);
 
 const submitCode = Number(route.params.submitcode || 0);
+const planCode = Number(route.query.planCode || 0);
 
 // ✅ 기본 정보 (상세 화면과 동일한 필드 구조)
 const submitInfo = ref({
@@ -362,8 +363,11 @@ async function loadData() {
 
   try {
     // 백엔드 라우터: GET /api/result/:submitCode (결과 작성용 기본정보)
-    const { data } = await axios.get(`/api/result/${submitCode}`);
-
+    const { data } = await axios.get(`/api/result/${submitCode}`, {
+      params: {
+        planCode: planCode || undefined, // 🔹 planCode가 있으면 같이 전송
+      },
+    });
     if (!data?.success || !data.result) {
       throw new Error(data?.message || "기본 정보를 찾을 수 없습니다.");
     }

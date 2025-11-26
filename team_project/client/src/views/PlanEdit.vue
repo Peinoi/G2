@@ -568,7 +568,7 @@ async function submitAll() {
     // 2) 반려(CC7) → 재승인요청(CC6) 전환
     if (isResubmit.value) {
       await axios.post(`/api/plans/${planCode}/resubmit`, {
-        requesterCode: 2, // TODO: 로그인 사용자 코드로 변경
+        requesterCode: modifier, // TODO: 로그인 사용자 코드로 변경
       });
       alert("재작성된 지원계획이 재승인 요청 되었습니다.");
     } else {

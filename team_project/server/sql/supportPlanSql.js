@@ -215,13 +215,16 @@ GROUP BY
 
   // submit_code로 support_plan 있는지 확인
   getSupportPlanBySubmitCode: `
-    SELECT
-      plan_code,
-      assi_by
-    FROM support_plan
-    WHERE submit_code = ?
-    LIMIT 1
-  `,
+     SELECT
+    plan_code,
+    assi_by,
+    status
+  FROM support_plan
+  WHERE submit_code = ?
+    AND status = 'CC1'   
+  ORDER BY plan_code DESC
+  LIMIT 1
+`,
 
   // support_plan 새로 insert
   insertSupportPlan: `
@@ -350,6 +353,7 @@ GROUP BY
       written_at
     FROM support_plan
     WHERE submit_code = ?
+    AND status = 'CC1'
     ORDER BY plan_code DESC
     LIMIT 1
   `,
