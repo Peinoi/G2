@@ -36,7 +36,7 @@ onMounted(async () => {
 
     userId = String(userObject.user_id);
     code = kakaoObject.code;
-    const res = await axios.post("http://49.50.139.49/pay/kakao/approve", {
+    const res = await axios.post("/api/pay/kakao/approve", {
       pg_token,
       tid,
       program_code: code,
