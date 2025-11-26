@@ -241,30 +241,49 @@
       </template>
     </div>
 
+    <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
+    <div
+      v-if="
+        role !== 1 &&
+        rejectionInfo.reason &&
+        (status === 'CD7' || status === 'CD6')
+      "
+      class="rejection-card"
+    >
+      <div class="font-semibold mb-1 text-sm">반려 이력</div>
+
+      <div class="mb-1">
+        반려일자:
+        <span class="font-medium">
+          {{ formattedRejectionDate }}
+        </span>
+      </div>
+
+      <div>
+        <div class="font-medium">사유:</div>
+        <p class="whitespace-pre-line mt-1">
+          {{ rejectionInfo.reason }}
+        </p>
+      </div>
+    </div>
+
+    <!-- 재수정하기 (반려 시 담당자 전용) -->
+    <div class="right-wrap mt-2">
+      <MaterialButton
+        v-if="role === 2 && status === 'CD7'"
+        color="dark"
+        size="sm"
+        @click="goEdit"
+      >
+        재수정하기
+      </MaterialButton>
+    </div>
+
     <!-- 🔥 관리자(3) 전용 영역: 반려 이력 + 승인/반려 버튼 -->
     <div
       v-if="role === 3 && (status === 'CD4' || status === 'CD6')"
       class="pt-4 border-t mt-2 space-y-3"
     >
-      <!-- ⛔ 마지막 반려 이력 (있을 때만 노출) -->
-      <div v-if="rejectionInfo && rejectionInfo.reason" class="rejection-card">
-        <div class="font-semibold mb-1 text-sm">반려 이력</div>
-
-        <div class="mb-1">
-          반려일자:
-          <span class="font-medium">
-            {{ formattedRejectionDate }}
-          </span>
-        </div>
-
-        <div>
-          <div class="font-medium">사유:</div>
-          <p class="whitespace-pre-line mt-1">
-            {{ rejectionInfo.reason }}
-          </p>
-        </div>
-      </div>
-
       <!-- 승인/반려 버튼 -->
       <div class="approve-actions">
         <MaterialButton
@@ -509,8 +528,8 @@ onMounted(async () => {
       await loadBasicInfo();
     }
 
-    // 3) 관리자라면 반려 이력도 같이 조회
-    if (role.value === 3) {
+    // 3) 반려 이력도 같이 조회
+    if (role.value !== 1) {
       await loadRejectionInfo();
     }
   } catch (e) {
@@ -595,7 +614,11 @@ function goWrite() {
   router.push({
     name: "result-write",
     params: { submitcode: submitCode },
-    query: { role: role.value },
+    query: {
+      role: role.value,
+      planCode,
+      submitCode,
+    },
   });
 }
 
@@ -811,6 +834,7 @@ section {
   padding: 0.9rem 1rem;
   font-size: 0.8rem;
   color: #b91c1c;
+  margin-top: 10px;
 }
 
 /* 승인/반려 버튼 줄 */
@@ -872,5 +896,10 @@ section {
   font-size: 0.9rem;
   color: #111827;
   font-weight: 500;
+}
+
+.right-wrap {
+  display: flex !important;
+  justify-content: flex-end !important;
 }
 </style>

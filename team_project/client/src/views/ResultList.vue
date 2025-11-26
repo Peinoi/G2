@@ -617,6 +617,11 @@ const handleWrite = (row) => {
   router.push({
     name: "result-write",
     params: { submitcode: row.submitCode },
+    query: {
+      planCode: row.planCode,
+      submitCode: row.submitCode,
+      role: selectedRole.value,
+    },
   });
 };
 
