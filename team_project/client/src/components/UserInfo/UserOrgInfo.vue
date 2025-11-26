@@ -10,7 +10,7 @@
       </div>
 
       <div class="text-end mt-4">
-        <material-button color="success" @click="$emit('edit')">
+        <material-button color="success" size="sm" @click="$emit('edit')">
           소속기관 수정
         </material-button>
       </div>
@@ -38,11 +38,16 @@
       </div>
 
       <div class="text-end mt-4 d-flex justify-content-end gap-2">
-        <material-button color="secondary" @click="$emit('cancel')">
-          취소
-        </material-button>
-        <material-button color="success" @click="$emit('save', localOrg)">
+        <material-button
+          color="success"
+          size="sm"
+          @click="$emit('save', localOrg)"
+        >
           저장
+        </material-button>
+
+        <material-button color="secondary" size="sm" @click="$emit('cancel')">
+          취소
         </material-button>
       </div>
     </div>
@@ -51,11 +56,12 @@
 
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
 
 export default {
   name: 'UserOrgInfo',
 
-  components: { MaterialInput },
+  components: { MaterialInput, MaterialButton },
 
   props: {
     role: String,

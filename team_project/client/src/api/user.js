@@ -143,3 +143,14 @@ export async function deleteChild(childCode) {
     console.error('[ addChild 오류 ]', err);
   }
 }
+
+// 회원탈퇴
+export async function deleteUser(userData) {
+  try {
+    return await axios.delete('/api/userinfo/deleteUser', {
+      data: userData,
+    });
+  } catch (err) {
+    console.error('[ deleteUser 오류 ]', err);
+  }
+}

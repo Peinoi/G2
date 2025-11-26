@@ -12,7 +12,6 @@ export const roleMenu = {
   ],
 
   AA2: [
-    { name: '대기자 목록', path: '/pendingapproval', color: 'primary' },
     { name: '조사지', path: '/survey-list', color: 'success' },
     { name: '상담', path: '/counsel-list', color: 'success' },
     { name: '지원', path: '/plan-list', color: 'success' },

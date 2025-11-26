@@ -257,7 +257,7 @@ export default {
           userPw: this.userPw,
         });
         if (!result.ok) {
-          alert(`로그인 실패: ${result.err}`);
+          alert(`로그인 실패 : ${result.message}`);
           return;
         }
 
@@ -266,7 +266,7 @@ export default {
         localStorage.setItem('user', JSON.stringify(result));
         menu.setRole(result.role);
       } catch (err) {
-        alert('로그인 실패: ', err);
+        alert('로그인 실패 err: ', err);
       }
     },
 

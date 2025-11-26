@@ -80,7 +80,7 @@
               </td>
             </tr>
             <tr v-if="filteredList.length === 0">
-              <td colspan="5" class="text-center">
+              <td colspan="6" class="text-center">
                 조회된 대기자 목록이 없습니다.
               </td>
             </tr>
@@ -153,6 +153,7 @@ import {
 } from '../api/pending';
 import ManagersModal from './Pending/ManagerSelectModal.vue';
 import ConfirmModal from './Pending/ConfirmModal.vue';
+import { checkAuth } from '@/utils/guard';
 
 export default {
   name: 'PendingApproval',
@@ -333,6 +334,9 @@ export default {
   },
 
   mounted() {
+    const { allowed, redirect } = checkAuth(['AA3', 'AA4']);
+    if (!allowed) return this.$router.push(redirect);
+
     this.fetchList();
   },
 };

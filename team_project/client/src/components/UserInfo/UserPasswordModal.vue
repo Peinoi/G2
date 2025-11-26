@@ -34,11 +34,11 @@
       </div>
 
       <div class="pw-btn-area">
-        <material-button color="secondary" @click="$emit('close')">
-          취소
-        </material-button>
-        <material-button color="success" @click="confirmClick">
+        <material-button color="success" size="sm" @click="confirmClick">
           변경
+        </material-button>
+        <material-button color="secondary" size="sm" @click="$emit('close')">
+          취소
         </material-button>
       </div>
     </div>
@@ -47,10 +47,11 @@
 
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
 
 export default {
   name: 'UserPasswordModal',
-  components: { MaterialInput },
+  components: { MaterialInput, MaterialButton },
   data() {
     return {
       passwords: {

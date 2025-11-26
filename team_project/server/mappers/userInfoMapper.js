@@ -39,9 +39,14 @@ async function updateUser(data) {
   }
 }
 
-// pw 가져오기
+// pw 가져오기 -> user_code 기반
 async function findUserPw(data) {
   return await pool.query(userInfoSQL.FIND_USER_PW, data);
+}
+
+// pw 가져오기 -> user_id 기반
+async function findUserPwForId(data) {
+  return await pool.query(userInfoSQL.FIND_USER_PW_FOR_ID, data);
 }
 
 // pw 변경
@@ -106,13 +111,20 @@ async function deleteChild(data) {
   }
 }
 
+// 회원탈퇴
+async function deleteUserMapper(userData) {
+  return await pool.query(userInfoSQL.DELETE_USER, [userData]);
+}
+
 module.exports = {
   findUserInfo,
   addChild,
   updateUser,
   findUserPw,
+  findUserPwForId,
   updatePw,
   updateOrg,
   updateChild,
   deleteChild,
+  deleteUserMapper,
 };

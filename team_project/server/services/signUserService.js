@@ -154,10 +154,13 @@ async function login(data) {
     const result = await signUserMapper.authLogin(data.userId);
     if (!result || result.length == 0)
       return { ok: false, status: 200, message: '존재하지 않는 아이디입니다.' };
-
     const isPw = await checkPw(data.userPw, result[0].password_hash);
+    console.log(isPw);
     if (!isPw)
       return { ok: false, status: 200, message: '패스워드가 맞지 않습니다.' };
+
+    if (result[0].delete_status == 1)
+      return { ok: false, status: 200, message: '비활성화 계정입니다.' };
 
     return { ok: true, message: '로그인 성공', ...result[0] };
   } catch (err) {

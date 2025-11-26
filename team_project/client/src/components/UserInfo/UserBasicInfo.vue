@@ -10,7 +10,7 @@
       </div>
 
       <div class="text-end mt-4" style="cursor: pointer">
-        <material-button color="success" @click="$emit('edit')">
+        <material-button color="success" size="sm" @click="$emit('edit')">
           회원정보 수정
         </material-button>
       </div>
@@ -38,19 +38,33 @@
       </div>
 
       <div class="text-end mt-4 d-flex justify-content-end gap-2">
-        <material-button color="secondary" @click="$emit('cancel')">
-          취소
+        <material-button
+          color="success"
+          size="sm"
+          @click="$emit('save', localUser)"
+        >
+          저장
         </material-button>
 
-        <material-button color="success" @click="$emit('save', localUser)">
-          저장
+        <material-button color="secondary" size="sm" @click="$emit('cancel')">
+          취소
         </material-button>
       </div>
 
-      <!-- 비밀번호 변경 -->
-      <div v-if="editMode" class="text-end mt-2">
+      <!-- 비밀번호 변경, 회원탈퇴 -->
+      <div
+        v-if="editMode"
+        class="d-flex justify-content-between align-items-center mt-2"
+      >
+        <!-- 회원탈퇴 -->
+        <material-button color="secondary" size="sm" @click="deleteModal">
+          회원탈퇴
+        </material-button>
+
+        <!-- 비밀번호 변경 -->
         <material-button
-          color="info"
+          color="secondary"
+          size="sm"
           class="pw-change-btn"
           @click="$emit('openPwModal')"
         >
@@ -63,11 +77,12 @@
 
 <script>
 import MaterialInput from '@/components/MaterialInput.vue';
+import MaterialButton from '@/components/MaterialButton.vue';
 
 export default {
   name: 'UserBasicInfo',
 
-  components: { MaterialInput },
+  components: { MaterialInput, MaterialButton },
 
   props: {
     editMode: Boolean,
@@ -130,6 +145,10 @@ export default {
 
       // 3. localUser.phone에 포맷된 값 반영
       this.localUser.phone = formatted;
+    },
+
+    deleteModal() {
+      this.$emit('openDeleteModal');
     },
   },
 };

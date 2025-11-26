@@ -41,7 +41,7 @@ export const useAuthStore = defineStore('authLogin', {
         this.userId = loginData.user_id;
         this.userName = loginData.name || '';
         this.role = loginData.role;
-        this.userCode = loginData.userCode || loginData.user_code || "";
+        this.userCode = loginData.userCode || loginData.user_code || '';
         this.orgCode = loginData.org_code;
         this.isLogin = true;
       } catch (err) {
@@ -58,14 +58,10 @@ export const useAuthStore = defineStore('authLogin', {
     // 로그인
     async login({ userId, userPw }) {
       const result = await loginApi({ userId, userPw });
-      // is_active 체크
-      if (result.is_active == 0) {
-        return { ok: false, err: '승인 후 로그인 가능' };
-      }
-      // 아이디, 패스워드 오기입 시 false가 되어 SignIn.vue에서 에러 발생시킴
-      if (!result.ok) {
-        throw new Error(result.message);
-      }
+
+      if (result.is_active == 0) return result;
+
+      if (!result.ok) return result;
 
       this.userId = result.user_id;
       this.userName = result.name || '';

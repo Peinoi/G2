@@ -10,9 +10,7 @@ router.post('/findInfo', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ userRoute.js -> findInfo 라우터 오류 ]', err);
-    res
-      .status(500)
-      .json({ ok: false, message: '[ userRoute.js -> findInfo 라우터 오류 ]' });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -24,10 +22,7 @@ router.put('/updateInfo', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ userRoute.js -> updateInfo 라우터 오류 ]', err);
-    res.status(500).json({
-      ok: false,
-      message: '[ userRoute.js -> updateInfo 라우터 오류 ]',
-    });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -38,10 +33,7 @@ router.put('/updatePw', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ userRoute.js -> updatePw 라우터 오류 ]', err);
-    res.status(500).json({
-      ok: false,
-      message: '[ updatePw 라우터 오류 ]',
-    });
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
@@ -64,10 +56,18 @@ router.delete('/deleteChild', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[ userRoute.js -> deleteChild 라우터 오류 ]', err);
-    res.status(500).json({
-      ok: false,
-      message: '[ userRoute.js -> deleteChild 라우터 오류 ]',
-    });
+    res.status(500).json({ ok: false, message: err });
+  }
+});
+
+// 회원탈퇴
+router.delete('/deleteUser', async (req, res) => {
+  try {
+    const result = await userInfoService.deleteUserService(req.body);
+    res.json(result);
+  } catch (err) {
+    console.error('[ userRoute.js -> deleteChild 라우터 오류 ]', err);
+    res.status(500).json({ ok: false, message: err });
   }
 });
 
