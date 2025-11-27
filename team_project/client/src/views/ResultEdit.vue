@@ -384,8 +384,8 @@ async function loadData() {
 
     // 기본 정보 + 결과 상세를 동시에 요청
     const [basicRes, detailRes] = await Promise.all([
-      axios.get(`/api/result/${submitCode}`), // 작성 화면과 동일 API
-      axios.get(`/api/result/detail/${resultCode}`),
+      axios.get(`/api/result/${submitCode}`), // 기본 정보 API (그대로 유지)
+      axios.get(`/api/result/detail/${resultCode}`), // 이 응답에서 planCode + planGoals 사용
     ]);
 
     // 1) 지원자 기본 정보
@@ -411,15 +411,8 @@ async function loadData() {
     }
     const d = detail.result;
 
-    // planCode를 응답에서 최대한 뽑아내기
-    planCode.value = Number(
-      d.main?.planCode ??
-        d.main?.plan_code ??
-        d.planCode ??
-        d.plan_code ??
-        planCode.value ??
-        0
-    );
+    // 👉 resultCode 기준으로 내려주는 planCode 사용
+    planCode.value = Number(d.planCode ?? d.plan_code ?? planCode.value ?? 0);
 
     mainForm.value = {
       resultDate: d.main?.resultDate
@@ -449,11 +442,9 @@ async function loadData() {
         url: a.url,
       })) || [];
 
-    // 🔹 계획 목표 목록 세팅
-    if (Array.isArray(basicResData.planGoals)) {
-      const goals = basicResData.planGoals
-        .map((g) => (g || "").trim())
-        .filter((g) => g);
+    // 🔹 계획 목표 목록 세팅: 이제는 "결과에 연결된 planCode" 기준으로 내려온 planGoals 사용
+    if (Array.isArray(d.planGoals)) {
+      const goals = d.planGoals.map((g) => (g || "").trim()).filter((g) => g);
 
       let uniq = [...new Set(goals)];
 
@@ -633,7 +624,7 @@ async function submitAll() {
     // CD7(반려)에서 재작성 완료인 경우 → 재승인요청
     if (isResubmit.value) {
       await axios.post(`/api/result/${resultCode}/resubmit`, {
-        requesterCode: 2, // TODO: 나중에 로그인 세션값으로 교체
+        requesterCode: modifier,
       });
       alert("재작성된 지원결과가 재승인 요청으로 올라갔습니다.");
     } else {

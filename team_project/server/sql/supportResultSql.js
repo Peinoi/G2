@@ -356,12 +356,25 @@ ORDER BY sr.result_code DESC
     COALESCE(c.disability_type, u.disability_type)
 `,
 
-  getPlanGoalsBySubmitCode: `
-  SELECT spi.item_title
-  FROM support_plan sp
-  JOIN support_plan_item spi
-    ON spi.plan_code = sp.plan_code
+  // 🔹 plan_code 기준으로 계획 목표 목록 조회
+  getPlanGoalsByPlanCode: `
+    SELECT
+      item_title
+    FROM support_plan_item
+    WHERE plan_code = ?
+    ORDER BY plan_item_code ASC
+  `,
+
+  // 🔹 submit_code 기준으로 "이미 결과가 연결된" plan_code 찾기
+  getPlanCodeBySubmitFromResult: `
+  SELECT
+    sr.plan_code
+  FROM support_result sr
+  JOIN support_plan sp
+    ON sp.plan_code = sr.plan_code
   WHERE sp.submit_code = ?
+  ORDER BY sr.result_code DESC
+  LIMIT 1
 `,
 
   // 🔹 result_code 로 support_result 한 건 조회

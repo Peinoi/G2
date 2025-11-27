@@ -308,7 +308,7 @@
                         normStatus(row.status) === 'CC7' && selectedRole !== 1
                       "
                       type="button"
-                      class="status-pill status-pill--rejected status-pill--clickable"
+                      class="status-pill status-pill--rejected status-pill--clickable p-red"
                       @click.stop="openRejectReason(row)"
                     >
                       {{ statusLabel(row.status) }}

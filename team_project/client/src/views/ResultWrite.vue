@@ -308,6 +308,7 @@ const router = useRouter();
 const planGoals = ref([]);
 
 const submitCode = Number(route.params.submitcode || 0);
+const planCode = Number(route.query.planCode || 0);
 
 // ✅ 기본 정보 (상세 화면과 동일한 필드 구조)
 const submitInfo = ref({
@@ -362,8 +363,11 @@ async function loadData() {
 
   try {
     // 백엔드 라우터: GET /api/result/:submitCode (결과 작성용 기본정보)
-    const { data } = await axios.get(`/api/result/${submitCode}`);
-
+    const { data } = await axios.get(`/api/result/${submitCode}`, {
+      params: {
+        planCode: planCode || undefined, // 🔹 planCode가 있으면 같이 전송
+      },
+    });
     if (!data?.success || !data.result) {
       throw new Error(data?.message || "기본 정보를 찾을 수 없습니다.");
     }
@@ -464,6 +468,7 @@ async function handleTempSave() {
   try {
     const formJson = {
       submitCode,
+      planCode,
       mainForm: mainForm.value,
       resultItems: resultItems.value,
       removedAttachCodes: removedAttachCodes.value,
@@ -496,26 +501,39 @@ async function handleTempSave() {
 // 결과 임시 저장 불러오기
 async function handleLoad() {
   try {
-    const { data } = await axios.get(`/api/result/form/${submitCode}`);
+    const { data } = await axios.get(`/api/result/form/${submitCode}`, {
+      // 🔹 이 화면이 어떤 계획(planCode)에 대한 작성 화면인지 같이 넘겨주기
+      params: {
+        planCode: planCode || undefined,
+      },
+    });
 
     if (!data?.success || !data.result) {
-      alert(data?.message || "불러올 지원결과 내용이 없습니다.");
+      alert(data?.message || "불러올 임시 저장 결과가 없습니다.");
       return;
     }
 
     const res = data.result;
 
+    // 🔹 진짜 내용이 없으면 여기서 걸러주기
+    if (!res.main) {
+      alert("불러올 임시 저장 결과가 없습니다.");
+      return;
+    }
+
+    // ✅ 메인 폼 채우기
     mainForm.value = {
-      resultDate: res.main?.resultDate
+      resultDate: res.main.resultDate
         ? String(res.main.resultDate).slice(0, 10)
         : getTodayStr(),
-      actualStart: res.main?.actualStart || "",
-      actualEnd: res.main?.actualEnd || "",
-      goal: res.main?.goal || "",
-      publicContent: res.main?.publicContent || "",
-      privateContent: res.main?.privateContent || "",
+      actualStart: res.main.actualStart || "",
+      actualEnd: res.main.actualEnd || "",
+      goal: res.main.goal || "",
+      publicContent: res.main.publicContent || "",
+      privateContent: res.main.privateContent || "",
     };
 
+    // ✅ 추가 결과들
     resultItems.value =
       (res.items || []).map((d, idx) => ({
         id: d.resultItemCode || Date.now() + idx,
@@ -524,6 +542,7 @@ async function handleLoad() {
         privateContent: d.privateContent || "",
       })) || [];
 
+    // ✅ 첨부 파일
     existingFiles.value =
       (res.attachments || []).map((a) => ({
         attachCode: a.attachCode,
@@ -544,8 +563,20 @@ async function handleLoad() {
 
 // 계획 상세로 연결
 function openPlanDetail() {
-  // 백엔드/프론트 라우트 구조에 맞게 수정해서 사용
-  window.open(`/plans/detail/${submitCode}`, "_blank");
+  // planCode가 없으면 그냥 막 열지 말고 한번 체크
+  if (!planCode) {
+    alert("연결된 지원계획 정보를 찾을 수 없습니다.");
+    return;
+  }
+
+  // (필요하면 role도 쿼리로 같이 넣을 수 있음)
+  const roleParam = route.query.role || "";
+
+  const url = `/plans/detail/${planCode}?submitCode=${submitCode}${
+    roleParam ? `&role=${roleParam}` : ""
+  }`;
+
+  window.open(url, "_blank");
 }
 
 // 목록으로 돌아가기
@@ -607,6 +638,7 @@ async function submitAll() {
   try {
     const formJson = {
       submitCode,
+      planCode,
       mainForm: mainForm.value,
       resultItems: resultItems.value,
       removedAttachCodes: removedAttachCodes.value,

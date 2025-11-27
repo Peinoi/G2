@@ -11,8 +11,11 @@ module.exports = {
   },
 
   // 기본정보 (이름/생년월일/계획서/결과일)
-  getResultBasic(submitCode) {
-    return supportResultMapper.getResultBasic(Number(submitCode));
+  getResultBasic(submitCode, planCode) {
+    return supportResultMapper.getResultBasic(
+      Number(submitCode),
+      planCode ? Number(planCode) : null
+    );
   },
 
   // 결과 최종 저장
@@ -26,8 +29,11 @@ module.exports = {
   },
 
   // 작성 화면 "불러오기"
-  getResultFormData(submitCode) {
-    return supportResultMapper.getResultFormDataBySubmit(Number(submitCode));
+  getResultFormDataBySubmit(submitCode, planCode) {
+    return supportResultMapper.getResultFormDataBySubmit(
+      Number(submitCode),
+      planCode ? Number(planCode) : null
+    );
   },
 
   // 수정 화면 조회

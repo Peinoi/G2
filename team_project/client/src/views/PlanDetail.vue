@@ -28,6 +28,15 @@
         >
           수정하기
         </MaterialButton>
+
+        <MaterialButton
+          v-if="role === 2 && status === 'CC7'"
+          color="dark"
+          size="sm"
+          @click="goEdit"
+        >
+          재수정하기
+        </MaterialButton>
       </div>
     </div>
 
@@ -126,16 +135,10 @@
         <div v-if="isTemp" class="info-card muted-info">
           <template v-if="status === 'CC1'">
             이 지원계획은 <strong>임시 저장</strong> 상태입니다.<br />
-            목표, 내용 및 첨부파일은
-            <span class="font-semibold">[작성하기]</span>
-            화면에서만 확인·수정할 수 있습니다.
           </template>
 
           <template v-else>
             이 지원계획은 아직 <strong>작성 전</strong> 상태입니다.<br />
-            목표, 내용 및 첨부파일은
-            <span class="font-semibold">[작성하기]</span>
-            버튼을 눌러 작성해 주세요.
           </template>
         </div>
 
@@ -153,7 +156,7 @@
             </div>
 
             <div class="field-block">
-              <div class="field-label">계획 내용 (일반용)</div>
+              <div class="field-label">계획 내용 (일반)</div>
               <div class="field-value whitespace-pre-line">
                 {{ mainForm.publicContent || "-" }}
               </div>
@@ -161,7 +164,7 @@
 
             <!-- 관리자용 내용: role !== 1 일 때만 -->
             <div v-if="role !== 1" class="field-block">
-              <div class="field-label">계획 내용 (관리자용)</div>
+              <div class="field-label">계획 내용 (관리자)</div>
               <div class="field-value whitespace-pre-line">
                 {{ mainForm.privateContent || "-" }}
               </div>
@@ -218,14 +221,14 @@
                 </div>
 
                 <div class="field-block">
-                  <div class="field-label">계획 내용 (일반용)</div>
+                  <div class="field-label">계획 내용 (일반)</div>
                   <div class="field-value whitespace-pre-line">
                     {{ item.publicContent || "-" }}
                   </div>
                 </div>
 
                 <div v-if="role !== 1" class="field-block">
-                  <div class="field-label">계획 내용 (관리자용)</div>
+                  <div class="field-label">계획 내용 (관리자)</div>
                   <div class="field-value whitespace-pre-line">
                     {{ item.privateContent || "-" }}
                   </div>
@@ -780,6 +783,9 @@ section {
   padding: 0.5rem 0.7rem;
   font-size: 0.9rem;
   color: #111827;
+
+  white-space: pre-line; /* \n → 실제 줄바꿈 */
+  word-break: break-word;
 }
 
 /* 첨부 파일 텍스트 */

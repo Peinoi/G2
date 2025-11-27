@@ -72,20 +72,25 @@ router.get("/", async (req, res) => {
 router.get("/form/:submitCode", async (req, res) => {
   try {
     const submitCode = Number(req.params.submitCode || 0);
+    const planCode = req.query.planCode ? Number(req.query.planCode) : null;
+
     if (!submitCode) {
       return res
         .status(400)
         .json({ success: false, message: "submitCode가 필요합니다." });
     }
 
-    const result = await supportResultService.getResultFormData(submitCode);
+    const result = await supportResultService.getResultFormDataBySubmit(
+      submitCode,
+      planCode
+    );
 
     res.json({ success: true, result: toSafeJson(result) });
   } catch (e) {
     console.error("[GET /result/form/:submitCode]", e);
     res.status(500).json({
       success: false,
-      message: e.message || "지원결과 불러오기 중 오류",
+      message: e.message || "임시 저장된 지원결과 조회 중 오류",
     });
   }
 });
@@ -115,11 +120,7 @@ router.get("/detail/:resultCode", async (req, res) => {
   }
 });
 
-/**
- * 🔹 기본정보 조회 (이름/생년월일/계획서 제출일/결과 작성일)
- *   GET /api/result/:submitCode
- *   → ResultWrite, ResultEdit, ResultDetail 에서 공통 사용
- */
+// 기본정보
 router.get("/:submitCode", async (req, res) => {
   try {
     const submitCode = Number(req.params.submitCode || 0);
@@ -129,7 +130,13 @@ router.get("/:submitCode", async (req, res) => {
         .json({ success: false, message: "submitCode가 필요합니다." });
     }
 
-    const result = await supportResultService.getResultBasic(submitCode);
+    const planCode = req.query.planCode ? Number(req.query.planCode) : null; // 🔹 추가
+
+    const result = await supportResultService.getResultBasic(
+      submitCode,
+      planCode // 🔹 전달
+    );
+
     res.json({ success: true, result: toSafeJson(result) });
   } catch (e) {
     console.error("[GET /result/:submitCode]", e);

@@ -5,7 +5,10 @@
         ← 목록으로
       </MaterialButton>
       <!-- 관리자 전용: 우상단 담당자 배정 버튼 -->
-      <div v-if="isAdmin" class="absolute right-8 top-6 z-10">
+      <div
+        v-if="isAdmin && submission?.status === 'CA1'"
+        class="absolute right-8 top-6 z-10"
+      >
         <MaterialButton color="dark" size="sm" @click="goAssignPage">
           담당자 배정
         </MaterialButton>
@@ -157,7 +160,7 @@
     <!-- 일반 전용: 우하단 수정 버튼 -->
     <div class="form-actions">
       <MaterialButton
-        v-if="isGeneral"
+        v-if="isGeneral && submission?.status === 'CA1'"
         color="dark"
         size="sm"
         class="fixed right-6 bottom-6 shadow-lg rounded-full mt-3"

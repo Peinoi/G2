@@ -165,7 +165,7 @@
                       normStatus(row.status) === 'CD7' && selectedRole !== 1
                     "
                     type="button"
-                    class="status-pill status-pill--rejected status-pill--clickable"
+                    class="status-pill status-pill--rejected status-pill--clickable p-red"
                     @click.stop="openRejectReason(row)"
                   >
                     {{ statusLabel(row.status) }}
@@ -363,7 +363,7 @@ function statusPillClass(code) {
   switch (normStatus(code)) {
     case "CD1":
     case "CD3":
-      return "p-gray";
+      return "p-blue";
     case "CD4":
       return "p-yellow";
     case "CD5":
@@ -617,6 +617,11 @@ const handleWrite = (row) => {
   router.push({
     name: "result-write",
     params: { submitcode: row.submitCode },
+    query: {
+      planCode: row.planCode,
+      submitCode: row.submitCode,
+      role: selectedRole.value,
+    },
   });
 };
 

@@ -103,7 +103,7 @@ async function listSupportResultsByRole(role, userId) {
 }
 
 // 지원자 정보
-async function getResultBasic(submitCode) {
+async function getResultBasic(submitCode, planCodeFromQuery = null) {
   const conn = await pool.getConnection();
   try {
     const rows = await conn.query(sql.getResultBasicBySubmitCode, [submitCode]);
@@ -115,14 +115,41 @@ async function getResultBasic(submitCode) {
       );
     }
 
-    const goalRows = await conn.query(sql.getPlanGoalsBySubmitCode, [
-      submitCode,
-    ]);
+    let planCode = null;
 
-    const planGoals = (goalRows || [])
-      .map((r) => (r.item_title || "").trim())
-      .filter((v) => v) // 빈 문자열 제거
-      .filter((v, idx, arr) => arr.indexOf(v) === idx); // 중복 제거
+    // 1️⃣ 우선: 프론트에서 planCode를 넘겨줬다면 그걸 최우선 사용
+    if (planCodeFromQuery) {
+      planCode = planCodeFromQuery;
+    } else {
+      // 2️⃣ 없으면 기존 로직 유지
+
+      // (1) 이 submit_code로 이미 만들어진 결과가 있는지 확인
+      const [resPlanRow] = await conn.query(sql.getPlanCodeBySubmitFromResult, [
+        submitCode,
+      ]);
+
+      if (resPlanRow && resPlanRow.plan_code) {
+        // 👉 결과가 있는 경우: 결과에 연결된 plan_code 사용
+        planCode = resPlanRow.plan_code;
+      } else {
+        // 👉 결과가 아직 없는 경우: "가장 최근 계획" 기준
+        const [planRow] = await conn.query(sql.getPlanBySubmitCode, [
+          submitCode,
+        ]);
+        planCode = planRow?.plan_code || null;
+      }
+    }
+
+    let planGoals = [];
+
+    if (planCode) {
+      const goalRows = await conn.query(sql.getPlanGoalsByPlanCode, [planCode]);
+
+      planGoals = (goalRows || [])
+        .map((r) => (r.item_title || "").trim())
+        .filter((v) => v)
+        .filter((v, idx, arr) => arr.indexOf(v) === idx);
+    }
 
     return safeJSON({
       submitCode: row.submit_code,
@@ -134,8 +161,7 @@ async function getResultBasic(submitCode) {
       level: row.level || "",
       planSubmitAt: row.plan_submit_at,
 
-      // ✅ 프론트에서 쓰는 배열
-      planGoals,
+      planGoals, // ✅ 이제 현재 planCode 기준으로만 들어감
     });
   } finally {
     conn.release();
@@ -150,20 +176,42 @@ async function getResultBasic(submitCode) {
  *  - 최초/제출 저장이므로 여기서는 히스토리 기록 ❌
  */
 async function saveResultWithItems(formJson, files = []) {
-  const { submitCode, mainForm, resultItems } = formJson;
+  const { submitCode, planCode: rawPlanCode, mainForm, resultItems } = formJson;
 
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
 
-    // 0) submitCode → plan_code + assi_by
-    const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
-    if (!plan || !plan.plan_code) {
-      throw new Error("해당 제출건의 지원계획을 찾을 수 없습니다.");
-    }
+    // ✅ 0) planCode 결정 로직
+    const explicitPlanCode = Number(rawPlanCode) || null;
 
-    const planCode = plan.plan_code;
-    const assiBy = plan.assi_by || null;
+    let planCode;
+    let assiBy;
+
+    if (explicitPlanCode) {
+      // 🔹 프론트에서 planCode를 명시적으로 넘겨준 경우: 그 계획만 조회
+      const planRows = await conn.query(
+        "SELECT plan_code, assi_by FROM support_plan WHERE plan_code = ? LIMIT 1",
+        [explicitPlanCode]
+      );
+      const plan = planRows[0];
+
+      if (!plan || !plan.plan_code) {
+        throw new Error("지정한 지원계획을 찾을 수 없습니다.");
+      }
+
+      planCode = plan.plan_code;
+      assiBy = plan.assi_by || null;
+    } else {
+      // 🔹 기존 로직: submitCode 기준으로 최신 계획 1건 가져오기
+      const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
+      if (!plan || !plan.plan_code) {
+        throw new Error("해당 제출건의 지원계획을 찾을 수 없습니다.");
+      }
+
+      planCode = plan.plan_code;
+      assiBy = plan.assi_by || null;
+    }
 
     // 1) plan_code 기준으로 기존 support_result 있는지 확인
     const [existing] = await conn.query(sql.getSupportResultByPlan, [planCode]);
@@ -272,16 +320,11 @@ async function saveResultWithItems(formJson, files = []) {
   }
 }
 
-/**
- * 🔹 결과 임시 저장
- *  - 상태: CD1
- *  - result_items 갈아끼우기
- *  - 첨부파일 임시저장/삭제 반영
- *  - 임시저장이라 히스토리 기록 ❌
- */
+// 임시저장
 async function saveResultTemp(formJson, files = []) {
   const {
     submitCode,
+    planCode: rawPlanCode,
     mainForm,
     resultItems,
     removedAttachCodes = [],
@@ -291,16 +334,38 @@ async function saveResultTemp(formJson, files = []) {
   try {
     await conn.beginTransaction();
 
-    // 1) submitCode → plan_code + assi_by
-    const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
-    if (!plan || !plan.plan_code) {
-      throw new Error("해당 제출건의 지원계획을 찾을 수 없습니다.");
+    // ✅ 1) planCode 결정
+    const explicitPlanCode = Number(rawPlanCode) || null;
+
+    let planCode;
+    let assiBy;
+
+    if (explicitPlanCode) {
+      // 🔹 planCode가 명시적으로 넘어온 경우
+      const planRows = await conn.query(
+        "SELECT plan_code, assi_by FROM support_plan WHERE plan_code = ? LIMIT 1",
+        [explicitPlanCode]
+      );
+      const plan = planRows[0];
+
+      if (!plan || !plan.plan_code) {
+        throw new Error("지정한 지원계획을 찾을 수 없습니다.");
+      }
+
+      planCode = plan.plan_code;
+      assiBy = plan.assi_by || null;
+    } else {
+      // 🔹 기존 방식: submitCode로 최신 계획 찾기
+      const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
+      if (!plan || !plan.plan_code) {
+        throw new Error("해당 제출건의 지원계획을 찾을 수 없습니다.");
+      }
+
+      planCode = plan.plan_code;
+      assiBy = plan.assi_by || null;
     }
 
-    const planCode = plan.plan_code;
-    const assiBy = plan.assi_by || null;
-
-    // 2) plan_code 기준 기존 support_result 확인
+    // 2) plan_code 기준 기존 support_result 확인 (status 포함돼 있어야 함!)
     const [existing] = await conn.query(sql.getSupportResultByPlan, [planCode]);
 
     const actualFrom =
@@ -312,26 +377,37 @@ async function saveResultTemp(formJson, files = []) {
         ? mainForm.actualEnd + "-01"
         : null;
 
-    const writtenAt = null;
+    const writtenAt = null; // 임시저장은 작성일 null 유지
     const status = "CD1"; // 임시저장
 
     let resultCode;
 
     if (existing && existing.result_code) {
-      // 이미 결과 있음 → 임시저장 상태로 갱신
+      // ✅ 이미 결과 헤더가 있는 경우
       resultCode = existing.result_code;
+
+      const currentStatus = existing.status;
+
+      // 🔒 제출/승인된 결과는 임시저장으로 되돌리면 안 됨
+      const allowedStatuses = ["CD1", "CD3"]; // 임시 or 자동생성 초기 상태만 허용
+      if (currentStatus && !allowedStatuses.includes(currentStatus)) {
+        throw new Error(
+          `현재 상태(${currentStatus})의 지원결과는 임시저장할 수 없습니다.`
+        );
+      }
 
       await conn.query(sql.updateSupportResultByCode, [
         actualFrom,
         actualTo,
-        status,
+        status, // CD1으로 세팅
         writtenAt,
         resultCode,
       ]);
 
+      // 기존 item 싹 지우고 다시 넣기
       await conn.query(sql.deleteSupportResultItemsByResultCode, [resultCode]);
     } else {
-      // 처음 임시저장 → support_result 생성
+      // 🆕 아주 예외적인 케이스: 결과 헤더가 하나도 없는 경우에만 새로 생성
       const insertRes = await conn.query(sql.insertSupportResult, [
         planCode,
         actualFrom,
@@ -402,33 +478,36 @@ async function saveResultTemp(formJson, files = []) {
   }
 }
 
-/**
- * 🔹 작성 화면 "불러오기" 데이터
- *  - submitCode → plan_code → support_result 헤더/아이템/첨부 조회
- */
-async function getResultFormDataBySubmit(submitCode) {
+// 불러오기
+async function getResultFormDataBySubmit(submitCode, planCodeFromQuery = null) {
   const conn = await pool.getConnection();
   try {
-    // 1) submitCode → plan_code
-    const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
-    if (!plan || !plan.plan_code) {
-      // 아직 계획/결과가 전혀 없을 때
-      return safeJSON({
-        main: null,
-        items: [],
-        attachments: [],
-      });
-    }
-    const planCode = plan.plan_code;
+    let planCode;
 
-    // 2) plan_code → support_result 헤더 (마지막 1건)
+    // 1️⃣ 프론트에서 planCode를 넘겨줬으면 그걸 우선 사용
+    if (planCodeFromQuery) {
+      planCode = planCodeFromQuery;
+    } else {
+      // 2️⃣ 없으면 기존처럼 submitCode로 계획 찾기
+      const [plan] = await conn.query(sql.getPlanBySubmitCode, [submitCode]);
+      if (!plan || !plan.plan_code) {
+        return safeJSON({
+          main: null,
+          items: [],
+          attachments: [],
+        });
+      }
+      planCode = plan.plan_code;
+    }
+
+    // 2) plan_code → support_result 헤더들 조회
     const headers = await conn.query(sql.getSupportResultHeaderByPlan, [
       planCode,
     ]);
-    const header = headers[0];
+
+    const header = headers.find((h) => h.status === "CD1") || null;
 
     if (!header) {
-      // 결과 자체가 아직 없으면 빈 값
       return safeJSON({
         main: null,
         items: [],
@@ -438,12 +517,9 @@ async function getResultFormDataBySubmit(submitCode) {
 
     const resultCode = header.result_code;
 
-    // 3) item들
     const items = await conn.query(sql.getSupportResultItemsByResultCode, [
       resultCode,
     ]);
-
-    // 4) 첨부파일
     const attachments = await conn.query(sql.getAttachmentsBySupportResult, [
       resultCode,
     ]);
@@ -501,6 +577,14 @@ async function getResultDetail(resultCode) {
       throw new Error("지원결과를 찾을 수 없습니다.");
     }
 
+    // 🔹 이 계획에 달린 목표들
+    const goalRows = await conn.query(sql.getPlanGoalsByPlanCode, [
+      header.plan_code,
+    ]);
+    const planGoals = (goalRows || [])
+      .map((r) => (r.item_title || "").trim())
+      .filter((v) => v);
+
     // 2) item들 (메인 + 추가 결과)
     const items = await conn.query(sql.getSupportResultItemsByResultCode, [
       resultCode,
@@ -533,11 +617,13 @@ async function getResultDetail(resultCode) {
     const attachList = attachments.map((a) => ({
       attachCode: a.attach_code,
       originalFilename: a.original_filename,
-      url: a.file_path, // '/uploads/results/파일명...'
+      url: a.file_path,
     }));
 
     return safeJSON({
       status: header.status,
+      planCode: header.plan_code, // 🔹 추가
+      planGoals, // 🔹 추가
       main,
       items: extraItems,
       attachments: attachList,

@@ -491,6 +491,19 @@ async function handleLoad() {
 
     const res = data.result;
 
+    const hasMain =
+      res.main &&
+      (res.main.goal || res.main.publicContent || res.main.privateContent);
+
+    const hasItems = Array.isArray(res.items) && res.items.length > 0;
+    const hasAttachments =
+      Array.isArray(res.attachments) && res.attachments.length > 0;
+
+    if (!hasMain && !hasItems && !hasAttachments) {
+      alert("불러올 지원계획 내용이 없습니다.");
+      return;
+    }
+
     // 메인 계획
     mainForm.value = {
       planDate: res.main?.planDate

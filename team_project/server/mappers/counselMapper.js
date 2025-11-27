@@ -280,6 +280,7 @@ async function saveCounsel(body, files = []) {
         "BA1", // state (요청)
         "counsel_note", // linked_table_name
         counsel_code, // linked_record_pk
+        effectivePriority,
       ]);
     }
 
