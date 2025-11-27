@@ -219,7 +219,20 @@ const processPayment = async () => {
     if (!res.data.tid) {
       throw new Error("카카오페이 서버로부터 TID를 받지 못했습니다.");
     }
+    // ✅ 응답 존재 확인
+    if (!res.data) {
+      throw new Error("서버 응답이 비어있습니다.");
+    }
 
+    // ✅ TID 존재 확인
+    if (!res.data.tid) {
+      throw new Error("TID를 받지 못했습니다.");
+    }
+
+    // ✅ Redirect URL 존재 확인
+    if (!res.data.next_redirect_pc_url) {
+      throw new Error("결제창 URL을 받지 못했습니다.");
+    }
     // tid 저장 → approve 때 필요
     localStorage.setItem(
       "kakao_tid",
