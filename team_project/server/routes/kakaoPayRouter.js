@@ -43,7 +43,7 @@ router.post("/ready", async (req, res) => {
       body,
       {
         headers: {
-          Authorization: `SECRET_KEY DEVF87E1D98EB3A9C76FAD77CA0ABFC5BCC7D89F`,
+          Authorization: `SECRET_KEY ${process.env.KAKAO_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -84,7 +84,7 @@ router.post("/approve", async (req, res) => {
       body,
       {
         headers: {
-          Authorization: `SECRET_KEY DEVF87E1D98EB3A9C76FAD77CA0ABFC5BCC7D89F`,
+          Authorization: `SECRET_KEY ${process.env.KAKAO_SECRET_KEY}`,
           "Content-Type": "application/json",
         },
       }
