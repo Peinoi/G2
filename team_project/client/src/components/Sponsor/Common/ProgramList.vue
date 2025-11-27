@@ -219,8 +219,7 @@ const getSponsorList = async (params = {}) => {
   });
 
   sponsorList.value = list;
-  // 2. 검색 조건이 없는 최초 로딩 시에만 programList를 갱신
-  //  (검색 결과는 programList에 영향을 주지 않아야 함)
+  // 최초 로딩 시에만 programList를 갱신
   if (Object.keys(params).length === 0) {
     programList.value = list;
   }
