@@ -7,7 +7,7 @@ router.get('/checkid', async (req, res) => {
   const userId = req.query.id;
   try {
     const result = await userService.checkId(userId);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> checkid 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -18,7 +18,7 @@ router.get('/checkid', async (req, res) => {
 router.post('/verifySMS', async (req, res) => {
   try {
     const result = await userService.verifyCode(req.body);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> verifySMS 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -28,7 +28,7 @@ router.post('/verifySMS', async (req, res) => {
 router.post('/sendSMS', async (req, res) => {
   try {
     const result = await userService.sendCode(req.body);
-    res.status(200).send(result);
+    res.send(result);
   } catch (err) {
     console.error('[ authUser.js -> sendSMS 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -39,7 +39,7 @@ router.post('/sendSMS', async (req, res) => {
 router.post('/addUser', async (req, res) => {
   try {
     const result = await userService.addUser(req.body);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> addUser 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -50,7 +50,7 @@ router.post('/addUser', async (req, res) => {
 router.post('/findOrg', async (req, res) => {
   try {
     const result = await userService.findOrg();
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findOrg 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -61,7 +61,7 @@ router.post('/findOrg', async (req, res) => {
 router.post('/addOrg', async (req, res) => {
   try {
     const result = await userService.addOrg(req.body);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> addOrg 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -72,7 +72,7 @@ router.post('/addOrg', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const result = await userService.login(req.body);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> login 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -84,7 +84,7 @@ router.post('/findIdPw', async (req, res) => {
   try {
     const { type, data } = req.body;
     const result = await userService.findIdPw(type, data);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });
@@ -96,7 +96,7 @@ router.put('/findIdPw', async (req, res) => {
   try {
     const { type, data } = req.body;
     const result = await userService.findIdPw(type, data);
-    res.status(200).json(result);
+    res.json(result);
   } catch (err) {
     console.error('[ authUser.js -> findIdPw 라우터 오류 ]', err);
     res.status(500).json({ ok: false, message: err });

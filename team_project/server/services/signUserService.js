@@ -99,10 +99,7 @@ async function addOrg(userData) {
   try {
     await conn.beginTransaction();
 
-    // 첫 번째: 인가 후 기관 조회
-    if (userData.role != 'AA2' && userData.role != 'AA3')
-      return { ok: false, message: '권한이 맞지 않습니다.' };
-
+    // 첫 번째: 기관 조회
     const orgCode = await signUserMapper.findOrgCode(conn, userData.org_name);
     if (orgCode[0] == null)
       return { ok: false, message: '일치하는 기관이 없습니다.' };
