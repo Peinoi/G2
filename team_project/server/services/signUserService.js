@@ -32,6 +32,7 @@ async function sendCode(phone) {
 
   const code = getSmsCode();
   const textMsg = `[ 인증번호 : ${code} ]`;
+  console.log(textMsg);
 
   const result = await sendSms(phone.data, textMsg);
   if (!result.ok) return { ok: false, status: 200, message: '문자 전송 실패' };
