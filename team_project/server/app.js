@@ -5,6 +5,7 @@ const isProd = process.argv.includes("prod");
 const SERVER_URL = isProd ? "http://49.50.139.49/api" : "http://localhost:3000";
 global.SERVER_URL = SERVER_URL;
 const express = require("express");
+const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const testRouter = require("./routes/testRoute");
@@ -32,7 +33,11 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
+const corsOptions = {
+  origin: "https://t1.kakaocdn.net", // 프론트엔드 서버 주소
+};
 
+app.use(cors(corsOptions));
 // 라우터
 // app.use('/api', testRouter);
 
