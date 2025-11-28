@@ -24,6 +24,7 @@ async function updateStatusMapper(data) {
 
     await conn.commit();
 
+    await conn.rollback();
     return { ok: true, message: '배정 성공' };
   } catch (err) {
     console.error('[ updateStatusMapper 실패 ] : ', err);

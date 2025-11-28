@@ -12,10 +12,7 @@
               ? pendingItem.childName
               : pendingItem.writerName
           }}</strong>
-          님의 담당자를
-          <br />
-          <strong>{{ pendingItem.managerName }}</strong> 님으로
-          배정하시겠습니까?
+          님의 담당자를 배정하시겠습니까?
 
           <br />
         </p>
@@ -41,10 +38,7 @@
               ? pendingItem.childName
               : pendingItem.writerName
           }}</strong>
-          님의 담당자가
-          <br />
-          <strong>{{ pendingItem.managerName }}</strong> 님으로 배정이
-          완료되었습니다.
+          님의 담당자가 배정이 완료되었습니다.
         </p>
 
         <div class="modal-actions">
