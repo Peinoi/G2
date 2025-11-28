@@ -420,12 +420,12 @@ function formatKoreanTime(date) {
   return `${ampm} ${hours}:${minutes}`;
 }
 
-// 캘린더 클릭 예약 (DD2 전용)
+// 캘린더 클릭 예약 (예약제: DD2 전용)
 const onEventClick = async (info) => {
   if (loginRole.value !== "AA1")
-    return alert("신청은 일반 사용자(AA1)만 가능합니다.");
+    return alert("신청은 일반 사용자만 가능합니다.");
 
-  // resultStatus 체크: 해당 이벤트 코드 && BA2
+  // 결과보고서 작성상태 체크 => 해당 이벤트 코드 && 승인: BA2
   const blocked = (event.value.resultStatus || []).some(
     (r) => r.event_code === eventCode && r.result_status === "BA2"
   );

@@ -11,26 +11,30 @@ const fs = require("fs");
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, "../uploads");
+
+    // 폴더가 없으면 생성
     if (!fs.existsSync(uploadPath))
       fs.mkdirSync(uploadPath, { recursive: true });
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    // 한글 지원
+    // 한글 파일명 깨짐 방지
     const originalName = Buffer.from(file.originalname, "latin1").toString(
       "utf8"
     );
 
-    // 날짜 접미사 (yyyyMMdd)
+    // 날짜 접미사 생성 (파일명 중복 방지)
     const now = new Date();
     const year = now.getFullYear();
     const month = ("0" + (now.getMonth() + 1)).slice(-2);
     const day = ("0" + now.getDate()).slice(-2);
     const dateSuffix = `${year}${month}${day}`;
 
+    // 파일명 (확장자 분리)
     const ext = path.extname(originalName);
     const baseName = path.basename(originalName, ext);
 
+    // 최종 파일명: originalName_yyyymmdd.ext
     cb(null, `${baseName}_${dateSuffix}${ext}`);
   },
 });

@@ -95,8 +95,9 @@
               <td>{{ sub.sub_event_code }}</td>
               <td>{{ sub.sub_event_name }}</td>
               <td>
-                {{ formatDate(sub.sub_event_start_date) }} ~
-                {{ formatDate(sub.sub_event_end_date) }}
+                {{ formatKoreanDateOnly(sub.sub_event_start_date) }}
+                {{ formatKoreanTime(sub.sub_event_start_date) }} ~
+                {{ formatKoreanTime(sub.sub_event_end_date) }}
               </td>
               <td>{{ sub.sub_recruit_count }}</td>
             </tr>
