@@ -49,14 +49,12 @@
             <input
               type="date"
               v-model="eventInfo.recruit_end_date"
-              :min="
-                eventInfo.recruit_start_date || dateFormat(today, 'yyyy-MM-dd')
-              "
+              :min="eventInfo.recruit_start_date"
               required
             />
           </div>
 
-          <!-- 이벤트 기간 -->
+          <!-- 이벤트 시행 기간 -->
           <!-- 신청제 -->
           <div v-if="eventInfo.event_type === 'DD1'">
             <label>이벤트 시작일</label>
@@ -138,6 +136,7 @@
                 type="datetime-local"
                 v-model="item.start"
                 :min="eventInfo.event_start_date + 'T00:00'"
+                :max="eventInfo.event_end_date + 'T00:00'"
                 required
               />
             </div>
@@ -147,6 +146,7 @@
                 type="datetime-local"
                 v-model="item.end"
                 :min="item.start"
+                :max="eventInfo.event_end_date + 'T00:00'"
                 required
               />
             </div>
@@ -244,7 +244,7 @@ const getNextDay = (dateString) => {
   return dateFormat(d, "yyyy-MM-dd");
 };
 
-// 다음날 + 날짜 계산 함수
+// 다음날 + 시간 계산 함수
 const getNextDayTime = (dateString) => {
   if (!dateString) return "";
 
@@ -308,12 +308,11 @@ const addTime = () => {
 };
 const removeTime = (index) => eventTimes.value.splice(index, 1);
 
-// 서브매니저 선택 시 본인은 제외
+// 서브매니저 선택 조건
 const filteredManagerList = computed(() => {
   return managerList.value.filter(
     (m) =>
       m.user_code !== user_code && // 본인 제외
-      m.user_code !== eventInfo.value.user_code && // 메인 매니저 제외
       m.org_code === org_code // 같은 기관 매니저만
   );
 });

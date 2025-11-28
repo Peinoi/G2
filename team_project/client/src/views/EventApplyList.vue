@@ -90,7 +90,7 @@ const handleCancel = async (apply_code) => {
     const res = await axios.delete(`/api/event/apply/${apply_code}`);
     if (res.data.status === "success") {
       await fetchApplies();
-      alert("신청이 취소되고 신청인원이 업데이트 되었습니다.");
+      alert("신청이 취소되었습니다.");
     }
   } catch (err) {
     console.error("신청 취소 실패:", err);
