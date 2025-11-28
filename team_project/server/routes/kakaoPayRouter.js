@@ -43,7 +43,7 @@ router.post("/ready", async (req, res) => {
       body,
       {
         headers: {
-          Authorization: `SECRET_KEY ${process.env.KAKAO_SECRET_KEY}`,
+          Authorization: `SECRET_KEY DEVF87E1D98EB3A9C76FAD77CA0ABFC5BCC7D89F`,
           "Content-Type": "application/json",
         },
       }
@@ -54,6 +54,7 @@ router.post("/ready", async (req, res) => {
       tid: kakaoResponse.data.tid,
     });
   } catch (error) {
+    console.error("READY ERROR:", error.response?.data || error);
     return res.status(500).json({ message: "결제 준비 실패", error });
   }
 });
@@ -83,7 +84,7 @@ router.post("/approve", async (req, res) => {
       body,
       {
         headers: {
-          Authorization: `SECRET_KEY ${process.env.KAKAO_SECRET_KEY}`,
+          Authorization: `SECRET_KEY DEVF87E1D98EB3A9C76FAD77CA0ABFC5BCC7D89F`,
           "Content-Type": "application/json",
         },
       }

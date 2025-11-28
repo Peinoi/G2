@@ -286,10 +286,10 @@
             class="preview-section"
           >
             <h4 class="font-semibold text-lg mb-1">
-              항목 #{{ sIdx + 1 }} — {{ sec.title || '제목 없음' }}
+              항목 #{{ sIdx + 1 }} — {{ sec.title || "제목 없음" }}
             </h4>
             <p class="text-gray-600 mb-3">
-              {{ sec.desc || '설명 없음' }}
+              {{ sec.desc || "설명 없음" }}
             </p>
 
             <div
@@ -298,10 +298,10 @@
               class="preview-subsection"
             >
               <h5 class="font-medium">
-                세부항목 #{{ subIdx + 1 }} — {{ sub.title || '제목 없음' }}
+                세부항목 #{{ subIdx + 1 }} — {{ sub.title || "제목 없음" }}
               </h5>
               <p class="text-gray-500 mb-2">
-                {{ sub.desc || '설명 없음' }}
+                {{ sub.desc || "설명 없음" }}
               </p>
 
               <div
@@ -317,7 +317,7 @@
                 </div>
 
                 <div class="text-gray-800 mb-2">
-                  {{ it.text || '질문 내용 없음' }}
+                  {{ it.text || "질문 내용 없음" }}
                 </div>
 
                 <!-- 옵션 -->
@@ -325,7 +325,7 @@
                   <div class="text-xs text-gray-600 mb-1">옵션</div>
                   <ul class="list-disc pl-6 text-sm">
                     <li v-for="op in it.options" :key="op.id">
-                      {{ op.label || '라벨 없음' }}
+                      {{ op.label || "라벨 없음" }}
                     </li>
                   </ul>
                 </div>
@@ -359,24 +359,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import axios from "axios";
 
-import MaterialButton from '@/components/MaterialButton.vue';
-import MaterialInput from '@/components/MaterialInput.vue';
-import MaterialSwitch from '@/components/MaterialSwitch.vue';
+import MaterialButton from "@/components/MaterialButton.vue";
+import MaterialInput from "@/components/MaterialInput.vue";
+import MaterialSwitch from "@/components/MaterialSwitch.vue";
 
 const router = useRouter();
 const sections = ref([]);
 let uid = 1;
 const newId = () => uid++;
 const isChoiceType = (t) =>
-  ['RADIO', 'CHECKBOX'].includes(String(t).toUpperCase());
+  ["RADIO", "CHECKBOX"].includes(String(t).toUpperCase());
 
 // 섹션
 function addSection() {
-  sections.value.push({ id: newId(), title: '', desc: '', subsections: [] });
+  sections.value.push({ id: newId(), title: "", desc: "", subsections: [] });
 }
 function removeSection(i) {
   sections.value.splice(i, 1);
@@ -386,8 +386,8 @@ function removeSection(i) {
 function addSubsection(i) {
   sections.value[i].subsections.push({
     id: newId(),
-    title: '',
-    desc: '',
+    title: "",
+    desc: "",
     items: [],
   });
 }
@@ -399,8 +399,8 @@ function removeSubsection(i, j) {
 function addItem(i, j) {
   sections.value[i].subsections[j].items.push({
     id: newId(),
-    type: 'TEXT',
-    text: '',
+    type: "TEXT",
+    text: "",
     required: false,
     options: [],
   });
@@ -414,7 +414,7 @@ function onChangeType(item) {
   if (isChoiceType(item.type)) {
     if (!Array.isArray(item.options)) item.options = [];
     if (item.options.length === 0)
-      item.options.push({ id: newId(), label: '' }); // 🔥 value/order 제거
+      item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
   } else {
     item.options = [];
   }
@@ -423,7 +423,7 @@ function onChangeType(item) {
 // 옵션 추가/삭제
 function addOption(i, j, k) {
   const item = sections.value[i].subsections[j].items[k];
-  item.options.push({ id: newId(), label: '' }); // 🔥 value/order 제거
+  item.options.push({ id: newId(), label: "" }); // 🔥 value/order 제거
 }
 function removeOption(i, j, k, o) {
   const item = sections.value[i].subsections[j].items[k];
@@ -433,8 +433,8 @@ function removeOption(i, j, k, o) {
 // 저장할 데이터 구조 (백엔드 insertSurvey에 맞춤)
 const payload = computed(() => ({
   template: {
-    version_no: '2.0',
-    status: 'ACTIVE',
+    version_no: "2.0",
+    status: "ACTIVE",
     created_by: 1,
     created_at: new Date().toISOString().slice(0, 10),
   },
@@ -450,11 +450,11 @@ const payload = computed(() => ({
         order: iIdx + 1,
         question_type: it.type,
         question_text: it.text,
-        is_required: it.required ? 'Y' : 'N',
+        is_required: it.required ? "Y" : "N",
         // 🔥 선택형일 때만 option_values 채움
         option_values: isChoiceType(it.type)
           ? it.options.map((op, k) => {
-              const base = op.label || ''; // 라벨만 사용
+              const base = op.label || ""; // 라벨만 사용
               return {
                 label: base,
                 value: base, // value는 label과 동일하게 자동 세팅
@@ -476,21 +476,21 @@ function openPreview() {
 // ✅ 저장 함수 (백엔드 연동)
 async function saveDraft() {
   try {
-    const { data } = await axios.post('/api/survey/new', payload.value);
+    const { data } = await axios.post("/api/survey/new", payload.value);
     if (data?.success) {
-      alert('조사지 저장 완료!');
-      router.push('/survey-version');
+      alert("조사지 저장 완료!");
+      router.push("/survey-version");
     } else {
-      alert('저장 실패');
+      alert("저장 실패");
     }
   } catch (e) {
-    console.error('save error:', e);
-    alert('서버 오류: ' + (e.response?.data?.message || e.message));
+    console.error("save error:", e);
+    alert("서버 오류: " + (e.response?.data?.message || e.message));
   }
 }
 
 function goBack() {
-  router.push({ name: 'surveyVersion' });
+  router.push({ name: "surveyVersion" });
 }
 </script>
 
@@ -510,18 +510,7 @@ section {
   margin-bottom: 0.2rem;
 }
 
-/* 빈 상태 */
-.empty-state {
-  text-align: center;
-  padding: 4rem 1rem;
-  border-radius: 0.75rem;
-  border: 1px dashed #d1d5db;
-  color: #4b5563;
-  background: #f9fafb;
-  margin-bottom: 1.5rem;
-}
-
-/* 공통 인풋 스타일 (select 등에서 사용) */
+/* 공통 인풋 스타일 (select 등) */
 .input-basic {
   border-radius: 0.5rem;
   border: 1px solid #e5e7eb;
@@ -536,19 +525,48 @@ section {
 
 .input-basic:focus {
   border-color: #111827;
-  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.2);
+  box-shadow: 0 0 0 1px rgba(17, 24, 39, 0.12);
 }
 
-/* 섹션 카드 */
+/* =========================
+   비어있는 상태
+========================= */
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+  color: #4b5563;
+  background: #f9fafb;
+  margin-bottom: 1.5rem;
+}
+
+/* =========================
+   섹션(항목) 카드 - 1단계
+========================= */
 .section-card {
+  position: relative;
   border-radius: 0.9rem;
   border: 1px solid #e5e7eb;
-  background-color: #ffffff;
-  padding: 1.25rem;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+  background: #fcfcfc;
+  padding: 1.2rem 1.2rem 1rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.03);
+  margin-bottom: 0.9rem;
 }
 
-/* 섹션 헤더 줄 */
+/* 섹션 왼쪽에 은은한 라인 */
+.section-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(to bottom, #d1d5db, #e5e7eb);
+}
+
+/* 섹션 헤더 */
 .section-header {
   display: flex;
   align-items: center;
@@ -559,18 +577,30 @@ section {
 }
 
 .section-title {
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #4b5563;
+  color: #6b7280;
 }
 
-/* 세부항목 카드 */
+/* =========================
+   세부항목 카드 - 2단계
+========================= */
 .subsection-card {
+  position: relative;
   border-radius: 0.75rem;
   border: 1px solid #e5e7eb;
   background-color: #f9fafb;
   padding: 0.9rem;
+  margin-top: 0.75rem;
+  margin-left: 0.25rem;
+  border-left-width: 3px;
+  border-left-color: #e5e7eb;
+}
+
+/* 아주 살짝 호버만 */
+.subsection-card:hover {
+  background-color: #f3f4f6;
 }
 
 /* 세부항목 헤더 */
@@ -581,30 +611,69 @@ section {
   margin-bottom: 0.75rem;
 }
 
-/* 질문 카드 */
-.question-card {
-  border-radius: 0.75rem;
-  border: 1px dashed #d1d5db;
-  padding: 0.9rem;
-  background-color: #ffffff;
+/* 세부항목 타이틀 뱃지 느낌 */
+.sub-header .font-medium {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  font-size: 0.72rem;
+  color: #374151;
 }
 
+/* =========================
+   질문 카드 - 3단계
+========================= */
+.question-card {
+  position: relative;
+  border-radius: 0.75rem;
+  border: 1px dashed #d1d5db;
+  padding: 0.85rem;
+  background-color: #ffffff;
+  margin-top: 0.55rem;
+  margin-left: 0.6rem;
+  border-left: 2px solid #e5e7eb;
+}
+
+/* 질문 헤더 */
 .question-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
-/* 옵션 행 (번호 + 라벨 + 삭제 버튼) */
+/* "질문 #n" 뱃지 */
+.question-header .font-medium {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  font-size: 0.7rem;
+  color: #4b5563;
+}
+
+/* =========================
+   옵션 행 (번호 + 라벨 + 삭제)
+========================= */
 .option-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 80px; /* 🔥 3컬럼으로 변경 */
+  grid-template-columns: 40px minmax(0, 1fr) 80px;
   gap: 0.5rem;
   align-items: center;
 }
 
-/* 모달 */
+.option-row > div:first-child {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* =========================
+   모달
+========================= */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -622,20 +691,19 @@ section {
   width: 100%;
   max-width: 720px;
   max-height: 90vh;
-  /* 🔥 여기부터 추가/수정 */
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 모달 바깥으로 넘치는 것만 잘라주고 */
+  overflow: hidden;
 }
 
-/* 내용 부분만 스크롤 되게 */
+/* 내용만 스크롤 */
 .preview-scroll {
-  flex: 1; /* 남는 높이를 다 차지하고 */
-  overflow-y: auto; /* 여기만 세로 스크롤 */
-  margin-bottom: 0.75rem; /* 버튼과 살짝 간격 */
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
 }
 
-/* 프리뷰 안쪽 카드들 */
+/* 프리뷰 카드들 */
 .preview-section {
   border-radius: 0.75rem;
   border: 1px solid #e5e7eb;
@@ -666,7 +734,8 @@ section {
   justify-content: space-between;
   gap: 0.5rem;
 }
-/* <style scoped> 안에 추가 */
+
+/* 필요 시 사용 가능 */
 .question-add-wrap {
   display: flex;
   justify-content: flex-end;

@@ -66,12 +66,7 @@
                 <MaterialButton color="dark" size="sm" @click="onApprove(r)">
                   승인
                 </MaterialButton>
-                <MaterialButton
-                  color="dark"
-                  size="sm"
-                  class="apv-btn apv-btn-xs apv-btn-danger"
-                  @click="onReject(r)"
-                >
+                <MaterialButton color="dark" size="sm" @click="onReject(r)">
                   반려
                 </MaterialButton>
               </template>
