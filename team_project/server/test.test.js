@@ -4,23 +4,26 @@ const {
   pwUpdate,
   deleteUserService,
 } = require('./services/userInfoService');
+const { addOrg } = require('./services/signUserService');
 const { decryptSsn } = require('./utils/ssnCrypto');
 
 async function testUser() {
   console.log('----------------------------------------------------');
-  // const testUser = {
-  //   org_name: '대구행복복지센터',
-  //   userId: 'test01',
-  //   userPw: '123123123',
-  //   role: 'AA1',
-  //   agree: true,
-  //   joinDate: '2025-11-25',
-  //   name: 'test01',
-  //   ssn: '111111-2222222',
-  //   phone: '010-7797-8738',
-  //   address: '경북 경산시 대동',
-  //   email: 'test@email.com',
-  // };
+  const testUser = {
+    userId: 'test123',
+    userPw: 'songsil12!',
+    agree: true,
+    joinDate: '2025-11-27',
+    name: 'test123',
+    ssn: '111111-2222222',
+    phone: '111-1111-1111',
+    isPhoneVerified: true,
+    address: 'addtest',
+    email: 'seung01@test.com',
+    org_name: '대구행복복지센터',
+    department: 'test',
+    role: 'AA4',
+  };
 
   // const testUser = {
   //   user_code: 32,
@@ -39,9 +42,9 @@ async function testUser() {
   //   newPw: '123',
   // };
 
-  const testUser = { user_id: 'test01', password: 'songsil12!' };
+  // const testUser = { user_id: 'test01', password: 'songsil12!' };
 
-  const result = await deleteUserService(testUser);
+  const result = await addOrg(testUser);
   console.log(result);
 
   return;

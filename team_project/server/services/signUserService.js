@@ -13,7 +13,7 @@ const { encryptSsn, decryptSsn } = require('../utils/ssnCrypto');
 async function checkId(id) {
   const result = await signUserMapper.findUserId(id);
   if (result[0] != null)
-    return { ok: false, status: 200, message: '이미 사용중인 아이디입니다.' };
+    return { ok: false, message: '이미 사용중인 아이디입니다.' };
   return { ok: true, message: '사용 가능한 아이디입니다.' };
 }
 
@@ -26,7 +26,6 @@ async function sendCode(phone) {
   if (phone.data.length < 10)
     return {
       ok: false,
-      status: 200,
       message: '연락처는 10~11자로 입력하셔야 됩니다.',
     };
 
@@ -34,7 +33,7 @@ async function sendCode(phone) {
   const textMsg = `[ 인증번호 : ${code} ]`;
 
   const result = await sendSms(phone.data, textMsg);
-  if (!result.ok) return { ok: false, status: 200, message: '문자 전송 실패' };
+  if (!result.ok) return { ok: false, message: '문자 전송 실패' };
 
   smsUtil.makeCode(phone.data, code);
   return { ok: true, message: '인증코드 전송 완료' };
@@ -42,7 +41,7 @@ async function sendCode(phone) {
 
 async function verifyCode(data) {
   const result = smsUtil.verifiedCode(data.phone, data.code);
-  if (!result) return { ok: false, status: 200, message: '전화번호 인증 실패' };
+  if (!result) return { ok: false, message: '전화번호 인증 실패' };
   return { ok: true, message: '전화번호 인증 완료' };
 }
 
@@ -64,7 +63,7 @@ async function addUser(userData) {
     const hashedPw = await hashPw(userData.userPw);
     const enc = encryptSsn(userData.ssn);
 
-    // 세 번째: 도매인
+    // 세 번째: 도메인
     const tempData = createUser(userData, {
       orgCode: orgCode,
       hashedPw: hashedPw,
@@ -99,18 +98,19 @@ async function addOrg(userData) {
   try {
     await conn.beginTransaction();
 
-    // 첫 번째: 기관 조회
+    // 첫 번째: 인가 후 기관 조회
+    if (userData.role != 'AA2' && userData.role != 'AA3')
+      return { ok: false, message: '권한이 맞지 않습니다.' };
+
     const orgCode = await signUserMapper.findOrgCode(conn, userData.org_name);
-    if (orgCode[0] == null) {
-      await conn.rollback();
-      return { ok: false, status: 200, message: '기관이 없습니다.' };
-    }
+    if (orgCode[0] == null)
+      return { ok: false, message: '일치하는 기관이 없습니다.' };
 
     // 두 번째: 해싱
     const hashedPw = await hashPw(userData.userPw);
     const enc = encryptSsn(userData.ssn);
 
-    // 세 번째: 도매인
+    // 세 번째: 도메인
     const tempData = createUser(userData, {
       orgCode: orgCode[0].org_code,
       hashedPw: hashedPw,
@@ -135,8 +135,7 @@ async function addOrg(userData) {
     };
 
     // 일곱 번째: db insert
-    const result = await signUserMapper.requestApproval(conn, reqData);
-    console.log('result: ', result);
+    await signUserMapper.requestApproval(conn, reqData);
 
     await conn.commit();
     return { ok: true, message: '등록 성공' };
@@ -152,15 +151,15 @@ async function addOrg(userData) {
 async function login(data) {
   try {
     const result = await signUserMapper.authLogin(data.userId);
+
     if (!result || result.length == 0)
-      return { ok: false, status: 200, message: '존재하지 않는 아이디입니다.' };
+      return { ok: false, message: '존재하지 않는 아이디입니다.' };
+
     const isPw = await checkPw(data.userPw, result[0].password_hash);
-    console.log(isPw);
-    if (!isPw)
-      return { ok: false, status: 200, message: '패스워드가 맞지 않습니다.' };
+    if (!isPw) return { ok: false, message: '패스워드가 맞지 않습니다.' };
 
     if (result[0].delete_status == 1)
-      return { ok: false, status: 200, message: '비활성화 계정입니다.' };
+      return { ok: false, message: '비활성화 계정입니다.' };
 
     return { ok: true, message: '로그인 성공', ...result[0] };
   } catch (err) {
@@ -174,7 +173,7 @@ async function findIdPw(type, data) {
     case 'findId': {
       const result = await signUserMapper.findId(data);
       if (!result || result.length == 0)
-        return { ok: false, status: 200, message: '맞는 아이디가 없습니다.' };
+        return { ok: false, message: '맞는 아이디가 없습니다.' };
 
       return { ok: true, data: result[0] };
     }
@@ -182,8 +181,7 @@ async function findIdPw(type, data) {
       const payLoad = [data.user_id, data.name, data.phone];
       const result = await signUserMapper.findPw(payLoad);
 
-      if (result.length == 0)
-        return { ok: false, status: 200, message: '값이 없습니다.' };
+      if (result.length == 0) return { ok: false, message: '값이 없습니다.' };
 
       return { ok: true, message: '다음 단계로' };
     }
@@ -191,8 +189,7 @@ async function findIdPw(type, data) {
       const newHashPw = await hashPw(data.newPw);
       const { user_id } = data;
       const result = await signUserMapper.updatePw({ user_id, newHashPw });
-      if (result.affectedRows == 0)
-        return { ok: false, status: 200, message: '변경 실패' };
+      if (result.affectedRows == 0) return { ok: false, message: '변경 실패' };
 
       return { ok: true, message: '변경 성공' };
     default:
