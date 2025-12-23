@@ -11,8 +11,10 @@ DB : 권수민
 
 ## 개발 환경
 ```
-123
-
+[FRONT]    JavaScript, Vue.js, HTML, CSS
+[BACK]     Express.js, Node.js
+[DATABASE] MariaDB
+[TOOL]     Git, Github Action, NAVER Cloud Platform, Visual Studio
 ```
 
 ---
