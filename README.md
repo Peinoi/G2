@@ -2,9 +2,14 @@
 <img width="1889" height="948" alt="메인" src="https://github.com/user-attachments/assets/6a214a16-b317-49a8-8e57-175bf7408ab2" />
 
 ## 📑 바로가기
-- [프로젝트 개요](#프로젝트-개요)
-- [내 파트 (후원)](#후원-파트)
-- [프로젝트 소감](#프로젝트-소감)
+
+<p align="center">
+  <a href="#프로젝트-개요"><kbd>📘 프로젝트 개요</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+</p>
 
 ## 프로젝트 개요
 
@@ -16,15 +21,11 @@
 **One-Stop으로 통합 관리**하며,  
 찾아가는 복지가 아닌 **필요한 사람에게 먼저 다가가는 맞춤형 연결 시스템**을 제공합니다.
 
----
-
 ### 개발 일정
 - **2025.10.31 ~ 2025.11.25**
 
 ### 메인 링크
 - 🔗 https://github.com/scv2780/G2
-
----
 
 ### 활용 방안
 
@@ -42,7 +43,6 @@
   **행정 효율성 향상 및 중복 지원 방지**
 - 노인·아동·자립 청년 등  
   **다양한 취약계층 지원 분야로 플랫폼 모델 확장 가능**
----
 
 <!--
 팀 소개 방법 들 일반/테이블/이미지테이블
@@ -94,7 +94,6 @@
   </tr>
 </table>
 
----
 
 ## 개발 환경
 ```
@@ -103,18 +102,26 @@
 [DATABASE] MariaDB
 [TOOL]     Git, Github Action, NAVER Cloud Platform, Visual Studio Code
 ```
----
 
 ## 데이터 베이스
 <p align="center">
   <img width="808" height="373" alt="image" src="https://github.com/user-attachments/assets/955b76fb-05e8-495c-8ff7-4edb69503571" />
 </p>
 
----
 
 ## 프로세스 흐름도 
 <p align="center">
   <img  width="910" height="526" alt="image" src="https://github.com/user-attachments/assets/31db83e3-f5d1-4e46-89d3-33f1ec0844ba" />
+</p>
+
+---
+
+<p align="center">
+  <a href="#프로젝트-개요"><kbd>📘 프로젝트 개요</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
 </p>
 
 ---
@@ -127,23 +134,96 @@
 후원자는 **후원 프로그램과 금액을 선택**하여 결제할 수 있으며,<br/>
 후원 내역과 **후원 활동 보고서**는 시스템에 기록되어 **체계적으로 관리**됩니다.
 
----
+<p align="center">
+  <a href="#후원-프로세스"><kbd>📊 후원 프로세스</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#후원-페이지-별-기능"><kbd>⚙️ 후원 페이지 별 기능</kbd></a>
+</p>
 
 ## 후원 데이터 베이스
 <p align="center">
   <img width="929" height="632" alt="image" src="https://github.com/user-attachments/assets/21504554-5f56-4287-a575-951ec36ffe8c" />
 </p>
 
-## [후원 프로세스]
+## 후원 프로세스
 <p align="center">
   <img width="986" height="520" alt="image" src="https://github.com/user-attachments/assets/584b4bcf-4978-4de7-abad-ba10b8b24f0d" />
 </p>
 
 ## 후원 페이지 별 기능
 
+### 프로그램 관리
+<p align="center">
+ <img width="500" alt="후원 프로그램 관리" src="https://github.com/user-attachments/assets/9d7f1ab0-aadd-42f2-878c-248be270f3d2" />
+ <img width="500" alt="후원 프로그램 등록2" src="https://github.com/user-attachments/assets/70111fa3-a085-4af6-ad0c-760ecb8ee46f" />
 
+</p>
+
++ 기관 담당자 이상만 접근이 가능하며 해당 기관의 후원 프로그램을 등록 / 삭제 / 수정 / 승인 요청이 가능합니다.
++ 후원 프로그램 등록시 필수로 프로그램명, 기간, 목표금액, 포스터를 작성 해야 하며 이때 후원금 단위를 여러개 지정하여 등록이 가능합니다.
++ 기관 관리자는 승인 요청 페이지에서 후원 프로그램 승인 페이지로 접근시 해당 프로그램에 대한 승인 및 반려가 가능합니다.
+  
+### 프로그램 목록
+<p align="center">0
+ <img width="1892" height="946" alt="후원 프로그램 목록" src="https://github.com/user-attachments/assets/00baf5c5-49bd-4053-81a1-f48aadca71eb" />
+</p>
+
++ 승인이 완료되어 진행 중인 프로그램과 종료된 프로그램의 목록을 확인 가능합니다.
++ 해당 프로그램 클릭시 프로그램 상세 페이지와 결제 페이지로 이동 가능합니다.
+
+### 후원 하기
+<p align="center">0
+ <img width="800" height="946" alt="후원 프로그램 결제" src="https://github.com/user-attachments/assets/b9fcd6d2-6d98-47ef-a7f8-491d28751685" />
+ <img width="200" height="946" alt="image" src="https://github.com/user-attachments/assets/694a6992-09dd-4de8-a2f3-cc61fb13c195" />
+</p>
+
++ 후원 프로그램에 대한 후원금액을 선택하여 후원이 가능합니다.
++ 결제는 카카오 페이 API를 사용 했습니다.
+
+### 전체 후원 내역
+<p align="center">0
+ <img width="1915" height="950" alt="전체 후원 내역" src="https://github.com/user-attachments/assets/9cf92c5e-3e0f-49e0-9524-d0964cd050e4" />
+</p>
+
++ 전체 후원 내역을 확인 가능합니다.
+
+### 후원 활동 보고서
+<p align="center">0
+ <img width="500" height="945" alt="활동보고서" src="https://github.com/user-attachments/assets/67c7e7a6-1de8-487b-b299-4371ee11fe0b" />
+ <img width="500" height="945" alt="활동 보고서 등록2" src="https://github.com/user-attachments/assets/3204b0d7-92cf-4514-9f3a-4b1d805e2e59" />
+</p>
+
++ 후원 금액에 대한 활동 보고서의 열람 및 작성 가능합니다.
++ 모든 이용자가 접근 가능하지만 보고서 작성 버튼과 상세 페이지 열람은 기관 담당자 이상만 가능합니다.
++ 하나의 활동 보고서에는 후원금 사용 용도에서 추가 버튼을 이용해 다수의 사용 내역을 등록 가능합니다.
++ 보고서 작성에는 CKEditor5를 적용하여 작성 가능하게 되어 있습니다.
+
+### 후원 활동 보고서
+<p align="center">0
+ <img width="500" height="954" alt="예산 총괄표" src="https://github.com/user-attachments/assets/da9ce576-019a-452d-9e11-fe1058887e00" />
+ <img width="500" height="954" alt="예산 총괄표 상세보기" src="https://github.com/user-attachments/assets/97f81908-6f11-4d1d-a93b-67fae6bd791b" />
+</p>
+
++ 후원 프로그램에 대한 총괄 내역서 입니다.
++ 모든 이용자가 접근 가능하지만 상세 페이지 열람은 기관 담당자 이상만 가능합니다.
+
+### 사이드 바
+<p align="center">0
+ <img width="500" height="947" alt="이벤트_사이드바" src="https://github.com/user-attachments/assets/a67efc41-bacf-4e28-b547-f1d1b54f4e22" />
+ <img width="500" height="948" alt="승인요청관리_사이드바" src="https://github.com/user-attachments/assets/2c5484ba-521e-4d6f-ab00-746c97483e30" />
+</p>
+
++ 각 페이지와 권한에 따른 표시되는 사이드바입니다.
 
 ---
+
+<p align="center">
+  <a href="#프로젝트-개요"><kbd>📘 프로젝트 개요</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+</p>
 
 # 프로젝트 소감
 
