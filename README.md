@@ -156,7 +156,6 @@
 <p align="center">
  <img width="500" alt="후원 프로그램 관리" src="https://github.com/user-attachments/assets/9d7f1ab0-aadd-42f2-878c-248be270f3d2" />
  <img width="500" alt="후원 프로그램 등록2" src="https://github.com/user-attachments/assets/70111fa3-a085-4af6-ad0c-760ecb8ee46f" />
-
 </p>
 
 + 기관 담당자 이상만 접근이 가능하며 해당 기관의 후원 프로그램을 등록 / 삭제 / 수정 / 승인 요청이 가능합니다.
@@ -173,7 +172,7 @@
 
 ### 후원 하기
 <p align="center">0
- <img width="800" height="946" alt="후원 프로그램 결제" src="https://github.com/user-attachments/assets/b9fcd6d2-6d98-47ef-a7f8-491d28751685" />
+ <img width="700" height="946" alt="후원 프로그램 결제" src="https://github.com/user-attachments/assets/b9fcd6d2-6d98-47ef-a7f8-491d28751685" />
  <img width="200" height="946" alt="image" src="https://github.com/user-attachments/assets/694a6992-09dd-4de8-a2f3-cc61fb13c195" />
 </p>
 
@@ -188,9 +187,9 @@
 + 전체 후원 내역을 확인 가능합니다.
 
 ### 후원 활동 보고서
-<p align="center">0
- <img width="500" height="945" alt="활동보고서" src="https://github.com/user-attachments/assets/67c7e7a6-1de8-487b-b299-4371ee11fe0b" />
- <img width="500" height="945" alt="활동 보고서 등록2" src="https://github.com/user-attachments/assets/3204b0d7-92cf-4514-9f3a-4b1d805e2e59" />
+<p align="center">
+  <img width="500" height="945" alt="활동보고서" src="https://github.com/user-attachments/assets/67c7e7a6-1de8-487b-b299-4371ee11fe0b" />
+  <img width="500" height="945" alt="활동 보고서 등록2" src="https://github.com/user-attachments/assets/3204b0d7-92cf-4514-9f3a-4b1d805e2e59" />
 </p>
 
 + 후원 금액에 대한 활동 보고서의 열람 및 작성 가능합니다.
@@ -199,18 +198,18 @@
 + 보고서 작성에는 CKEditor5를 적용하여 작성 가능하게 되어 있습니다.
 
 ### 후원 활동 보고서
-<p align="center">0
- <img width="500" height="954" alt="예산 총괄표" src="https://github.com/user-attachments/assets/da9ce576-019a-452d-9e11-fe1058887e00" />
- <img width="500" height="954" alt="예산 총괄표 상세보기" src="https://github.com/user-attachments/assets/97f81908-6f11-4d1d-a93b-67fae6bd791b" />
+<p align="center">
+  <img width="500" height="954" alt="예산 총괄표" src="https://github.com/user-attachments/assets/da9ce576-019a-452d-9e11-fe1058887e00" />
+  <img width="500" height="954" alt="예산 총괄표 상세보기" src="https://github.com/user-attachments/assets/97f81908-6f11-4d1d-a93b-67fae6bd791b" />
 </p>
 
 + 후원 프로그램에 대한 총괄 내역서 입니다.
 + 모든 이용자가 접근 가능하지만 상세 페이지 열람은 기관 담당자 이상만 가능합니다.
 
 ### 사이드 바
-<p align="center">0
- <img width="500" height="947" alt="이벤트_사이드바" src="https://github.com/user-attachments/assets/a67efc41-bacf-4e28-b547-f1d1b54f4e22" />
- <img width="500" height="948" alt="승인요청관리_사이드바" src="https://github.com/user-attachments/assets/2c5484ba-521e-4d6f-ab00-746c97483e30" />
+<p align="center">
+  <img width="500" height="947" alt="이벤트_사이드바" src="https://github.com/user-attachments/assets/a67efc41-bacf-4e28-b547-f1d1b54f4e22" />
+  <img width="500" height="948" alt="승인요청관리_사이드바" src="https://github.com/user-attachments/assets/2c5484ba-521e-4d6f-ab00-746c97483e30" />
 </p>
 
 + 각 페이지와 권한에 따른 표시되는 사이드바입니다.
