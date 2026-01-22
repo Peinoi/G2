@@ -245,7 +245,7 @@
 그리고 **일정 관리와 현재 개발 역량을 점검할 수 있었던 의미 있는 경험**이었습니다.
 
 
---- 
+
 폴더 구조
 📦client
  ┣ 📦public
@@ -283,4 +283,4 @@
  ┣ 📜README.md
  ┣ 📜vue.config.js
  ┗ 📜material-dashboard.js
----
+
