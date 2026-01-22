@@ -243,3 +243,44 @@
 이번 프로젝트는 단순한 기능 구현을 넘어,  
 **문서화의 중요성**, **환경 차이에 따른 이슈 관리**,  
 그리고 **일정 관리와 현재 개발 역량을 점검할 수 있었던 의미 있는 경험**이었습니다.
+
+
+--- 
+폴더 구조
+📦client
+ ┣ 📦public
+ ┃ ┗ 📂img
+ ┣ 📦src
+ ┃ ┣ 📂components
+ ┃ ┃ ┣ 📂BaseSidenav
+ ┃ ┃ ┣ 📂Pending
+ ┃ ┃ ┣ 📂SignUp
+ ┃ ┃ ┣ 📂Sponsor
+ ┃ ┃ ┃ ┣ 📂Activity
+ ┃ ┃ ┃ ┣ 📂AgencyStaff
+ ┃ ┃ ┃ ┣ 📂Common
+ ┃ ┃ ┃ ┣ 📂Sidebar
+ ┃ ┃ ┃ ┣ 📂SystemAdmin
+ ┃ ┃ ┃ ┗ 📂User
+ ┃ ┃ ┣ 📂UserInfo
+ ┃ ┣ 📂config
+ ┃ ┣ 📂examples
+ ┃ ┃ ┣ 📂Cards
+ ┃ ┃ ┣ 📂Charts
+ ┃ ┃ ┣ 📂Menu
+ ┃ ┃ ┣ 📂Navbars
+ ┃ ┃ ┣ 📂PageLayout
+ ┃ ┃ ┣ 📂Sidenav
+ ┃ ┣ 📂router
+ ┃ ┣ 📂store
+ ┃ ┣ 📂utils
+ ┃ ┣ 📂views
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┣ 📂Sponsor
+ ┃ ┣ 📜App.vue
+ ┃ ┣ 📜main.js
+ ┣ 📜.gitignore
+ ┣ 📜README.md
+ ┣ 📜vue.config.js
+ ┗ 📜material-dashboard.js
+---
