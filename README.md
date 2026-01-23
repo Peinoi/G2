@@ -244,43 +244,23 @@
 **문서화의 중요성**, **환경 차이에 따른 이슈 관리**,  
 그리고 **일정 관리와 현재 개발 역량을 점검할 수 있었던 의미 있는 경험**이었습니다.
 
+## 📁 Project Structure
 
+### Client / Server Architecture
 
-폴더 구조
-📦client
- ┣ 📦public
- ┃ ┗ 📂img
- ┣ 📦src
- ┃ ┣ 📂components
- ┃ ┃ ┣ 📂BaseSidenav
- ┃ ┃ ┣ 📂Pending
- ┃ ┃ ┣ 📂SignUp
- ┃ ┃ ┣ 📂Sponsor
- ┃ ┃ ┃ ┣ 📂Activity
- ┃ ┃ ┃ ┣ 📂AgencyStaff
- ┃ ┃ ┃ ┣ 📂Common
- ┃ ┃ ┃ ┣ 📂Sidebar
- ┃ ┃ ┃ ┣ 📂SystemAdmin
- ┃ ┃ ┃ ┗ 📂User
- ┃ ┃ ┣ 📂UserInfo
- ┃ ┣ 📂config
- ┃ ┣ 📂examples
- ┃ ┃ ┣ 📂Cards
- ┃ ┃ ┣ 📂Charts
- ┃ ┃ ┣ 📂Menu
- ┃ ┃ ┣ 📂Navbars
- ┃ ┃ ┣ 📂PageLayout
- ┃ ┃ ┣ 📂Sidenav
- ┃ ┣ 📂router
- ┃ ┣ 📂store
- ┃ ┣ 📂utils
- ┃ ┣ 📂views
- ┃ ┃ ┣ 📂components
- ┃ ┃ ┣ 📂Sponsor
- ┃ ┣ 📜App.vue
- ┃ ┣ 📜main.js
- ┣ 📜.gitignore
- ┣ 📜README.md
- ┣ 📜vue.config.js
- ┗ 📜material-dashboard.js
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="top">
+        <b>Client</b><br/>
+        <img src="https://github.com/user-attachments/assets/c612559b-fe89-497b-a3d1-659f40ba0ff4" width="420"/>
+      </td>
+      <td align="center" valign="top">
+        <b>Server</b><br/>
+        <img src="https://github.com/user-attachments/assets/69b9f5c4-bed8-4193-9b16-2818175a7161" width="420"/>
+      </td>
+    </tr>
+  </table>
+</div>
+
 
