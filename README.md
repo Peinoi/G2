@@ -263,4 +263,20 @@
   </table>
 </div>
 
+### MY Client / Server Architecture
 
+<div align="center">
+  <table>
+    <tr>
+      <td align="center" valign="top">
+        <b>Client</b><br/>
+        <img src="https://github.com/user-attachments/assets/19877a91-6212-4eff-b651-26ed652f312d" width="420"/>
+      </td>
+      <td align="center" valign="top">
+        <b>Server</b><br/>
+        <img src="https://github.com/user-attachments/assets/dbe944b0-5381-492f-8d03-9d5192834dd1" width="420"/>
+      </td>
+    </tr>
+  </table>
+
+</div>
