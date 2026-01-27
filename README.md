@@ -9,6 +9,8 @@
   <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 ## 프로젝트 개요
@@ -122,6 +124,8 @@
   <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 ---
@@ -224,6 +228,8 @@
   <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 # 프로젝트 소감
@@ -243,6 +249,16 @@
 이번 프로젝트는 단순한 기능 구현을 넘어,  
 **문서화의 중요성**, **환경 차이에 따른 이슈 관리**,  
 그리고 **일정 관리와 현재 개발 역량을 점검할 수 있었던 의미 있는 경험**이었습니다.
+
+<p align="center">
+  <a href="#프로젝트-개요"><kbd>📘 프로젝트 개요</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#후원-파트"><kbd>🧩 내 파트 (후원)</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
+  &nbsp;&nbsp;
+  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
+</p>
 
 ## 📁 Project Structure
 
