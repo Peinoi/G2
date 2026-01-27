@@ -260,7 +260,7 @@
   <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
-## 📁 Project Structure
+## Project Structure
 
 ### Client / Server Architecture
 
