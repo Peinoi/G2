@@ -10,7 +10,7 @@
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
   &nbsp;&nbsp;
-  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
+  <a href="#Project-Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 ## 프로젝트 개요
@@ -125,7 +125,7 @@
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
   &nbsp;&nbsp;
-  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
+  <a href="#Project-Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 ---
@@ -229,7 +229,7 @@
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
   &nbsp;&nbsp;
-  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
+  <a href="#Project-Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 # 프로젝트 소감
@@ -257,7 +257,7 @@
   &nbsp;&nbsp;
   <a href="#프로젝트-소감"><kbd>📝 프로젝트 소감</kbd></a>
   &nbsp;&nbsp;
-  <a href="#Project Structure"><kbd>📁 Project Structure</kbd></a>
+  <a href="#Project-Structure"><kbd>📁 Project Structure</kbd></a>
 </p>
 
 ## Project Structure
