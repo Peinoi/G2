@@ -72,7 +72,7 @@
   </tr>
   <tr>
     <td align="center">
-      <img  width="120" alt="image" src="https://github.com/user-attachments/assets/fd2ed4de-b16c-4339-a6f7-bc8f4d846d29" />
+      <img  width="120" alt="image" src="https://github.com/Peinoi.png" />
     </td>
     <td align="center">
       <img width="120" alt="female" src="https://github.com/user-attachments/assets/8d5708ba-b9f8-41e6-bd47-7c5e777a0088" />
